@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">DeepLog</title>
+  <defs>
+    <linearGradient id="surface" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a8f2ef"/>
+      <stop offset="1" stop-color="#35c8dc"/>
+    </linearGradient>
+    <linearGradient id="middle" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#34c9df"/>
+      <stop offset="1" stop-color="#168fd0"/>
+    </linearGradient>
+    <linearGradient id="depth" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#157fca"/>
+      <stop offset="1" stop-color="#142157"/>
+    </linearGradient>
+    <clipPath id="d-shape">
+      <path d="M16 12h45c31 0 53 21 53 52s-22 52-53 52H16z"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#d-shape)">
+    <rect width="128" height="128" fill="url(#surface)"/>
+    <path d="M-8 48c24-15 43-13 63 0 23 15 46 16 81-5v85H-8z" fill="#46d1dc"/>
+    <path d="M-8 66c24-15 45-14 65 0 22 15 45 15 79-5v67H-8z" fill="url(#middle)"/>
+    <path d="M-8 84c25-15 45-14 66 0 22 14 46 14 78-6v50H-8z" fill="#176fbd"/>
+    <path d="M-8 101c25-14 46-13 67 0 22 14 45 13 77-7v34H-8z" fill="url(#depth)"/>
+  </g>
+
+  <path
+    d="M16 12h45c31 0 53 21 53 52s-22 52-53 52H16z"
+    fill="none"
+    stroke="#126caa"
+    stroke-width="3"
+  />
+  <path
+    d="M43 31v66h18c19 0 33-13 33-33S80 31 61 31z"
+    fill="#f5fbff"
+    fill-opacity=".97"
+  />
+  <circle cx="58" cy="78" r="8" fill="#168fd0"/>
+  <circle cx="58" cy="61" r="5.5" fill="#25bad7"/>
+  <circle cx="58" cy="47" r="3.8" fill="#5bdce2"/>
+  <circle cx="58" cy="36" r="2.5" fill="#8cebe8"/>
+</svg>

@@ -1,0 +1,9 @@
+{
+  "name": "deeplog-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check js/*.js",
+    "test": "node --test tests/*.test.js"
+  }
+}

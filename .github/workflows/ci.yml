@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: deeplog_test
+          POSTGRES_USER: deeplog_test
+          POSTGRES_PASSWORD: deeplog_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U deeplog_test -d deeplog_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      # Run outside UTC on purpose: date handling bugs only show up there.
+      TZ: Europe/Madrid
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_NAME: deeplog_test
+      DB_USER: deeplog_test
+      DB_PASSWORD: deeplog_test_password
+      UPLOADS_DIR: /tmp/deeplog-ci-uploads
+      BCRYPT_ROUNDS: 4
+      JWT_SECRET: ci-only-secret-with-more-than-32-characters
+      JWT_EXPIRES_IN: 15m
+      JWT_ISSUER: deeplog-api
+      JWT_AUDIENCE: deeplog-web
+      REFRESH_TOKEN_DAYS: 30
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Use Node.js 20
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Check JavaScript syntax
+        run: |
+          npm run check
+          find ../frontend/js -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Verify generated OpenAPI is current
+        run: |
+          cp openapi.json /tmp/openapi.json
+          node scripts/build-openapi.js
+          cmp openapi.json /tmp/openapi.json
+      - name: Run unit, integration and E2E tests
+        run: npm test
+      - name: Test stable frontend
+        working-directory: frontend
+        run: |
+          npm run check
+          npm test
+      - name: Test and build React POC
+        working-directory: frontend-react-poc
+        run: |
+          npm ci
+          npm test
+          npm run build
+          npm audit --audit-level=moderate
+      - name: Audit all dependencies
+        run: npm run audit:ci
+
+  images:
+    name: Docker images
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Validate development Compose
+        run: docker compose config --quiet
+      - name: Build development images
+        run: docker compose --profile poc build backend frontend frontend-react-poc
+      - name: Validate production Compose
+        env:
+          DOMAIN: staging.example.com
+          ACME_EMAIL: ci@example.com
+          DB_NAME: deeplog
+          DB_USER: deeplog
+          DB_PASSWORD: ci-database-password
+          JWT_SECRET: ci-only-secret-with-more-than-32-characters
+        run: docker compose --env-file /dev/null -f compose.production.yml config --quiet
+      - name: Build production images
+        run: |
+          docker build -f backend/Dockerfile.production -t deeplog-api:${{ github.sha }} backend
+          docker build -f frontend/Dockerfile -t deeplog-web:${{ github.sha }} frontend

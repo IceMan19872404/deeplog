@@ -1,0 +1,106 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+      revision:
+        description: Commit SHA or tag already present in this repository
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify release
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Deploy ${{ inputs.environment }}
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout selected revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.revision }}
+      - name: Resolve immutable revision
+        id: revision
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Validate deployment secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HEALTH_URL: ${{ secrets.DEPLOY_HEALTH_URL }}
+        run: |
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_PATH DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS DEPLOY_HEALTH_URL; do
+            test -n "${!name}" || { echo "Missing environment secret: $name"; exit 1; }
+          done
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deeplog
+          chmod 600 ~/.ssh/deeplog
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Deploy with application rollback
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          TARGET_ENVIRONMENT: ${{ inputs.environment }}
+          TARGET_REVISION: ${{ steps.revision.outputs.sha }}
+        run: |
+          ssh -i ~/.ssh/deeplog "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash -s -- '$DEPLOY_PATH' '$TARGET_REVISION' '$TARGET_ENVIRONMENT'" <<'REMOTE'
+          set -Eeuo pipefail
+          app_path="$1"
+          revision="$2"
+          environment="$3"
+          cd "$app_path"
+          previous_revision="$(git rev-parse HEAD)"
+          compose=(docker compose --env-file ".env.$environment" -f compose.production.yml)
+
+          rollback() {
+            echo "Deployment failed; restoring application revision $previous_revision"
+            git checkout --detach "$previous_revision"
+            "${compose[@]}" up -d --build
+          }
+          trap rollback ERR
+
+          git fetch --tags origin
+          git cat-file -e "$revision^{commit}"
+          if "${compose[@]}" ps --status running backend | grep -q backend; then
+            "${compose[@]}" run --rm backup /bin/sh /ops/backup-once.sh
+          fi
+          git checkout --detach "$revision"
+          "${compose[@]}" config --quiet
+          "${compose[@]}" up -d --build
+          "${compose[@]}" ps
+          trap - ERR
+          REMOTE
+      - name: Verify public health endpoint
+        env:
+          DEPLOY_HEALTH_URL: ${{ secrets.DEPLOY_HEALTH_URL }}
+        run: curl --fail --show-error --silent --retry 8 --retry-delay 5 "$DEPLOY_HEALTH_URL/api/v1/health"

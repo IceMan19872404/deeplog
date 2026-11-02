@@ -1,0 +1,10 @@
+.DS_Store
+.env
+.env.production
+backend/.env
+backend/node_modules/
+frontend-react-poc/node_modules/
+frontend-react-poc/dist/
+backend/uploads/
+backups/
+npm-debug.log*

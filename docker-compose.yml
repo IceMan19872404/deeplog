@@ -1,0 +1,105 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: deeplog-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-deeplog}
+      POSTGRES_USER: ${DB_USER:-deeplog_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-deeplog_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-deeplog_user} -d ${DB_NAME:-deeplog}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: deeplog-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-deeplog}
+      DB_USER: ${DB_USER:-deeplog_user}
+      DB_PASSWORD: ${DB_PASSWORD:-deeplog_password}
+      UPLOADS_DIR: /app/uploads
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+      JWT_SECRET: ${JWT_SECRET:-development-only-change-me}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_ISSUER: ${JWT_ISSUER:-deeplog-api}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-deeplog-web}
+      REFRESH_TOKEN_DAYS: ${REFRESH_TOKEN_DAYS:-30}
+      TRUST_PROXY_HOPS: 1
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      APP_RELEASE: ${APP_RELEASE:-development}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/api/v1/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - dive_uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: deeplog-web
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  frontend-react-poc:
+    build:
+      context: ./frontend-react-poc
+    container_name: deeplog-react-poc
+    restart: unless-stopped
+    profiles: ["poc"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8081:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
+  dive_uploads:

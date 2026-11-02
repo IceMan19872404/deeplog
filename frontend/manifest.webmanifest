@@ -1,0 +1,13 @@
+{
+  "name": "DeepLog - Bitácora de inmersiones",
+  "short_name": "DeepLog",
+  "description": "Tu cuaderno digital de inmersiones.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#edfaff",
+  "theme_color": "#107acc",
+  "lang": "es",
+  "icons": [
+    { "src": "/assets/deeplog-mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

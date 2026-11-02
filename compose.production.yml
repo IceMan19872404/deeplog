@@ -1,0 +1,154 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is required}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - private
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.production
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:?DB_NAME is required}
+      DB_USER: ${DB_USER:?DB_USER is required}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      UPLOADS_DIR: /app/uploads
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_ISSUER: ${JWT_ISSUER:-deeplog-api}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-deeplog-web}
+      REFRESH_TOKEN_DAYS: ${REFRESH_TOKEN_DAYS:-30}
+      TRUST_PROXY_HOPS: 2
+      PUBLIC_APP_URL: https://${DOMAIN:?DOMAIN is required}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      APP_RELEASE: ${APP_RELEASE:-unknown}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    volumes:
+      - dive_uploads:/app/uploads
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/api/v1/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - private
+
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:?DB_NAME is required}
+      DB_USER: ${DB_USER:?DB_USER is required}
+      PGPASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      UPLOADS_DIR: /uploads
+      BACKUP_DIR: /backups
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    command: ["/bin/sh", "/ops/backup-loop.sh"]
+    volumes:
+      - ./ops:/ops:ro
+      - dive_uploads:/uploads:ro
+      - ${BACKUP_HOST_PATH:-./backups}:/backups
+    networks:
+      - private
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - private
+      - edge
+
+  monitor:
+    image: alpine:3.21
+    restart: unless-stopped
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backup:
+        condition: service_started
+    environment:
+      HEALTH_URL: http://frontend/api/v1/health/ready
+      BACKUP_DIR: /backups
+      MONITOR_INTERVAL_SECONDS: ${MONITOR_INTERVAL_SECONDS:-300}
+      MAX_BACKUP_AGE_SECONDS: ${MAX_BACKUP_AGE_SECONDS:-93600}
+      MONITOR_WEBHOOK_URL: ${MONITOR_WEBHOOK_URL:-}
+    command: ["/bin/sh", "/ops/monitor-loop.sh"]
+    volumes:
+      - ./ops:/ops:ro
+      - ${BACKUP_HOST_PATH:-./backups}:/backups:ro
+    networks:
+      - private
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      frontend:
+        condition: service_healthy
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN is required}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL is required}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - edge
+
+networks:
+  edge:
+  private:
+    internal: true
+
+volumes:
+  postgres_data:
+  dive_uploads:
+  caddy_data:
+  caddy_config:

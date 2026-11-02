@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="DeepLog, tu cuaderno digital de inmersiones."
+    >
+    <title>DeepLog</title>
+    <link rel="icon" href="/assets/deeplog-mark.svg" type="image/svg+xml">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#107acc">
+    <link rel="apple-touch-icon" href="/assets/deeplog-mark.svg">
+    <link rel="stylesheet" href="/styles.css?v=20261030-2">
+    <script type="module" src="/js/app.js?v=20261030-2"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
+    <div class="ocean-backdrop" aria-hidden="true">
+      <span class="current current-one"></span>
+      <span class="current current-two"></span>
+      <div class="bubble-stream bubble-stream-one">
+        <span style="--x: 0px; --size: 12px; --delay: 0s"></span>
+        <span style="--x: 18px; --size: 20px; --delay: 0.18s"></span>
+        <span style="--x: -12px; --size: 8px; --delay: 0.34s"></span>
+        <span style="--x: 31px; --size: 13px; --delay: 0.48s"></span>
+        <span style="--x: 7px; --size: 25px; --delay: 0.66s"></span>
+        <span style="--x: -24px; --size: 16px; --delay: 0.82s"></span>
+      </div>
+      <div class="bubble-stream bubble-stream-two">
+        <span style="--x: 0px; --size: 9px; --delay: 0s"></span>
+        <span style="--x: -20px; --size: 17px; --delay: 0.15s"></span>
+        <span style="--x: 24px; --size: 11px; --delay: 0.31s"></span>
+        <span style="--x: 8px; --size: 28px; --delay: 0.5s"></span>
+        <span style="--x: -31px; --size: 13px; --delay: 0.72s"></span>
+      </div>
+      <div class="bubble-stream bubble-stream-three">
+        <span style="--x: 0px; --size: 14px; --delay: 0s"></span>
+        <span style="--x: 22px; --size: 8px; --delay: 0.14s"></span>
+        <span style="--x: -18px; --size: 22px; --delay: 0.32s"></span>
+        <span style="--x: 34px; --size: 16px; --delay: 0.49s"></span>
+        <span style="--x: -5px; --size: 10px; --delay: 0.68s"></span>
+        <span style="--x: -32px; --size: 27px; --delay: 0.83s"></span>
+      </div>
+      <div class="bubble-stream bubble-stream-four">
+        <span style="--x: -8px; --size: 10px; --delay: 0s"></span>
+        <span style="--x: 19px; --size: 24px; --delay: 0.13s"></span>
+        <span style="--x: -27px; --size: 15px; --delay: 0.27s"></span>
+        <span style="--x: 34px; --size: 9px; --delay: 0.41s"></span>
+        <span style="--x: 4px; --size: 19px; --delay: 0.58s"></span>
+        <span style="--x: -16px; --size: 29px; --delay: 0.74s"></span>
+      </div>
+      <div class="bubble-stream bubble-stream-five">
+        <span style="--x: 5px; --size: 16px; --delay: 0s"></span>
+        <span style="--x: -24px; --size: 8px; --delay: 0.12s"></span>
+        <span style="--x: 28px; --size: 21px; --delay: 0.26s"></span>
+        <span style="--x: -8px; --size: 12px; --delay: 0.39s"></span>
+        <span style="--x: 38px; --size: 27px; --delay: 0.56s"></span>
+        <span style="--x: -31px; --size: 18px; --delay: 0.72s"></span>
+      </div>
+      <div class="bubble-stream bubble-stream-six">
+        <span style="--x: 0px; --size: 11px; --delay: 0s"></span>
+        <span style="--x: 23px; --size: 18px; --delay: 0.11s"></span>
+        <span style="--x: -21px; --size: 26px; --delay: 0.25s"></span>
+        <span style="--x: 37px; --size: 13px; --delay: 0.38s"></span>
+        <span style="--x: -4px; --size: 8px; --delay: 0.53s"></span>
+        <span style="--x: -34px; --size: 20px; --delay: 0.69s"></span>
+      </div>
+    </div>
+
+    <main id="main-content" class="app-shell" tabindex="-1">
+      <section id="public-share-view" class="public-share-view" hidden>
+        <header class="public-share-header">
+          <a class="brand" href="/" aria-label="DeepLog">
+            <img class="brand-mark" src="/assets/deeplog-mark.svg" alt="" width="48" height="48">
+            <span>DeepLog</span>
+          </a>
+          <span class="share-readonly-badge">Solo lectura</span>
+        </header>
+        <article class="public-dive-card">
+          <div id="public-share-loading" class="detail-loading">
+            <span class="loader" aria-hidden="true"></span>
+            Abriendo recuerdo compartido...
+          </div>
+          <div id="public-share-error" class="public-share-state" hidden></div>
+          <form id="public-share-password-form" class="public-share-password" method="post" hidden>
+            <p class="eyebrow">Recuerdo protegido</p>
+            <h1>Esta inmersión tiene contraseña</h1>
+            <p>Introdúcela para acceder a la ficha y sus fotografías.</p>
+            <label>Contraseña
+              <input name="password" type="password" minlength="8" maxlength="64" required autocomplete="current-password">
+            </label>
+            <button class="primary-button" type="submit">Abrir inmersión</button>
+            <div id="public-password-message" class="message" role="status" hidden></div>
+          </form>
+          <div id="public-dive-content" hidden>
+            <div class="public-dive-hero">
+              <p class="eyebrow">Inmersión compartida</p>
+              <h1 id="public-dive-name"></h1>
+              <p id="public-diver-name" class="public-diver-name" hidden></p>
+            </div>
+            <dl id="public-dive-facts" class="detail-facts public-dive-facts"></dl>
+            <section id="public-buddies-section" class="detail-section" hidden>
+              <p class="eyebrow">Compañeros</p><p id="public-buddies"></p>
+            </section>
+            <section id="public-comments-section" class="detail-section" hidden>
+              <p class="eyebrow">Notas de la inmersión</p><p id="public-comments"></p>
+            </section>
+            <section id="public-photos-section" class="detail-section" hidden>
+              <p class="eyebrow">Galería</p>
+              <div id="public-photos" class="public-photo-grid"></div>
+            </section>
+          </div>
+        </article>
+        <p class="public-share-footer">Compartido de forma privada con DeepLog.</p>
+      </section>
+      <section id="auth-view" class="auth-layout">
+        <div class="brand-panel">
+          <p class="eyebrow">Tu océano. Tu historia.</p>
+          <a class="brand" href="/" aria-label="DeepLog">
+            <img
+              class="brand-mark"
+              src="/assets/deeplog-mark.svg"
+              alt=""
+              width="52"
+              height="52"
+            >
+            <span>DeepLog</span>
+          </a>
+          <h1>Todas tus inmersiones en un único lugar.</h1>
+          <p class="brand-copy">
+            Un cuaderno de bitácora para cada experiencia bajo la superficie.
+          </p>
+          <div class="depth-scale" aria-hidden="true">
+            <span>0 m</span>
+            <span>10 m</span>
+            <span>20 m</span>
+            <span>30 m</span>
+            <span>40 m</span>
+          </div>
+        </div>
+
+        <div class="auth-card">
+          <div class="auth-tabs" role="tablist" aria-label="Acceso">
+            <button
+              id="login-tab"
+              class="auth-tab is-active"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="login-form"
+            >
+              Iniciar sesión
+            </button>
+            <button
+              id="register-tab"
+              class="auth-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="register-form"
+              tabindex="-1"
+            >
+              Crear cuenta
+            </button>
+          </div>
+
+          <div id="auth-message" class="message" role="status" hidden></div>
+
+          <form
+            id="login-form"
+            class="auth-form"
+            method="post"
+            role="tabpanel"
+            aria-labelledby="login-tab"
+            novalidate
+          >
+            <div class="form-heading">
+              <p class="eyebrow">Bienvenido de nuevo</p>
+              <h2>Continúa tu bitácora</h2>
+            </div>
+            <label>
+              Correo electrónico
+              <input
+                name="email"
+                type="email"
+                autocomplete="email"
+                placeholder="tu@email.com"
+                required
+              >
+            </label>
+            <label>
+              Contraseña
+              <input
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                placeholder="Tu contraseña"
+                required
+              >
+            </label>
+            <button id="forgot-password-button" class="text-button" type="button">
+              He olvidado mi contraseña
+            </button>
+            <button class="primary-button" type="submit">
+              <span>Entrar en DeepLog</span>
+              <span aria-hidden="true">→</span>
+            </button>
+          </form>
+
+          <form
+            id="register-form"
+            class="auth-form"
+            method="post"
+            role="tabpanel"
+            aria-labelledby="register-tab"
+            novalidate
+            hidden
+          >
+            <div class="form-heading">
+              <p class="eyebrow">Primera inmersión</p>
+              <h2>Crea tu cuenta</h2>
+            </div>
+            <div class="field-grid">
+              <label>
+                Nombre
+                <input
+                  name="firstName"
+                  type="text"
+                  autocomplete="given-name"
+                  required
+                  minlength="2"
+                  maxlength="50"
+                >
+              </label>
+              <label>
+                Primer apellido
+                <input
+                  name="lastName"
+                  type="text"
+                  autocomplete="family-name"
+                  required
+                  minlength="2"
+                  maxlength="80"
+                >
+              </label>
+            </div>
+            <label>
+              Segundo apellido <span class="optional">(opcional)</span>
+              <input
+                name="secondLastName"
+                type="text"
+                maxlength="80"
+              >
+            </label>
+            <label>
+              Correo electrónico
+              <input
+                name="email"
+                type="email"
+                autocomplete="email"
+                required
+              >
+            </label>
+            <label>
+              Contraseña
+              <input
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                required
+                minlength="8"
+                maxlength="72"
+                pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,72}"
+              >
+              <small>8 caracteres, una mayúscula, una minúscula y un número.</small>
+            </label>
+            <button class="primary-button" type="submit">
+              <span>Crear mi bitácora</span>
+              <span aria-hidden="true">→</span>
+            </button>
+          </form>
+
+          <form id="forgot-password-form" class="auth-form" method="post" novalidate hidden>
+            <div class="form-heading">
+              <p class="eyebrow">Recuperar acceso</p>
+              <h2>¿Olvidaste tu contraseña?</h2>
+              <p>
+                Indica el correo de tu cuenta y prepararemos el cambio de
+                contraseña.
+              </p>
+            </div>
+            <label>
+              Correo electrónico
+              <input
+                name="email"
+                type="email"
+                autocomplete="email"
+                placeholder="tu@email.com"
+                required
+              >
+            </label>
+            <button class="primary-button" type="submit">
+              Continuar
+            </button>
+            <button class="text-button auth-back-button" type="button" data-back-login>
+              Volver a iniciar sesión
+            </button>
+          </form>
+
+          <form id="reset-password-form" class="auth-form" method="post" novalidate hidden>
+            <div class="form-heading">
+              <p class="eyebrow">Nueva contraseña</p>
+              <h2>Recupera tu cuenta</h2>
+              <p>Elige una contraseña segura que no hayas utilizado antes.</p>
+            </div>
+            <input name="token" type="hidden">
+            <label>
+              Nueva contraseña
+              <input
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                required
+                minlength="8"
+                maxlength="72"
+                pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,72}"
+              >
+              <small>8 caracteres, una mayúscula, una minúscula y un número.</small>
+            </label>
+            <label>
+              Repite la nueva contraseña
+              <input
+                name="passwordConfirmation"
+                type="password"
+                autocomplete="new-password"
+                required
+                minlength="8"
+                maxlength="72"
+              >
+            </label>
+            <button class="primary-button" type="submit">
+              Cambiar contraseña
+            </button>
+            <button class="text-button auth-back-button" type="button" data-back-login>
+              Cancelar y volver
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <section id="dashboard-view" class="dashboard" hidden>
+        <header class="topbar">
+          <a class="brand brand-compact" href="/" aria-label="DeepLog">
+            <img
+              class="brand-mark"
+              src="/assets/deeplog-mark.svg"
+              alt=""
+              width="42"
+              height="42"
+            >
+            <span>DeepLog</span>
+          </a>
+          <div class="user-menu">
+            <button id="open-profile-header" class="profile-menu-button" type="button" aria-label="Abrir mi perfil">
+              <span id="header-avatar" class="avatar avatar-small" aria-hidden="true"></span>
+            </button>
+            <div>
+              <span class="user-label">Buceador/a</span>
+              <strong id="user-name"></strong>
+            </div>
+            <button id="logout-button" class="ghost-button" type="button">
+              Cerrar sesión
+            </button>
+          </div>
+        </header>
+
+        <div class="dashboard-content">
+          <section class="dashboard-hero">
+            <div>
+              <p class="eyebrow">Tu actividad submarina</p>
+              <h1>Bitácora de inmersiones</h1>
+              <p>
+                Un vistazo limpio a las experiencias que ya forman parte de tu
+                historia.
+              </p>
+              <button class="primary-button hero-action" data-open-dive-form type="button">
+                <span>Nueva inmersión</span>
+                <span aria-hidden="true">+</span>
+              </button>
+            </div>
+            <div class="metric-card">
+              <span>Total registrado</span>
+              <strong id="dives-total">0</strong>
+              <small>inmersiones</small>
+            </div>
+          </section>
+
+          <section class="profile-summary" aria-labelledby="profile-summary-title">
+            <div class="profile-identity">
+              <span id="profile-avatar" class="avatar avatar-large" aria-hidden="true"></span>
+              <div>
+                <p class="eyebrow">Perfil privado</p>
+                <h2 id="profile-summary-title">Tu experiencia como buceador/a</h2>
+                <p id="profile-summary-copy">Completa tu perfil para reunir trayectoria y preferencias.</p>
+              </div>
+            </div>
+            <dl class="profile-facts">
+              <div><dt>Certificación</dt><dd id="profile-certification">Sin indicar</dd></div>
+              <div><dt>Buceando desde</dt><dd id="profile-since">Sin indicar</dd></div>
+              <div><dt>Privacidad</dt><dd id="profile-privacy">Nombre oculto por defecto</dd></div>
+            </dl>
+            <button id="open-profile" class="ghost-button" type="button">Editar perfil</button>
+          </section>
+
+          <section class="insights-panel" aria-labelledby="insights-title">
+            <div class="section-heading insights-heading">
+              <div>
+                <p class="eyebrow">Tu trayectoria</p>
+                <h2 id="insights-title">El mar, en cifras</h2>
+              </div>
+              <p id="favorite-center" class="favorite-center">
+                Registra inmersiones para descubrir tus tendencias.
+              </p>
+            </div>
+
+            <div id="stats-loading" class="stats-loading" role="status" aria-live="polite">
+              Actualizando estadísticas...
+            </div>
+            <div class="stats-grid" aria-live="polite">
+              <article class="stat-card stat-time">
+                <span>Tiempo bajo el agua</span>
+                <strong id="total-time">0 min</strong>
+                <small>acumulado</small>
+              </article>
+              <article class="stat-card">
+                <span>Máxima profundidad</span>
+                <strong id="max-depth">—</strong>
+                <small>récord personal</small>
+              </article>
+              <article class="stat-card">
+                <span>Inmersión más larga</span>
+                <strong id="longest-duration">—</strong>
+                <small>récord personal</small>
+              </article>
+              <article class="stat-card stat-year">
+                <span>Este año</span>
+                <strong id="dives-this-year">0</strong>
+                <small>inmersiones</small>
+              </article>
+            </div>
+
+            <div class="activity-card">
+              <div>
+                <p class="eyebrow">Últimos seis meses</p>
+                <h3>Ritmo de inmersiones</h3>
+              </div>
+              <div
+                id="activity-chart"
+                class="activity-chart"
+                role="img"
+                aria-label="Sin actividad registrada en los últimos seis meses"
+              ></div>
+            </div>
+          </section>
+
+          <section class="map-panel" aria-labelledby="map-title">
+            <div class="section-heading insights-heading">
+              <div><p class="eyebrow">Tus lugares</p><h2 id="map-title">Mapa de inmersiones</h2></div>
+              <p id="map-status" class="insight-disclaimer">Las ubicaciones son privadas y solo tú puedes verlas.</p>
+            </div>
+            <div id="dive-map" class="dive-map" role="group" aria-label="Sin ubicaciones registradas"></div>
+            <p class="map-privacy-note">DeepLog no envía tus coordenadas a proveedores externos de mapas.</p>
+          </section>
+
+          <section class="advanced-insights-panel" aria-labelledby="advanced-insights-title">
+            <div class="section-heading insights-heading">
+              <div>
+                <p class="eyebrow">Patrones personales</p>
+                <h2 id="advanced-insights-title">Tu historial, con contexto</h2>
+              </div>
+              <p class="insight-disclaimer">Describe tus registros. No recomienda configuraciones ni prácticas de buceo.</p>
+            </div>
+            <div id="advanced-insights-loading" class="stats-loading" role="status" aria-live="polite">Analizando tu historial...</div>
+            <div id="advanced-insights-empty" class="insight-empty" hidden>
+              Registra más inmersiones y configuraciones para descubrir patrones personales.
+            </div>
+            <div id="advanced-insights-content" hidden>
+              <div class="insight-layout">
+                <article class="insight-card insight-card-wide">
+                  <div><p class="eyebrow">Últimas 12 inmersiones</p><h3>Evolución de profundidad y duración</h3></div>
+                  <div id="evolution-chart" class="evolution-chart" role="img"></div>
+                  <div class="chart-legend"><span><i class="legend-depth"></i>Profundidad máxima</span><span><i class="legend-duration"></i>Duración</span></div>
+                </article>
+                <article class="insight-card">
+                  <p class="eyebrow">Equipo</p><h3>Propio frente a alquiler</h3>
+                  <div id="ownership-comparison" class="ownership-comparison"></div>
+                </article>
+                <article class="insight-card">
+                  <p class="eyebrow">Personas y lugares</p><h3>Más frecuentes</h3>
+                  <div class="frequency-columns"><div><h4>Compañeros</h4><ol id="frequent-buddies"></ol></div><div><h4>Centros</h4><ol id="frequent-centers"></ol></div></div>
+                </article>
+                <article class="insight-card insight-card-full">
+                  <div><p class="eyebrow">Memoria de lastre</p><h3>Configuraciones registradas</h3><p class="insight-help">Media y rango observados en cada grupo. Una sola inmersión no constituye una tendencia.</p></div>
+                  <div id="ballast-patterns" class="ballast-patterns"></div>
+                </article>
+                <article class="insight-card insight-card-full learning-timeline-card">
+                  <div><p class="eyebrow">Aprendizaje</p><h3>Cómo evoluciona tu experiencia</h3><p class="insight-help">Una cronología de tus palabras, sin notas ni comparaciones.</p></div>
+                  <div id="reflection-evolution" class="reflection-evolution"></div>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <section class="logbook-panel">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Logbook</p>
+                <h2>Mis inmersiones</h2>
+              </div>
+              <button id="refresh-button" class="ghost-button" type="button">
+                Actualizar
+              </button>
+            </div>
+
+            <div id="dashboard-message" class="message" role="status" hidden></div>
+            <div id="dives-loading" class="loading-state" role="status" aria-live="polite">
+              <span class="loader" aria-hidden="true"></span>
+              Cargando inmersiones...
+            </div>
+            <div id="dives-empty" class="empty-state" hidden>
+              <span class="empty-icon" aria-hidden="true">≈</span>
+              <h3>Tu bitácora está esperando su primera historia</h3>
+              <p>
+                Registra los datos esenciales de tu primera experiencia bajo
+                la superficie.
+              </p>
+              <button class="primary-button empty-action" data-open-dive-form type="button">
+                Registrar mi primera inmersión
+              </button>
+            </div>
+            <div id="dives-list" class="dives-list" aria-live="polite"></div>
+
+            <nav id="pagination" class="pagination" aria-label="Paginación" hidden>
+              <button id="previous-page" class="ghost-button" type="button">
+                Anterior
+              </button>
+              <span id="page-label"></span>
+              <button id="next-page" class="ghost-button" type="button">
+                Siguiente
+              </button>
+            </nav>
+          </section>
+
+          <section class="account-panel" aria-labelledby="account-title">
+            <div class="account-copy">
+              <p class="eyebrow">Tus datos son tuyos</p>
+              <h2 id="account-title">Portabilidad y control</h2>
+              <p>Descarga una copia estructurada de tu bitácora o un archivo completo con todas tus fotografías.</p>
+            </div>
+            <div class="export-actions" aria-label="Formatos de exportación">
+              <button class="ghost-button" type="button" data-export-format="json">Descargar JSON</button>
+              <button class="ghost-button" type="button" data-export-format="csv">Descargar CSV</button>
+              <button class="primary-button" type="button" data-export-format="zip">Descargar todo</button>
+            </div>
+            <p id="account-message" class="account-message" role="status"></p>
+            <div class="account-danger-zone">
+              <div><strong>Sesiones abiertas</strong><p>Revoca el acceso en este y en cualquier otro dispositivo.</p></div>
+              <button id="logout-all-button" class="ghost-button" type="button">Cerrar todas las sesiones</button>
+            </div>
+            <div class="account-danger-zone">
+              <div><strong>Eliminar mi cuenta</strong><p>Borra la cuenta, inmersiones, fotografías y enlaces compartidos.</p></div>
+              <button id="open-delete-account" class="danger-link" type="button">Eliminar cuenta</button>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="profile-dialog" class="app-dialog profile-dialog" aria-labelledby="profile-dialog-title">
+      <form id="profile-form" class="profile-form" method="post" novalidate>
+        <div class="dialog-heading">
+          <div><p class="eyebrow">Tu espacio personal</p><h2 id="profile-dialog-title">Editar perfil</h2><p>Solo tú puedes ver esta información. La preferencia de nombre se puede cambiar en cada enlace.</p></div>
+          <button id="close-profile" class="dialog-close" type="button" aria-label="Cerrar perfil">×</button>
+        </div>
+        <div class="profile-photo-editor">
+          <span id="profile-form-avatar" class="avatar avatar-editor" aria-hidden="true"></span>
+          <div>
+            <label class="file-button">Elegir fotografía<input name="photo" type="file" accept="image/jpeg,image/png,image/webp"></label>
+            <p>JPEG, PNG o WebP. Máximo 3 MB.</p>
+            <button id="remove-profile-photo" class="danger-link" type="button" hidden>Eliminar fotografía</button>
+          </div>
+        </div>
+        <label>Sobre ti <span class="optional">(opcional)</span><textarea name="bio" maxlength="500" rows="4" placeholder="Qué te atrae del mar o qué tipo de inmersiones disfrutas."></textarea><small>Hasta 500 caracteres.</small></label>
+        <div class="field-grid">
+          <label>Nivel o certificación
+            <select name="certificationLevel">
+              <option value="">Sin indicar</option><option value="beginner">En formación</option><option value="open_water">Open Water</option><option value="advanced">Advanced</option><option value="rescue">Rescue Diver</option><option value="divemaster">Divemaster</option><option value="instructor">Instructor/a</option>
+            </select>
+          </label>
+          <label>Buceando desde <span class="optional">(opcional)</span><input name="divingSince" type="number" min="1950" max="2026" inputmode="numeric"></label>
+        </div>
+        <fieldset class="privacy-choice">
+          <legend>Preferencia al compartir</legend>
+          <label><input name="shareNameByDefault" type="checkbox"> Incluir mi nombre por defecto en nuevos enlaces privados</label>
+          <p>La fotografía y la biografía nunca se comparten. Podrás desmarcar el nombre antes de crear cada enlace.</p>
+        </fieldset>
+        <div id="profile-message" class="message" role="status" aria-live="polite" hidden></div>
+        <div class="dialog-actions"><button class="ghost-button" id="cancel-profile" type="button">Cancelar</button><button class="primary-button" type="submit">Guardar perfil</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="dive-dialog" class="app-dialog">
+      <form id="dive-form" class="dive-form" method="post" novalidate>
+        <div class="dialog-heading">
+          <div>
+            <p id="dive-form-eyebrow" class="eyebrow">Nueva experiencia</p>
+            <h2 id="dive-form-title">Registrar inmersión</h2>
+            <p>Guarda primero lo esencial. Siempre podrás volver y editarlo.</p>
+          </div>
+          <button
+            class="dialog-close"
+            type="button"
+            data-close-dive-form
+            aria-label="Cerrar formulario"
+          >
+            ×
+          </button>
+        </div>
+
+        <div id="dive-form-message" class="message" role="status" hidden></div>
+
+        <div class="field-grid">
+          <label>
+            Nombre de la inmersión
+            <input
+              name="name"
+              type="text"
+              minlength="2"
+              maxlength="100"
+              placeholder="Ej.: Arrecife del Coral Azul"
+              required
+            >
+          </label>
+          <label>
+            Fecha
+            <input name="date" type="date" required>
+            <small class="field-example" data-disappearing-example>Ej.: 18/10/2026</small>
+          </label>
+        </div>
+
+        <div class="field-grid">
+          <label>
+            Duración <span class="field-unit">minutos</span>
+            <input
+              name="durationMinutes"
+              type="number"
+              min="1"
+              max="300"
+              step="1"
+              inputmode="numeric"
+              placeholder="Ej.: 52"
+              required
+            >
+          </label>
+          <label>
+            Profundidad máxima <span class="field-unit">metros</span>
+            <input
+              name="maxDepthMeters"
+              type="number"
+              min="0.01"
+              max="150"
+              step="0.01"
+              inputmode="decimal"
+              placeholder="Ej.: 18,5"
+              required
+            >
+          </label>
+        </div>
+
+        <fieldset class="equipment-section">
+          <legend>Configuración del equipo</legend>
+          <p>Recuerda cómo ajustaste tu equipo para esta inmersión.</p>
+          <div class="field-grid">
+            <label>
+              Lastre utilizado <span class="field-unit">kilogramos</span>
+              <input
+                name="ballastKg"
+                type="number"
+                min="0"
+                max="20"
+                step="0.01"
+                inputmode="decimal"
+                placeholder="Ej.: 6"
+              >
+            </label>
+            <label>
+              Material utilizado
+              <select name="equipmentOwnership">
+                <option value="">Ej.: material propio</option>
+                <option value="owned">Material propio</option>
+                <option value="rented">Material de alquiler</option>
+              </select>
+            </label>
+          </div>
+          <div class="field-grid configuration-grid">
+            <label>
+              Tipo de traje
+              <select name="suitType">
+                <option value="">Ej.: traje húmedo</option>
+                <option value="wetsuit">Húmedo</option>
+                <option value="drysuit">Seco</option>
+                <option value="shorty">Shorty</option>
+                <option value="none">Sin traje</option>
+              </select>
+            </label>
+            <label>
+              Grosor <span class="field-unit">milímetros</span>
+              <input name="suitThicknessMm" type="number" min="0" max="15" step="0.1" inputmode="decimal" placeholder="Ej.: 5">
+            </label>
+            <label>
+              Botella
+              <select name="cylinderMaterial">
+                <option value="">Ej.: botella de acero</option>
+                <option value="steel">Acero</option>
+                <option value="aluminum">Aluminio</option>
+              </select>
+            </label>
+            <label>
+              Capacidad <span class="field-unit">litros</span>
+              <input name="cylinderVolumeLiters" type="number" min="3" max="20" step="0.1" inputmode="decimal" placeholder="Ej.: 12">
+            </label>
+            <label>
+              Tipo de agua
+              <select name="waterType">
+                <option value="">Ej.: agua salada</option>
+                <option value="salt">Salada</option>
+                <option value="fresh">Dulce</option>
+              </select>
+            </label>
+          </div>
+          <section class="configuration-memory" aria-labelledby="configuration-memory-title">
+            <div>
+              <p class="eyebrow">Tu memoria personal</p>
+              <h3 id="configuration-memory-title">Configuraciones anteriores similares</h3>
+              <p>Consulta lo que utilizaste en tus propias inmersiones. No es una recomendación de seguridad.</p>
+            </div>
+            <button id="search-configuration-memory" class="ghost-button" type="button">Buscar en mi historial</button>
+            <div id="configuration-memory-message" class="configuration-memory-message" role="status"></div>
+            <div id="configuration-memory-results" class="configuration-memory-results"></div>
+          </section>
+        </fieldset>
+
+        <fieldset class="companions-section">
+          <legend>Compañeros de inmersión</legend>
+          <p>Añade hasta 10 personas separando sus nombres con comas.</p>
+          <label>
+            Nombres <span class="optional">(opcional)</span>
+            <textarea
+              name="buddiesText"
+              maxlength="819"
+              rows="2"
+              placeholder="Ej.: Ana López, Marcos Ruiz"
+            ></textarea>
+          </label>
+        </fieldset>
+
+        <fieldset class="photos-section">
+          <legend>Recuerdos de la inmersión</legend>
+          <p>
+            Añade hasta 5 fotos en formato JPEG, PNG o WebP. Máximo 8 MB por
+            imagen.
+          </p>
+          <label class="photo-picker">
+            <span>Seleccionar fotografías</span>
+            <input
+              name="photos"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+            >
+          </label>
+          <small class="field-example photo-example" data-disappearing-example>Ej.: una foto del punto de entrada y otra de la fauna observada.</small>
+          <div id="selected-photos" class="photo-grid" hidden></div>
+          <div id="existing-photos" class="photo-grid" hidden></div>
+        </fieldset>
+
+        <label>
+          Centro de buceo <span class="optional">(opcional)</span>
+          <input
+            name="diveCenter"
+            type="text"
+            maxlength="120"
+            placeholder="Ej.: Costa Brava Diving"
+          >
+        </label>
+
+        <fieldset class="location-section">
+          <legend>Ubicación de la inmersión <span class="optional">(opcional)</span></legend>
+          <p>Guárdala solo si quieres. La ubicación aproximada se redondea antes de llegar al servidor.</p>
+          <div class="field-grid location-grid">
+            <label>Latitud<input name="latitude" type="number" min="-90" max="90" step="0.00001" inputmode="decimal" placeholder="Ej.: 41,70210"></label>
+            <label>Longitud<input name="longitude" type="number" min="-180" max="180" step="0.00001" inputmode="decimal" placeholder="Ej.: 2,99460"></label>
+            <label>Precisión
+              <select name="locationPrecision">
+                <option value="approximate">Ej.: aproximada (~1 km)</option>
+                <option value="exact">Exacta y privada</option>
+              </select>
+            </label>
+          </div>
+          <div class="location-actions">
+            <button id="use-current-location" class="ghost-button" type="button">Usar mi ubicación actual</button>
+            <button id="clear-location" class="text-button" type="button">Quitar ubicación</button>
+          </div>
+          <p id="location-message" class="configuration-memory-message" role="status"></p>
+        </fieldset>
+
+        <label>
+          Notas de la inmersión <span class="optional">(opcional)</span>
+          <textarea
+            name="comments"
+            maxlength="5000"
+            rows="4"
+            placeholder="Ej.: Visibilidad de 20 m, agua en calma, banco de barracudas y buena flotabilidad."
+          ></textarea>
+          <small>Hasta 5.000 caracteres.</small>
+        </label>
+
+        <div class="dialog-actions">
+          <button class="ghost-button" type="button" data-close-dive-form>
+            Cancelar
+          </button>
+          <button id="save-dive-button" class="primary-button" type="submit">
+            Guardar inmersión
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="dive-detail-dialog" class="app-dialog detail-dialog">
+      <article class="dive-detail">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">Recuerdo de inmersión</p>
+            <h2 id="detail-name">Detalle de la inmersión</h2>
+            <p id="detail-subtitle">Consulta toda la información registrada.</p>
+          </div>
+          <button
+            class="dialog-close"
+            id="close-dive-detail"
+            type="button"
+            aria-label="Cerrar detalle"
+          >
+            ×
+          </button>
+        </div>
+
+        <div id="detail-loading" class="detail-loading">
+          <span class="loader" aria-hidden="true"></span>
+          Cargando inmersión...
+        </div>
+        <div id="detail-message" class="message" role="status" hidden></div>
+        <div id="detail-content" hidden>
+          <dl class="detail-facts">
+            <div><dt>Fecha</dt><dd id="detail-date"></dd></div>
+            <div><dt>Duración</dt><dd id="detail-duration"></dd></div>
+            <div><dt>Profundidad máxima</dt><dd id="detail-depth"></dd></div>
+            <div><dt>Centro de buceo</dt><dd id="detail-center"></dd></div>
+            <div><dt>Lastre utilizado</dt><dd id="detail-ballast"></dd></div>
+            <div><dt>Material</dt><dd id="detail-equipment"></dd></div>
+            <div><dt>Traje</dt><dd id="detail-suit"></dd></div>
+            <div><dt>Botella</dt><dd id="detail-cylinder"></dd></div>
+            <div><dt>Tipo de agua</dt><dd id="detail-water"></dd></div>
+            <div><dt>Ubicación</dt><dd id="detail-location"></dd></div>
+          </dl>
+
+          <section class="detail-section">
+            <p class="eyebrow">Compañeros</p>
+            <p id="detail-buddies"></p>
+          </section>
+          <section class="detail-section">
+            <p class="eyebrow">Notas de la inmersión</p>
+            <p id="detail-comments"></p>
+          </section>
+          <section id="detail-gallery-section" class="detail-section" hidden>
+            <p class="eyebrow">Galería</p>
+            <p class="detail-gallery-help">
+              Elige las fotografías que quieras incluir en el recuerdo.
+            </p>
+            <div id="detail-photos" class="photo-grid detail-photo-grid"></div>
+          </section>
+          <section class="detail-section reflection-section" aria-labelledby="reflection-title">
+            <div class="reflection-heading">
+              <div><p class="eyebrow">Después de la inmersión</p><h3 id="reflection-title">Diario de aprendizaje</h3><p>Describe tu experiencia. DeepLog no puntúa ni ofrece consejos de seguridad.</p></div>
+            </div>
+            <form id="reflection-form" class="reflection-form" method="post" novalidate>
+              <div class="field-grid">
+                <label>¿Qué salió bien?<textarea name="wentWell" maxlength="2000" rows="3"></textarea></label>
+                <label>¿Qué quieres mejorar?<textarea name="improveNext" maxlength="2000" rows="3"></textarea></label>
+              </div>
+              <div class="field-grid">
+                <label>Habilidad practicada<input name="practicedSkill" maxlength="120" placeholder="Por ejemplo: flotabilidad"></label>
+                <label>¿Cómo te sentiste?
+                  <select name="comfort"><option value="">Sin indicar</option><option value="comfortable">Con comodidad</option><option value="mixed">Con sensaciones mixtas</option><option value="challenging">Fue exigente</option></select>
+                </label>
+              </div>
+              <label>Incidencias o situaciones a recordar<textarea name="incidents" maxlength="2000" rows="3"></textarea></label>
+              <label>Objetivo personal para la próxima inmersión<textarea name="nextGoal" maxlength="500" rows="2"></textarea></label>
+              <div id="reflection-message" class="message" role="status" hidden></div>
+              <div class="reflection-actions"><button id="delete-reflection" class="danger-link" type="button" hidden>Borrar reflexión</button><button class="primary-button" type="submit">Guardar reflexión</button></div>
+            </form>
+          </section>
+          <section class="detail-export-section">
+            <div>
+              <p class="eyebrow">Historia visual</p>
+              <h3>Convierte esta inmersión en un recuerdo</h3>
+              <p>Prepara una versión A4 y guárdala como PDF desde tu navegador.</p>
+            </div>
+            <button id="export-dive-pdf" class="primary-button" type="button">
+              Preparar PDF
+            </button>
+            <p id="detail-export-message" class="detail-export-message" role="status"></p>
+          </section>
+          <section class="detail-share-section">
+            <div>
+              <p class="eyebrow">Compartir en privado</p>
+              <h3>Envía esta inmersión con un enlace o QR</h3>
+              <p>Elige exactamente qué datos verá la otra persona.</p>
+            </div>
+            <button id="open-share-dialog" class="primary-button" type="button">Compartir inmersión</button>
+          </section>
+        </div>
+      </article>
+    </dialog>
+
+    <dialog id="share-dialog" class="app-dialog share-dialog">
+      <form id="share-form" class="share-form" method="post">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">Enlace privado</p><h2>Compartir inmersión</h2><p>Configura una cápsula de solo lectura.</p></div>
+          <button id="close-share-dialog" class="dialog-close" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <fieldset class="share-options">
+          <legend>Información visible</legend>
+          <label><input type="checkbox" name="includeDiverName" checked> Mi nombre</label>
+          <label><input type="checkbox" name="includeCenter" checked> Centro de buceo</label>
+          <label><input type="checkbox" name="includeEquipment" checked> Lastre y material</label>
+          <label><input type="checkbox" name="includeBuddies" checked> Compañeros</label>
+          <label><input type="checkbox" name="includeComments" checked> Notas</label>
+        </fieldset>
+        <fieldset id="share-photo-options" class="share-options" hidden>
+          <legend>Fotografías visibles</legend>
+          <div id="share-photo-list" class="share-photo-list"></div>
+        </fieldset>
+        <div class="field-grid">
+          <label>Caducidad
+            <select name="expiresInDays">
+              <option value="1">1 día</option><option value="7" selected>7 días</option>
+              <option value="30">30 días</option><option value="never">Sin caducidad</option>
+            </select>
+          </label>
+          <label>Contraseña <span class="optional">(opcional)</span>
+            <input name="password" type="password" minlength="8" maxlength="64" autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+          </label>
+        </div>
+        <div id="share-message" class="message" role="status" hidden></div>
+        <section id="share-result" class="share-result" hidden>
+          <img id="share-qr" alt="Código QR del enlace privado" width="190" height="190">
+          <div><p class="eyebrow">Enlace creado</p><p>Solo se mostrará ahora. Si lo pierdes, crea uno nuevo.</p>
+            <div class="share-link-row"><input id="share-link" type="text" readonly><button id="copy-share-link" class="ghost-button" type="button">Copiar</button></div>
+          </div>
+        </section>
+        <section class="share-history"><h3>Enlaces creados</h3><div id="share-list"><p class="muted">Todavía no hay enlaces.</p></div></section>
+        <div class="dialog-actions"><button class="ghost-button" id="cancel-share-dialog" type="button">Cerrar</button><button class="primary-button" type="submit">Crear enlace y QR</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="delete-dialog" class="app-dialog confirm-dialog">
+      <div class="confirm-content">
+        <span class="confirm-symbol" aria-hidden="true">−</span>
+        <p class="eyebrow">Confirmar borrado</p>
+        <h2>¿Eliminar esta inmersión?</h2>
+        <p>
+          <strong id="delete-dive-name"></strong> desaparecerá de tu bitácora.
+          Esta acción no se puede deshacer.
+        </p>
+        <div id="delete-message" class="message" role="status" hidden></div>
+        <div class="dialog-actions">
+          <button id="cancel-delete-button" class="ghost-button" type="button">
+            Conservar
+          </button>
+          <button id="confirm-delete-button" class="danger-button" type="button">
+            Eliminar inmersión
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="delete-account-dialog" class="app-dialog confirm-dialog account-delete-dialog">
+      <form id="delete-account-form" class="confirm-content" method="post" novalidate>
+        <span class="confirm-symbol" aria-hidden="true">−</span>
+        <p class="eyebrow">Control de la cuenta</p>
+        <h2>Eliminar DeepLog definitivamente</h2>
+        <p>Esta acción elimina tus inmersiones, fotografías y enlaces. Descarga antes una copia si quieres conservarlos.</p>
+        <label>Contraseña actual
+          <input name="password" type="password" minlength="8" maxlength="72" autocomplete="current-password" required>
+        </label>
+        <label>Escribe ELIMINAR para confirmar
+          <input name="confirmation" type="text" pattern="ELIMINAR" autocomplete="off" required>
+        </label>
+        <div id="delete-account-message" class="message" role="status" hidden></div>
+        <div class="dialog-actions">
+          <button id="cancel-delete-account" class="ghost-button" type="button">Conservar cuenta</button>
+          <button id="confirm-delete-account" class="danger-button" type="submit">Eliminar definitivamente</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>
