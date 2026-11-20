@@ -1,4 +1,4 @@
-const archiver = require("archiver");
+const { ZipArchive } = require("archiver");
 const fs = require("fs");
 const path = require("path");
 const { once } = require("events");
@@ -153,7 +153,7 @@ function appendProfilePhoto(archive, profile) {
 }
 
 async function streamArchive(response, user) {
-  const archive = archiver("zip", { zlib: { level: 6 } });
+  const archive = new ZipArchive({ zlib: { level: 6 } });
   archive.on("warning", (error) => archive.destroy(error));
   archive.on("error", (error) => response.destroy(error));
   archive.pipe(response);
