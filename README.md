@@ -383,6 +383,16 @@ Navegacion por pestañas:
 - al cambiar de pestaña el foco pasa al titulo de la seccion para lectores de
   pantalla y navegacion con teclado.
 
+Modo claro y oscuro:
+- dos temas: Superficie (claro) y Abismo (oscuro); por defecto DeepLog sigue
+  el ajuste del sistema (Automatico),
+- se cambia desde el interruptor de la cabecera o en Perfil > Apariencia, y la
+  eleccion se recuerda en ese dispositivo,
+- el tema se aplica antes de pintar la pagina (`js/theme-init.js`), sin
+  parpadeos, y respeta la CSP porque el script se sirve desde la propia app,
+- todos los colores de `styles.css` son variables: cada tema solo cambia sus
+  valores.
+
 Direccion visual:
 - composicion minimalista y editorial inspirada en la claridad de Apple,
 - identidad propia con degradados azul/turquesa y tonos pastel,
