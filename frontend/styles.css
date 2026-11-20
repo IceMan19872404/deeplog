@@ -582,6 +582,12 @@ button:disabled {
 }
 
 .header-actions { display: flex; align-items: center; gap: 12px; }
+.section-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.section-new-dive { width: auto; padding-inline: 18px; }
+@media (max-width: 620px) {
+  .logbook-panel > .section-heading { flex-direction: column; align-items: stretch; gap: 14px; }
+  .section-actions .section-new-dive { flex: 1; }
+}
 .profile-name { margin: 2px 0 0; font-size: 1.05rem; }
 .tab-panel:focus, [data-tab-heading]:focus { outline: none; }
 

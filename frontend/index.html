@@ -12,7 +12,7 @@
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#107acc">
     <link rel="apple-touch-icon" href="/assets/deeplog-mark.svg">
-    <link rel="stylesheet" href="/styles.css?v=20261121-1">
+    <link rel="stylesheet" href="/styles.css?v=20261121-1b">
     <script type="module" src="/js/app.js?v=20261121-1"></script>
   </head>
   <body>
@@ -445,9 +445,15 @@
                 <p class="eyebrow">Logbook</p>
                 <h2 id="inmersiones-title" data-tab-heading>Mis inmersiones</h2>
               </div>
-              <button id="refresh-button" class="ghost-button" type="button">
-                Actualizar
-              </button>
+              <div class="section-actions">
+                <button id="refresh-button" class="ghost-button" type="button">
+                  Actualizar
+                </button>
+                <button class="primary-button section-new-dive" data-open-dive-form type="button">
+                  <span>Nueva inmersión</span>
+                  <span aria-hidden="true">+</span>
+                </button>
+              </div>
             </div>
 
             <div id="dashboard-message" class="message" role="status" hidden></div>
