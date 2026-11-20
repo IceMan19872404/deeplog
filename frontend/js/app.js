@@ -43,8 +43,10 @@ import {
 import { populateDiveForm } from "./dive-form.js?v=20261019-1";
 import { createDiveMap } from "./dive-map.js?v=20261030-1";
 import { TABS, createTabs } from "./tabs.js?v=20261121-1";
+import { createTheme } from "./theme.js?v=20261121-1";
 
 initializeClientMonitoring();
+createTheme();
 
 const state = {
   user: null,

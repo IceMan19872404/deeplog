@@ -10,10 +10,12 @@
     <title>DeepLog</title>
     <link rel="icon" href="/assets/deeplog-mark.svg" type="image/svg+xml">
     <link rel="manifest" href="/manifest.webmanifest">
-    <meta name="theme-color" content="#107acc">
+    <meta name="theme-color" content="#f5fbff">
+    <meta name="color-scheme" content="light dark">
     <link rel="apple-touch-icon" href="/assets/deeplog-mark.svg">
-    <link rel="stylesheet" href="/styles.css?v=20261121-1b">
-    <script type="module" src="/js/app.js?v=20261121-1"></script>
+    <script src="/js/theme-init.js?v=20261121-1"></script>
+    <link rel="stylesheet" href="/styles.css?v=20261121-2">
+    <script type="module" src="/js/app.js?v=20261121-2"></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
@@ -390,6 +392,14 @@
             </a>
           </nav>
           <div class="header-actions">
+            <div class="theme-switch" role="group" aria-label="Modo de color">
+              <button class="theme-option" type="button" data-theme-choice="light" aria-pressed="false" title="Superficie (modo claro)">
+                <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></svg><span>Superficie</span>
+              </button>
+              <button class="theme-option" type="button" data-theme-choice="dark" aria-pressed="false" title="Abismo (modo oscuro)">
+                <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>Abismo</span>
+              </button>
+            </div>
             <a id="open-profile-header" class="profile-menu-button" href="#/perfil" aria-label="Ir a mi perfil">
               <span id="header-avatar" class="avatar avatar-small" aria-hidden="true"></span>
             </a>
@@ -607,6 +617,32 @@
             </dl>
             <button id="open-profile" class="ghost-button" type="button">Editar perfil</button>
           </section>
+          <section class="preferences-panel" aria-labelledby="preferences-title">
+            <div class="preferences-copy">
+              <p class="eyebrow">En este dispositivo</p>
+              <h2 id="preferences-title">Apariencia</h2>
+              <p>Superficie es el modo claro y Abismo, el oscuro. En automático, DeepLog sigue el ajuste de tu sistema.</p>
+            </div>
+            <fieldset class="theme-choices">
+              <legend class="visually-hidden">Modo de color</legend>
+              <label class="theme-choice">
+                <input type="radio" name="theme-preference" data-theme-choice="light">
+                <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></svg>
+                <span><strong>Superficie</strong><small>Claro</small></span>
+              </label>
+              <label class="theme-choice">
+                <input type="radio" name="theme-preference" data-theme-choice="dark">
+                <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                <span><strong>Abismo</strong><small>Oscuro</small></span>
+              </label>
+              <label class="theme-choice">
+                <input type="radio" name="theme-preference" data-theme-choice="auto">
+                <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>
+                <span><strong>Automático</strong><small>Como tu sistema</small></span>
+              </label>
+            </fieldset>
+          </section>
+
           <section class="account-panel" aria-labelledby="account-title">
             <div class="account-copy">
               <p class="eyebrow">Tus datos son tuyos</p>

@@ -958,3 +958,36 @@ Validacion:
 `frontend/tests/tabs.test.js` cubre direcciones, enlaces internos y que cada
 pestaña tenga enlace y panel. Probado en navegador (1366 px y 390 px): enlace
 directo tras login, atras, recarga, foco y barra inferior sin desbordes.
+
+## TD-035 - Temas Superficie y Abismo con variables CSS
+
+Fecha: 2026-11-21
+
+Estado: Aceptada
+
+Contexto:
+`styles.css` tenia unos 200 colores escritos a mano. Un modo oscuro sobre esa
+base habria exigido duplicar cientos de reglas.
+
+Decision:
+Una migracion unica sustituyo cada color por una variable segun su papel
+(texto, fondo, borde o sombra). El valor claro es el original; el oscuro se
+derivo por papel (superficies claras a azul marino, tintas oscuras a tinta
+clara, acentos conservados, sombras mas profundas) y se ajusto a mano donde
+hacia falta. El tema activo vive en `html[data-theme]`. `js/theme-init.js`, un
+script clasico de la propia app cargado antes de la hoja de estilos, lo aplica
+sin parpadeo; `js/theme.js` gestiona la preferencia (`light`, `dark` o
+`auto`), escucha cambios del sistema y actualiza `theme-color`. La preferencia
+se guarda en `localStorage` como comodidad por dispositivo; si el
+almacenamiento falla, se sigue el sistema.
+
+Consecuencias:
+- Un tema nuevo solo redefine variables.
+- Una prueba impide reintroducir colores literales fuera de los bloques de
+  variables.
+- El PDF de una inmersion usa su propia hoja de estilos y sigue siendo claro,
+  pensado para imprimir.
+
+Validacion:
+`frontend/tests/theme.test.js` y capturas de todas las pestanas, la ficha, el
+formulario y el login en ambos temas a 1366 px y 390 px, sin avisos de la CSP.
