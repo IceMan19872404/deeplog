@@ -1,9 +1,11 @@
-const CACHE = "deeplog-shell-v7";
+const CACHE = "deeplog-shell-v8";
 const SHELL = [
-  "/", "/index.html", "/styles.css?v=20261121-2",
-  "/js/app.js?v=20261121-2", "/js/api.js?v=20260930-1",
+  "/", "/index.html", "/styles.css?v=20261121-3",
+  "/js/app.js?v=20261121-3", "/js/api.js?v=20260930-1",
   "/js/dive-form.js?v=20261019-1",
-  "/js/dive-map.js?v=20261030-1", "/js/tabs.js?v=20261121-1", "/js/theme.js?v=20261121-1", "/js/theme-init.js?v=20261121-1", "/js/world-map-data.js?v=20261030-1",
+  "/js/dive-map.js?v=20261030-1", "/js/tabs.js?v=20261121-1", "/js/theme.js?v=20261121-1", "/js/theme-init.js?v=20261121-1", "/js/dive-profile.js?v=20261121-1",
+  "/fonts/sora-latin-variable.woff2", "/fonts/ibm-plex-mono-latin-400.woff2",
+  "/fonts/ibm-plex-mono-latin-500.woff2", "/fonts/ibm-plex-mono-latin-600.woff2", "/js/world-map-data.js?v=20261030-1",
   "/js/validation-messages.js?v=20261019-2",
   "/js/client-monitoring.js?v=20260916-1", "/js/dive-pdf.js?v=20260902-2",
   "/js/public-share.js?v=20260902-2", "/assets/deeplog-mark.svg",
