@@ -42,6 +42,7 @@ import {
 } from "./validation-messages.js?v=20261019-2";
 import { populateDiveForm } from "./dive-form.js?v=20261019-1";
 import { createDiveMap } from "./dive-map.js?v=20261030-1";
+import { TABS, createTabs } from "./tabs.js?v=20261121-1";
 
 initializeClientMonitoring();
 
@@ -96,6 +97,14 @@ const elements = {
   logoutAllButton: document.querySelector("#logout-all-button"),
   refreshButton: document.querySelector("#refresh-button"),
   divesTotal: document.querySelector("#dives-total"),
+  greetingName: document.querySelector("#greeting-name"),
+  homeDate: document.querySelector("#home-date"),
+  homeSummary: document.querySelector("#home-summary"),
+  homeTotalTime: document.querySelector("#home-total-time"),
+  homeMaxDepth: document.querySelector("#home-max-depth"),
+  homeThisYear: document.querySelector("#home-this-year"),
+  homeLastDive: document.querySelector("#home-last-dive"),
+  homeRecent: document.querySelector("#home-recent"),
   totalTime: document.querySelector("#total-time"),
   maxDepth: document.querySelector("#max-depth"),
   longestDuration: document.querySelector("#longest-duration"),
@@ -189,6 +198,13 @@ const elements = {
   clearLocation: document.querySelector("#clear-location"),
   locationMessage: document.querySelector("#location-message")
 };
+
+const tabs = createTabs({
+  onChange(id) {
+    const tab = TABS.find((item) => item.id === id);
+    document.title = id === "inicio" ? "Mi bitácora | DeepLog" : `${tab.label} | DeepLog`;
+  }
+});
 
 function setMessage(element, message, type = "error") {
   element.textContent = message;
@@ -1021,6 +1037,12 @@ function renderStats(stats) {
     ? "—"
     : `${stats.longestDurationMinutes} min`;
   elements.divesThisYear.textContent = stats.divesThisYear;
+  elements.homeTotalTime.textContent = elements.totalTime.textContent;
+  elements.homeMaxDepth.textContent = elements.maxDepth.textContent;
+  elements.homeThisYear.textContent = stats.divesThisYear;
+  elements.homeSummary.textContent = stats.totalDives
+    ? `Llevas ${stats.totalDives} ${stats.totalDives === 1 ? "inmersión" : "inmersiones"} y ${formatTotalTime(stats.totalMinutes)} bajo el agua.`
+    : "Tu bitácora está lista para su primera inmersión.";
   elements.favoriteCenter.textContent = stats.favoriteCenter
     ? `Tu centro más visitado: ${stats.favoriteCenter.name}`
     : "Registra un centro para descubrir tu lugar más visitado.";
@@ -1250,6 +1272,50 @@ async function loadDashboardData() {
   await Promise.all([loadProfile(), loadStats(), loadAdvancedInsights(), loadDives(), loadDiveMap()]);
 }
 
+function daysAgoLabel(date) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((today - new Date(`${date}T00:00:00`)) / 86400000);
+  if (days <= 0) return "hoy";
+  if (days === 1) return "ayer";
+  return `hace ${days} días`;
+}
+
+// Inicio shows the newest dives. The list endpoint is ordered by date, so the
+// first page of the logbook already holds them.
+function renderHome(dives) {
+  const [latest, ...rest] = dives;
+  if (!latest) {
+    elements.homeLastDive.innerHTML = `
+      <p class="muted">Todavía no hay inmersiones registradas.</p>
+      <button class="primary-button" data-open-dive-form type="button">Registrar la primera</button>`;
+    elements.homeLastDive.querySelector("[data-open-dive-form]").addEventListener("click", openCreateDiveForm);
+    elements.homeRecent.innerHTML = "";
+    return;
+  }
+  elements.homeLastDive.innerHTML = `
+    <button class="home-last-open" type="button" data-dive-id="${escapeHtml(latest.id)}">
+      <span class="home-last-name">${escapeHtml(latest.name)}</span>
+      <span class="home-last-meta">${escapeHtml(formatDate(latest.date))} · ${escapeHtml(daysAgoLabel(latest.date))}${latest.diveCenter ? ` · ${escapeHtml(latest.diveCenter)}` : ""}</span>
+      <span class="home-last-facts">
+        <span><b>${escapeHtml(latest.maxDepthMeters)}</b> m</span>
+        <span><b>${escapeHtml(latest.durationMinutes)}</b> min</span>
+        ${latest.buddies.length ? `<span>Con ${escapeHtml(latest.buddies.join(", "))}</span>` : ""}
+      </span>
+      <span class="home-last-hint">Abrir ficha →</span>
+    </button>`;
+  elements.homeRecent.innerHTML = rest.slice(0, 4).map((dive) => `
+    <li><button type="button" data-dive-id="${escapeHtml(dive.id)}">
+      <span class="home-recent-depth">${escapeHtml(dive.maxDepthMeters)} m</span>
+      <span class="home-recent-text"><strong>${escapeHtml(dive.name)}</strong><small>${escapeHtml(formatDate(dive.date))}</small></span>
+    </button></li>`).join("") || '<li class="muted">Las siguientes inmersiones aparecerán aquí.</li>';
+}
+
+function handleHomeClick(event) {
+  const target = event.target.closest("[data-dive-id]");
+  if (target) openDiveDetail(target.dataset.diveId);
+}
+
 async function loadDives() {
   elements.divesLoading.hidden = false;
   elements.divesList.hidden = true;
@@ -1260,6 +1326,7 @@ async function loadDives() {
     const response = await getDives(state.page, state.limit);
     renderDives(response.data.dives);
     renderPagination(response.meta);
+    if (state.page === 1) renderHome(response.data.dives);
     writeOfflineSnapshot({ ...(readOfflineSnapshot() || {}), dives: response.data.dives, meta: response.meta });
   } catch (error) {
     if (handleUnauthorized(error)) return;
@@ -1269,6 +1336,7 @@ async function loadDives() {
       applyOfflineMode();
       renderDives(cached.dives);
       renderPagination(cached.meta || { page: 1, totalPages: 1 });
+      renderHome(cached.dives);
       setMessage(elements.dashboardMessage, "Mostrando la última copia sincronizada. La edición requiere conexión.", "success");
     } else setMessage(elements.dashboardMessage, "No se pudieron cargar las inmersiones.");
   } finally {
@@ -1498,9 +1566,11 @@ function handleDiveListKeydown(event) {
 function showDashboard(user) {
   state.user = user;
   elements.userName.textContent = `${user.firstName} ${user.lastName}`;
+  elements.greetingName.textContent = user.firstName;
+  elements.homeDate.textContent = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
   elements.authView.hidden = true;
   elements.dashboardView.hidden = false;
-  document.title = "Mi bitácora | DeepLog";
+  tabs.start();
   loadDashboardData();
 }
 
@@ -1863,7 +1933,8 @@ document.addEventListener("input", (event) => {
 });
 elements.logoutButton.addEventListener("click", logout);
 elements.openProfile.addEventListener("click", openProfileDialog);
-elements.openProfileHeader.addEventListener("click", openProfileDialog);
+elements.homeLastDive.addEventListener("click", handleHomeClick);
+elements.homeRecent.addEventListener("click", handleHomeClick);
 elements.closeProfile.addEventListener("click", closeProfileDialog);
 elements.cancelProfile.addEventListener("click", closeProfileDialog);
 elements.profileForm.addEventListener("submit", handleProfileSubmit);

@@ -370,6 +370,19 @@ Las Semanas 6, 7 y 8 incluyen:
 - dashboard con metricas globales y grafica de actividad de seis meses,
 - diseno responsive para escritorio y movil.
 
+Navegacion por pestañas:
+- la aplicacion se divide en cinco secciones: Inicio, Inmersiones, Mapa,
+  Estadisticas y Perfil,
+- cada seccion tiene su direccion (`#/inicio`, `#/inmersiones`, `#/mapa`,
+  `#/estadisticas`, `#/perfil`): atras, recargar y los marcadores funcionan,
+- un enlace directo sin sesion abierta lleva a esa seccion tras iniciar sesion,
+- en escritorio las pestañas van arriba; en movil, en una barra inferior,
+- las pestañas forman una escala de profundidad (0, 10, 20, 30 y 40 m),
+- Inicio resume la bitacora: saludo, cifras clave, ultima inmersion y las
+  cuatro anteriores, con acceso directo a su ficha,
+- al cambiar de pestaña el foco pasa al titulo de la seccion para lectores de
+  pantalla y navegacion con teclado.
+
 Direccion visual:
 - composicion minimalista y editorial inspirada en la claridad de Apple,
 - identidad propia con degradados azul/turquesa y tonos pastel,
