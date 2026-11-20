@@ -393,6 +393,17 @@ Modo claro y oscuro:
 - todos los colores de `styles.css` son variables: cada tema solo cambia sus
   valores.
 
+Estilo visual «B · Abismo» (elegido entre tres propuestas en Figma):
+- tipografias Sora (textos) e IBM Plex Mono (cifras y etiquetas), alojadas en
+  `frontend/fonts/` con su licencia OFL; no se cargan de servicios externos,
+- en Abismo, fondo de mar profundo con rayos de luz y particulas que brillan;
+  en Superficie se mantienen las burbujas,
+- la tarjeta de ultima inmersion dibuja un perfil aproximado (descenso, fondo
+  y parada de seguridad) calculado solo con la profundidad maxima y la
+  duracion, y lo indica asi; DeepLog no guarda datos de ordenador de buceo,
+- cada inmersion de la bitacora muestra una barra de profundidad (0-40 m),
+- el mapa ocupa la pantalla en su propia pestaña.
+
 Direccion visual:
 - composicion minimalista y editorial inspirada en la claridad de Apple,
 - identidad propia con degradados azul/turquesa y tonos pastel,

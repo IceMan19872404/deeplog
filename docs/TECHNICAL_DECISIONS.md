@@ -991,3 +991,34 @@ Consecuencias:
 Validacion:
 `frontend/tests/theme.test.js` y capturas de todas las pestanas, la ficha, el
 formulario y el login en ambos temas a 1366 px y 390 px, sin avisos de la CSP.
+
+## TD-036 - Estilo Abismo: tipografias propias y perfil aproximado
+
+Fecha: 2026-11-21
+
+Estado: Aceptada
+
+Contexto:
+Se diseñaron tres direcciones visuales en Figma (Arrecife, Abismo y Carta
+nautica) y se eligio Abismo, con la navegacion arriba.
+
+Decision:
+Sora e IBM Plex Mono se sirven desde la propia app (`frontend/fonts/`, unos
+78 KB en total, subconjunto latino con acentos), lo que respeta la CSP
+(`font-src 'self'`) y no filtra visitas a terceros; el service worker las
+cachea para el modo sin conexion. Rayos, particulas y brillos son CSS puro
+sobre el fondo existente y usan variables, asi que cada tema tiene su
+version. El "perfil de inmersion" de Inicio es esquematico: DeepLog solo
+guarda profundidad maxima y duracion, por lo que `js/dive-profile.js`
+construye una curva con ritmos habituales (descenso ~18 m/min, ascenso
+~9 m/min, parada de 3 min a 5 m por debajo de 10 m) y la interfaz la presenta
+como aproximada.
+
+Consecuencias:
+- No se muestra como medido nada que no lo sea.
+- Si en el futuro se importan perfiles reales (UDDF), la misma tarjeta podra
+  dibujarlos sustituyendo la funcion.
+
+Validacion:
+`frontend/tests/dive-profile.test.js` y capturas de todas las vistas en ambos
+temas a 1366 px y 390 px, sin avisos de la CSP.
