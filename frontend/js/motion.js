@@ -13,18 +13,21 @@ export function easeOutCubic(progress) {
   return 1 - (1 - progress) ** 3;
 }
 
-// Integers only: counts of dives, years, totals.
+// Integers only: counts of dives, years, totals. Counts from the value already
+// shown, so a refresh after saving a dive only ticks up by the difference.
 export function countUp(element, value, { duration = 700 } = {}) {
-  const target = Number(value);
   if (!element) return;
-  if (!Number.isInteger(target) || target <= 0 || prefersReducedMotion()) {
+  const target = Number(value);
+  const from = Number.parseInt(element.textContent, 10);
+  const start = Number.isInteger(from) ? from : 0;
+  if (!Number.isInteger(target) || target < 0 || target === start || prefersReducedMotion()) {
     element.textContent = String(value);
     return;
   }
-  const start = performance.now();
+  const began = performance.now();
   const step = (now) => {
-    const progress = Math.min(1, (now - start) / duration);
-    element.textContent = String(Math.round(target * easeOutCubic(progress)));
+    const progress = Math.min(1, (now - began) / duration);
+    element.textContent = String(Math.round(start + (target - start) * easeOutCubic(progress)));
     if (progress < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);

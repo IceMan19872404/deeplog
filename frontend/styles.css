@@ -2308,14 +2308,27 @@ button:disabled {
   }
 }
 
+/* System setting or Perfil > Apariencia > Reducir animaciones */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
+}
+
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 0.01ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }
 
 .detail-share-section {
@@ -2752,7 +2765,9 @@ h1, h2, h3, .brand-compact span { letter-spacing: -0.035em; }
 .home-last-profile { display: block; margin-top: 6px; }
 .dive-profile { display: block; width: 100%; height: auto; overflow: visible; }
 .dive-profile-area { fill: var(--profile-area); }
-.dive-profile-line { fill: none; stroke: var(--profile-line); stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+/* No non-scaling-stroke here: it would measure the dash in screen pixels and
+   break the pathLength-based drawing animation. The SVG scales uniformly. */
+.dive-profile-line { fill: none; stroke: var(--profile-line); stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; }
 .dive-profile-stop { fill: var(--profile-stop); }
 .dive-profile-max { fill: var(--profile-dot); stroke: var(--profile-line); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
 .home-last-caption { font-family: var(--font-mono); font-size: 0.72rem; opacity: 0.7; }
@@ -2785,3 +2800,159 @@ h1, h2, h3, .brand-compact span { letter-spacing: -0.035em; }
 /* The map has its own tab now: let it use the screen. */
 #panel-mapa .dive-map { min-height: clamp(360px, 62vh, 640px); }
 :root[data-theme="dark"] .map-cluster { color: var(--on-accent-strong); box-shadow: var(--glow); }
+
+/* ------------------------------------------------------------------------
+   Animaciones (TD-037). All of them are decorative and switch off with the
+   reduced-motion rules above. Easing: a gentle "water" curve.
+   ------------------------------------------------------------------------ */
+:root { --ease-water: cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Tabs: moving right dives deeper (the panel rises from below), moving left
+   returns towards the surface (it sinks in from above). Panels go from
+   display:none to visible, so the animation replays on every switch. */
+.dashboard-content[data-direction="deeper"] > .tab-panel:not([hidden]) {
+  animation: panel-in-deeper 420ms var(--ease-water) both;
+}
+
+.dashboard-content[data-direction="shallower"] > .tab-panel:not([hidden]) {
+  animation: panel-in-shallower 420ms var(--ease-water) both;
+}
+
+@keyframes panel-in-deeper {
+  from { opacity: 0; transform: translateY(26px); filter: blur(3px); }
+}
+
+@keyframes panel-in-shallower {
+  from { opacity: 0; transform: translateY(-26px); filter: blur(3px); }
+}
+
+.tab-link {
+  transition: background-color 220ms var(--ease-water), color 220ms var(--ease-water),
+    box-shadow 220ms var(--ease-water), transform 160ms var(--ease-water);
+}
+
+.tab-link .tab-icon { transition: transform 260ms var(--ease-water); }
+.tab-link[aria-current="page"] .tab-icon { transform: translateY(-1px) scale(1.08); }
+
+/* Press feedback */
+.tab-link:active,
+.primary-button:active,
+.secondary-button:active,
+.ghost-button:active,
+.theme-option:active,
+.theme-choice:active,
+.home-last-open:active,
+.home-recent button:active,
+.dive-card:active {
+  transform: scale(0.97);
+}
+
+.theme-option,
+.theme-choice,
+.primary-button,
+.secondary-button,
+.ghost-button {
+  transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease,
+    color 200ms ease, transform 160ms var(--ease-water);
+}
+
+/* Hover lift on the cards that open something */
+.home-last-open,
+.stat-card,
+.insight-card {
+  transition: transform 220ms var(--ease-water), box-shadow 220ms var(--ease-water),
+    border-color 220ms ease;
+}
+
+.home-last-open:hover,
+.stat-card:hover,
+.insight-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--glow);
+}
+
+/* Staggered entry, like bubbles rising one after another */
+.tab-panel:not([hidden]) .home-stat,
+.tab-panel:not([hidden]) .home-recent li,
+.tab-panel:not([hidden]) .stat-card,
+.tab-panel:not([hidden]) .insight-card {
+  animation: enter 480ms var(--ease-water) both;
+}
+
+.home-stat:nth-child(2), .home-recent li:nth-child(2), .stat-card:nth-child(2), .insight-card:nth-child(2) { animation-delay: 60ms; }
+.home-stat:nth-child(3), .home-recent li:nth-child(3), .stat-card:nth-child(3), .insight-card:nth-child(3) { animation-delay: 120ms; }
+.home-stat:nth-child(4), .home-recent li:nth-child(4), .stat-card:nth-child(4), .insight-card:nth-child(4) { animation-delay: 180ms; }
+.stat-card:nth-child(n + 5), .insight-card:nth-child(n + 5) { animation-delay: 240ms; }
+
+/* The dive profile draws itself, then the deepest point and the safety stop
+   appear. pathLength="1" on the line makes the dash maths size-independent. */
+.tab-panel:not([hidden]) .dive-profile-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: profile-draw 1300ms var(--ease-water) 200ms both;
+}
+
+.tab-panel:not([hidden]) .dive-profile-area { animation: profile-fade 900ms ease 500ms both; }
+
+.tab-panel:not([hidden]) .dive-profile-max,
+.tab-panel:not([hidden]) .dive-profile-stop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: profile-pop 420ms var(--ease-water) 900ms both;
+}
+
+.tab-panel:not([hidden]) .dive-profile-stop { animation-delay: 1200ms; }
+
+@keyframes profile-draw { from { stroke-dashoffset: 1; } }
+@keyframes profile-fade { from { opacity: 0; } }
+@keyframes profile-pop { from { opacity: 0; transform: scale(0.2); } }
+
+/* Depth bars fill from the surface */
+.depth-bar::after {
+  transform-origin: left center;
+  animation: depth-fill 800ms var(--ease-water) both;
+  animation-delay: calc(var(--delay, 0ms) + 180ms);
+}
+
+@keyframes depth-fill { from { transform: scaleX(0); } }
+
+/* Theme change: the new palette spreads as a circle from the button that was
+   pressed (View Transitions API; browsers without it just switch). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  animation: theme-reveal 650ms var(--ease-water);
+}
+
+@keyframes theme-reveal {
+  from { clip-path: circle(0 at var(--reveal-x, 50%) var(--reveal-y, 0)); }
+  to { clip-path: circle(150vmax at var(--reveal-x, 50%) var(--reveal-y, 0)); }
+}
+
+/* Reducir animaciones (Perfil > Apariencia) */
+.motion-choice {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  cursor: pointer;
+}
+
+.motion-choice input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--aqua-dark);
+}
+
+.motion-choice span { display: grid; gap: 2px; }
+.motion-choice small { color: var(--muted); font-size: 0.78rem; line-height: 1.45; }
+.motion-choice:has(input:focus-visible) { outline: 3px solid var(--aqua-dark); outline-offset: 3px; }

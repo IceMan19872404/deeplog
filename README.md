@@ -404,6 +404,17 @@ Estilo visual «B · Abismo» (elegido entre tres propuestas en Figma):
 - cada inmersion de la bitacora muestra una barra de profundidad (0-40 m),
 - el mapa ocupa la pantalla en su propia pestaña.
 
+Animaciones:
+- al cambiar de pestaña hacia la derecha el contenido sube como si bajaras
+  mas profundo; hacia la izquierda, baja como si volvieras a la superficie,
+- el cambio de tema se extiende en circulo desde el boton pulsado (en
+  navegadores sin View Transitions cambia al instante),
+- las cifras de Inicio cuentan hasta su valor, el perfil de la ultima
+  inmersion se dibuja solo, las barras de profundidad se llenan y las listas y
+  tarjetas aparecen escalonadas; botones y tarjetas responden al pulsar,
+- Perfil > Apariencia > «Reducir animaciones» las quita en ese dispositivo; si
+  el sistema ya pide reducir movimiento, DeepLog lo respeta siempre.
+
 Direccion visual:
 - composicion minimalista y editorial inspirada en la claridad de Apple,
 - identidad propia con degradados azul/turquesa y tonos pastel,

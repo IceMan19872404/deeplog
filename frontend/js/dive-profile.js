@@ -56,7 +56,7 @@ export function profileSvg(maxDepth, duration, { width = 520, height = 120 } = {
     (stop ? " y parada de seguridad a 5 m" : "") + ` en ${minutes} minutos.`;
   return `<svg class="dive-profile" viewBox="0 0 ${width} ${height}" role="img" aria-label="${label}">
     <path class="dive-profile-area" d="${line} L${x(minutes)} ${pad} L${x(0)} ${pad} Z"/>
-    <path class="dive-profile-line" d="${line}"/>
+    <path class="dive-profile-line" d="${line}" pathLength="1"/>
     ${stop ? `<rect class="dive-profile-stop" x="${x(stop[0])}" y="${(Number(y(STOP_DEPTH)) - 7).toFixed(1)}" width="${(Number(x(stopEnd)) - Number(x(stop[0]))).toFixed(1)}" height="14" rx="4"/>` : ""}
     <circle class="dive-profile-max" cx="${x(deepest[0])}" cy="${y(deepest[1])}" r="4.5"/>
   </svg>`;

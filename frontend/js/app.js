@@ -43,11 +43,13 @@ import {
 import { populateDiveForm } from "./dive-form.js?v=20261019-1";
 import { createDiveMap } from "./dive-map.js?v=20261030-1";
 import { TABS, createTabs } from "./tabs.js?v=20261121-1";
-import { createTheme } from "./theme.js?v=20261121-1";
-import { profileSvg } from "./dive-profile.js?v=20261121-1";
+import { createTheme } from "./theme.js?v=20261121-2";
+import { profileSvg } from "./dive-profile.js?v=20261121-2";
+import { countUp, createMotionPreference } from "./motion.js?v=20261121-1";
 
 initializeClientMonitoring();
 createTheme();
+createMotionPreference();
 
 const state = {
   user: null,
@@ -202,9 +204,16 @@ const elements = {
   locationMessage: document.querySelector("#location-message")
 };
 
+// Each tab sits one "depth" lower than the previous one, so moving right dives
+// deeper and moving left rises to the surface; CSS animates the panel to match.
 const tabs = createTabs({
-  onChange(id) {
+  onChange(id, previous) {
     const tab = TABS.find((item) => item.id === id);
+    const from = TABS.findIndex((item) => item.id === previous);
+    const content = document.querySelector(".dashboard-content");
+    if (content) {
+      content.dataset.direction = from < 0 ? "none" : TABS.indexOf(tab) > from ? "deeper" : "shallower";
+    }
     document.title = id === "inicio" ? "Mi bitácora | DeepLog" : `${tab.label} | DeepLog`;
   }
 });
@@ -1032,7 +1041,7 @@ function renderActivityChart(activity) {
 }
 
 function renderStats(stats) {
-  elements.divesTotal.textContent = stats.totalDives;
+  countUp(elements.divesTotal, stats.totalDives);
   elements.totalTime.textContent = formatTotalTime(stats.totalMinutes);
   elements.maxDepth.textContent = stats.maxDepthMeters === null
     ? "—"
@@ -1043,7 +1052,7 @@ function renderStats(stats) {
   elements.divesThisYear.textContent = stats.divesThisYear;
   elements.homeTotalTime.textContent = elements.totalTime.textContent;
   elements.homeMaxDepth.textContent = elements.maxDepth.textContent;
-  elements.homeThisYear.textContent = stats.divesThisYear;
+  countUp(elements.homeThisYear, stats.divesThisYear);
   elements.homeSummary.textContent = stats.totalDives
     ? `Llevas ${stats.totalDives} ${stats.totalDives === 1 ? "inmersión" : "inmersiones"} y ${formatTotalTime(stats.totalMinutes)} bajo el agua.`
     : "Tu bitácora está lista para su primera inmersión.";
