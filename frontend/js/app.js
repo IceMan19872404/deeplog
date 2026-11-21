@@ -669,9 +669,10 @@ function renderDives(dives) {
           data-dive-id="${escapeHtml(dive.id)}"
           role="button"
           tabindex="0"
-          aria-label="Ver toda la información de ${escapeHtml(dive.name)}"
+          aria-label="Ver toda la información de ${dive.diveNumber ? `la inmersión nº ${escapeHtml(dive.diveNumber)}, ` : ""}${escapeHtml(dive.name)}"
         >
           <div class="dive-date">
+            ${dive.diveNumber ? `<span class="dive-number"><abbr title="Número de inmersión">Nº</abbr> ${escapeHtml(dive.diveNumber)}</span>` : ""}
             <span>${escapeHtml(formatDate(dive.date))}</span>
             <strong>${escapeHtml(dive.maxDepthMeters)} m</strong>
             <span class="depth-bar" style="--depth: ${Math.min(100, Math.round((Number(dive.maxDepthMeters) / 40) * 100))}%" aria-hidden="true"></span>
@@ -909,7 +910,11 @@ async function openDiveDetail(diveId) {
     const dive = response.data.dive;
     state.detailDive = dive;
     elements.detailName.textContent = dive.name;
-    elements.detailSubtitle.textContent = `${formatDate(dive.date)} · ${dive.maxDepthMeters} m`;
+    elements.detailSubtitle.textContent = [
+      dive.diveNumber ? `Inmersión nº ${dive.diveNumber}` : "",
+      formatDate(dive.date),
+      `${dive.maxDepthMeters} m`
+    ].filter(Boolean).join(" · ");
     elements.detailDate.textContent = formatDate(dive.date);
     elements.detailDuration.textContent = `${dive.durationMinutes} minutos`;
     elements.detailDepth.textContent = `${dive.maxDepthMeters} metros`;
