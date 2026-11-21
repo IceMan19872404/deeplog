@@ -43,7 +43,7 @@ import {
 import { populateDiveForm } from "./dive-form.js?v=20261019-1";
 import { createDiveMap } from "./dive-map.js?v=20261030-1";
 import { TABS, createTabs } from "./tabs.js?v=20261121-1";
-import { createTheme } from "./theme.js?v=20261121-2";
+import { createTheme } from "./theme.js?v=20261122-1";
 import { profileSvg } from "./dive-profile.js?v=20261121-2";
 import { countUp, createMotionPreference } from "./motion.js?v=20261121-1";
 

@@ -6,7 +6,7 @@ import { withRevealTransition } from "./motion.js?v=20261121-1";
 
 export const THEME_KEY = "deeplog.theme";
 export const PREFERENCES = ["light", "dark", "auto"];
-const THEME_COLORS = { light: "#f5fbff", dark: "#071a33" };
+const THEME_COLORS = { light: "#c9f6f1", dark: "#071a33" };
 
 export function resolveTheme(preference, systemPrefersDark) {
   if (preference === "light" || preference === "dark") return preference;

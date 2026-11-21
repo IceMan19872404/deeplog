@@ -397,7 +397,9 @@ Estilo visual «B · Abismo» (elegido entre tres propuestas en Figma):
 - tipografias Sora (textos) e IBM Plex Mono (cifras y etiquetas), alojadas en
   `frontend/fonts/` con su licencia OFL; no se cargan de servicios externos,
 - en Abismo, fondo de mar profundo con rayos de luz y particulas que brillan;
-  en Superficie se mantienen las burbujas,
+  en Superficie, agua poco profunda y soleada: aguamarina intensa que pasa a
+  azul, reflejos de luz que se mueven sobre el fondo y burbujas blancas bien
+  visibles,
 - la tarjeta de ultima inmersion dibuja un perfil aproximado (descenso, fondo
   y parada de seguridad) calculado solo con la profundidad maxima y la
   duracion, y lo indica asi; DeepLog no guarda datos de ordenador de buceo,
