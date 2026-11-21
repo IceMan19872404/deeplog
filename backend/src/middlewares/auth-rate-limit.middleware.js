@@ -1,22 +1,4 @@
-const { rateLimit } = require("express-rate-limit");
-
-function rateLimitHandler(_req, res) {
-  return res.status(429).json({
-    error: {
-      code: "RATE_LIMIT_EXCEEDED",
-      message: "Too many attempts. Please try again later"
-    }
-  });
-}
-
-function createLimiter(options) {
-  return rateLimit({
-    standardHeaders: "draft-8",
-    legacyHeaders: false,
-    handler: rateLimitHandler,
-    ...options
-  });
-}
+const { createLimiter } = require("./rate-limit");
 
 const loginLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
