@@ -1056,3 +1056,34 @@ Validacion:
 direccion de cada cambio de pestaña, circulo del tema fotograma a fotograma,
 dibujo del perfil, contador, persistencia de «Reducir animaciones» tras
 recargar y ausencia de avisos de la CSP.
+
+## TD-038 - Superficie como agua poco profunda
+
+Fecha: 2026-11-22
+
+Estado: Aceptada
+
+Contexto:
+El modo claro se veia casi blanco y las burbujas apenas se distinguian. Se
+pidio mas color, un azul de poca profundidad y burbujas visibles, manteniendo
+el nombre «Superficie». Se compararon tres propuestas (Laguna, Arrecife y
+Bajio) con capturas reales y se eligio la mas intensa.
+
+Decision:
+El fondo pasa a un degradado de aguamarina a azul con un brillo de sol arriba.
+Un pseudo-elemento del fondo dibuja causticas (manchas de luz desenfocadas que
+se mueven despacio) y las burbujas son blancas con borde y reflejo. Todo usa
+variables `--shallow-*`, `--caustic` y `--bubble-*` y solo aplica a
+`data-theme="light"`; Abismo no cambia. El color de la barra del navegador
+(`theme-color`) pasa a `#c9f6f1`.
+
+Consecuencias:
+- El texto que queda directamente sobre el agua (presentacion del acceso,
+  escala de profundidad, saludo de Inicio) usa tinta mas oscura
+  (`--on-water`), con un contraste medido de 6,4:1 a 10,4:1.
+- Las causticas se detienen con «Reducir animaciones» o con el ajuste del
+  sistema, como el resto del movimiento.
+
+Validacion:
+Capturas de todas las vistas en Superficie a 1366 px y 390 px, contraste
+medido sobre el fondo real y sin avisos de la CSP.
