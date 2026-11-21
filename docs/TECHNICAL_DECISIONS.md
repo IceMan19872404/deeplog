@@ -924,3 +924,37 @@ Validacion:
 `frontend/tests/dive-map.test.js` cubre encuadre en pantallas anchas y
 estrechas, zoom minimo, agrupacion y ausencia de URLs externas. Probado en
 navegador con 21 inmersiones (escritorio y 390 px) sin violaciones de CSP.
+
+## TD-034 - Pestañas con direccion propia en lugar de una pagina larga
+
+Fecha: 2026-11-21
+
+Estado: Aceptada
+
+Contexto:
+El dashboard apilaba perfil, estadisticas, mapa, historial, bitacora y cuenta
+en una sola pagina. En movil exigia mucho desplazamiento y cualquier dato
+quedaba lejos.
+
+Decision:
+Cinco pestañas (Inicio, Inmersiones, Mapa, Estadisticas, Perfil) gestionadas
+por `frontend/js/tabs.js`, sin dependencias. El estado vive en el hash
+(`#/mapa`): no necesita configurar el servidor para rutas, funciona con el
+service worker y conserva atras/adelante. Solo los hashes `#/` pertenecen al
+router, asi que enlaces internos como el de "saltar al contenido" siguen
+funcionando. Los paneles se ocultan con `hidden`; todos los datos se cargan al
+entrar, de modo que cambiar de pestaña es instantaneo. Una sola `<nav>` sirve
+para escritorio (arriba) y movil (barra inferior fija) cambiando solo CSS.
+
+Consecuencias:
+- Los identificadores existentes del DOM se conservan; la logica de la app no
+  cambia, solo donde vive cada bloque.
+- El mapa se dibuja aunque su pestaña este oculta y se reajusta al mostrarse
+  gracias al `ResizeObserver` de `dive-map.js`.
+- En movil la cabecera pierde `backdrop-filter`: con el desenfoque, la barra
+  fija quedaba anclada a la cabecera y no al pie de la pantalla.
+
+Validacion:
+`frontend/tests/tabs.test.js` cubre direcciones, enlaces internos y que cada
+pestaña tenga enlace y panel. Probado en navegador (1366 px y 390 px): enlace
+directo tras login, atras, recarga, foco y barra inferior sin desbordes.
