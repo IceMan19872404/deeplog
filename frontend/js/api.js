@@ -13,6 +13,19 @@ export function clearToken() {
   accessToken = null;
 }
 
+// Errors thrown by every request helper carry the API's error envelope
+// ({ error: { code, message, details } }) so callers can branch on `code` and
+// show field messages from `details`.
+function responseError(response, body, fallbackMessage) {
+  const error = new Error(body?.error?.message || fallbackMessage);
+  error.status = response.status;
+  error.code = body?.error?.code;
+  error.details = body?.error?.details;
+  return error;
+}
+
+const readJson = (response) => response.json().catch(() => null);
+
 function readCookie(name) {
   const prefix = `${name}=`;
   const part = document.cookie.split(";").map((value) => value.trim())
@@ -20,14 +33,18 @@ function readCookie(name) {
   return part ? decodeURIComponent(part.slice(prefix.length)) : null;
 }
 
+const csrfHeader = () => readCookie("deeplog_csrf") || "";
+
+// Concurrent 401s share a single refresh: the refresh token rotates on every
+// use (TD-026), so a second parallel refresh would revoke the session family.
 async function renewSession() {
   if (!refreshPromise) {
     refreshPromise = fetch("/api/v1/auth/refresh", {
       method: "POST",
       credentials: "same-origin",
-      headers: { "X-CSRF-Token": readCookie("deeplog_csrf") || "" }
+      headers: { "X-CSRF-Token": csrfHeader() }
     }).then(async (response) => {
-      const body = await response.json().catch(() => null);
+      const body = await readJson(response);
       if (!response.ok) throw new Error(body?.error?.message || "Session refresh failed");
       setToken(body.data.accessToken);
       return body;
@@ -36,15 +53,20 @@ async function renewSession() {
   return refreshPromise;
 }
 
+// Sends the in-memory access token and, on a 401, renews the session once and
+// retries. If the renewal fails the token is dropped and the original 401
+// response is returned, so callers see the usual "unauthorized" error.
 async function authenticatedFetch(path, options = {}, allowRefresh = true) {
   const headers = new Headers(options.headers);
-  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
-  let response = await fetch(path, { ...options, headers, credentials: "same-origin" });
+  const send = () => {
+    if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+    return fetch(path, { ...options, headers, credentials: "same-origin" });
+  };
+  let response = await send();
   if (response.status === 401 && allowRefresh) {
     try {
       await renewSession();
-      headers.set("Authorization", `Bearer ${accessToken}`);
-      response = await fetch(path, { ...options, headers, credentials: "same-origin" });
+      response = await send();
     } catch (_error) {
       clearToken();
     }
@@ -52,45 +74,26 @@ async function authenticatedFetch(path, options = {}, allowRefresh = true) {
   return response;
 }
 
-async function apiRequest(path, options = {}) {
+async function apiRequest(path, { allowRefresh = true, ...options } = {}) {
   const headers = new Headers(options.headers);
-  const allowRefresh = options.allowRefresh !== false;
-  const requestOptions = { ...options };
-  delete requestOptions.allowRefresh;
-
   if (options.body && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await authenticatedFetch(path, { ...requestOptions, headers }, allowRefresh);
+  const response = await authenticatedFetch(path, { ...options, headers }, allowRefresh);
+  if (response.status === 204) return null;
 
-  if (response.status === 204) {
-    return null;
-  }
-
-  const body = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    const error = new Error(
-      body?.error?.message || "No se pudo completar la operación"
-    );
-    error.status = response.status;
-    error.code = body?.error?.code;
-    error.details = body?.error?.details;
-    throw error;
-  }
-
+  const body = await readJson(response);
+  if (!response.ok) throw responseError(response, body, "No se pudo completar la operación");
   return body;
 }
+
+const jsonBody = (method, data) => ({ method, body: JSON.stringify(data) });
 
 async function downloadRequest(path) {
   const response = await authenticatedFetch(path);
   if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    const error = new Error(body?.error?.message || "No se pudo preparar la descarga");
-    error.status = response.status;
-    error.code = body?.error?.code;
-    throw error;
+    throw responseError(response, await readJson(response), "No se pudo preparar la descarga");
   }
   return response.blob();
 }
@@ -111,25 +114,15 @@ export async function downloadAccountExport(format) {
 }
 
 export function deleteAccount(data) {
-  return apiRequest("/api/v1/account", {
-    method: "DELETE",
-    body: JSON.stringify(data)
-  });
+  return apiRequest("/api/v1/account", jsonBody("DELETE", data));
 }
 
 export function registerUser(data) {
-  return apiRequest("/api/v1/auth/register", {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
+  return apiRequest("/api/v1/auth/register", jsonBody("POST", data));
 }
 
 export function loginUser(data) {
-  return apiRequest("/api/v1/auth/login", {
-    method: "POST",
-    body: JSON.stringify(data),
-    allowRefresh: false
-  });
+  return apiRequest("/api/v1/auth/login", { ...jsonBody("POST", data), allowRefresh: false });
 }
 
 export function restoreUserSession() {
@@ -137,7 +130,7 @@ export function restoreUserSession() {
 }
 
 async function closeSession(path) {
-  const headers = { "X-CSRF-Token": readCookie("deeplog_csrf") || "" };
+  const headers = { "X-CSRF-Token": csrfHeader() };
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
   try {
     const response = await fetch(path, { method: "POST", headers, credentials: "same-origin" });
@@ -156,17 +149,11 @@ export function logoutAllSessions() {
 }
 
 export function requestPasswordReset(data) {
-  return apiRequest("/api/v1/auth/forgot-password", {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
+  return apiRequest("/api/v1/auth/forgot-password", jsonBody("POST", data));
 }
 
 export function resetPassword(data) {
-  return apiRequest("/api/v1/auth/reset-password", {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
+  return apiRequest("/api/v1/auth/reset-password", jsonBody("POST", data));
 }
 
 export function getCurrentUser() {
@@ -178,7 +165,7 @@ export function getProfile() {
 }
 
 export function updateProfile(data) {
-  return apiRequest("/api/v1/profile", { method: "PUT", body: JSON.stringify(data) });
+  return apiRequest("/api/v1/profile", jsonBody("PUT", data));
 }
 
 export function uploadProfilePhoto(file) {
@@ -219,10 +206,7 @@ export function getConfigurationMemory(filters) {
 }
 
 export function createDive(data) {
-  return apiRequest("/api/v1/dives", {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
+  return apiRequest("/api/v1/dives", jsonBody("POST", data));
 }
 
 export function getDive(diveId) {
@@ -230,23 +214,15 @@ export function getDive(diveId) {
 }
 
 export function updateDive(diveId, data) {
-  return apiRequest(`/api/v1/dives/${diveId}`, {
-    method: "PUT",
-    body: JSON.stringify(data)
-  });
+  return apiRequest(`/api/v1/dives/${diveId}`, jsonBody("PUT", data));
 }
 
 export function deleteDive(diveId) {
-  return apiRequest(`/api/v1/dives/${diveId}`, {
-    method: "DELETE"
-  });
+  return apiRequest(`/api/v1/dives/${diveId}`, { method: "DELETE" });
 }
 
 export function saveDiveReflection(diveId, data) {
-  return apiRequest(`/api/v1/dives/${diveId}/reflection`, {
-    method: "PUT",
-    body: JSON.stringify(data)
-  });
+  return apiRequest(`/api/v1/dives/${diveId}/reflection`, jsonBody("PUT", data));
 }
 
 export function deleteDiveReflection(diveId) {
@@ -256,23 +232,15 @@ export function deleteDiveReflection(diveId) {
 export function uploadDivePhotos(diveId, files) {
   const body = new FormData();
   files.forEach((file) => body.append("photos", file));
-  return apiRequest(`/api/v1/dives/${diveId}/photos`, {
-    method: "POST",
-    body
-  });
+  return apiRequest(`/api/v1/dives/${diveId}/photos`, { method: "POST", body });
 }
 
 export function deleteDivePhoto(diveId, photoId) {
-  return apiRequest(`/api/v1/dives/${diveId}/photos/${photoId}`, {
-    method: "DELETE"
-  });
+  return apiRequest(`/api/v1/dives/${diveId}/photos/${photoId}`, { method: "DELETE" });
 }
 
 export function createDiveShare(diveId, data) {
-  return apiRequest(`/api/v1/dives/${diveId}/shares`, {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
+  return apiRequest(`/api/v1/dives/${diveId}/shares`, jsonBody("POST", data));
 }
 
 export function getDiveShares(diveId) {
@@ -283,33 +251,28 @@ export function revokeDiveShare(diveId, shareId) {
   return apiRequest(`/api/v1/dives/${diveId}/shares/${shareId}`, { method: "DELETE" });
 }
 
-async function publicRequest(path, options = {}, accessToken) {
+// Public share pages never use the owner's session: the only credential is the
+// short-lived share token issued after unlocking a password-protected link.
+async function publicRequest(path, options = {}, shareAccessToken) {
   const headers = new Headers(options.headers);
   if (options.body) headers.set("Content-Type", "application/json");
-  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+  if (shareAccessToken) headers.set("Authorization", `Bearer ${shareAccessToken}`);
   const response = await fetch(path, { ...options, headers });
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    const error = new Error(body?.error?.message || "No se pudo abrir el enlace");
-    error.status = response.status;
-    error.code = body?.error?.code;
-    throw error;
-  }
+  const body = await readJson(response);
+  if (!response.ok) throw responseError(response, body, "No se pudo abrir el enlace");
   return body;
 }
 
-export function getPublicDive(token, accessToken) {
-  return publicRequest(`/api/v1/public/dives/${token}`, {}, accessToken);
+export function getPublicDive(token, shareAccessToken) {
+  return publicRequest(`/api/v1/public/dives/${token}`, {}, shareAccessToken);
 }
 
 export function unlockPublicDive(token, password) {
-  return publicRequest(`/api/v1/public/dives/${token}/access`, {
-    method: "POST", body: JSON.stringify({ password })
-  });
+  return publicRequest(`/api/v1/public/dives/${token}/access`, jsonBody("POST", { password }));
 }
 
-export async function getPublicPhotoBlob(url, accessToken) {
-  const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+export async function getPublicPhotoBlob(url, shareAccessToken) {
+  const headers = shareAccessToken ? { Authorization: `Bearer ${shareAccessToken}` } : {};
   const response = await fetch(url, { headers });
   if (!response.ok) throw new Error("No se pudo cargar la fotografía compartida");
   return response.blob();
