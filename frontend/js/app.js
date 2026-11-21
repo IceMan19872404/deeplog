@@ -44,6 +44,7 @@ import { populateDiveForm } from "./dive-form.js?v=20261019-1";
 import { createDiveMap } from "./dive-map.js?v=20261030-1";
 import { TABS, createTabs } from "./tabs.js?v=20261121-1";
 import { createTheme } from "./theme.js?v=20261121-1";
+import { profileSvg } from "./dive-profile.js?v=20261121-1";
 
 initializeClientMonitoring();
 createTheme();
@@ -664,6 +665,7 @@ function renderDives(dives) {
           <div class="dive-date">
             <span>${escapeHtml(formatDate(dive.date))}</span>
             <strong>${escapeHtml(dive.maxDepthMeters)} m</strong>
+            <span class="depth-bar" style="--depth: ${Math.min(100, Math.round((Number(dive.maxDepthMeters) / 40) * 100))}%" aria-hidden="true"></span>
           </div>
           <div class="dive-main">
             <h3>${escapeHtml(dive.name)}</h3>
@@ -1304,6 +1306,8 @@ function renderHome(dives) {
         <span><b>${escapeHtml(latest.durationMinutes)}</b> min</span>
         ${latest.buddies.length ? `<span>Con ${escapeHtml(latest.buddies.join(", "))}</span>` : ""}
       </span>
+      <span class="home-last-profile">${profileSvg(latest.maxDepthMeters, latest.durationMinutes)}</span>
+      <span class="home-last-caption">Perfil aproximado según profundidad máxima y duración</span>
       <span class="home-last-hint">Abrir ficha →</span>
     </button>`;
   elements.homeRecent.innerHTML = rest.slice(0, 4).map((dive) => `
