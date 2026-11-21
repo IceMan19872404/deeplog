@@ -2,6 +2,8 @@
 // The preference is a per-device convenience, so it lives in localStorage and
 // the app works the same if storage is unavailable.
 
+import { withRevealTransition } from "./motion.js?v=20261121-1";
+
 export const THEME_KEY = "deeplog.theme";
 export const PREFERENCES = ["light", "dark", "auto"];
 const THEME_COLORS = { light: "#f5fbff", dark: "#071a33" };
@@ -46,19 +48,26 @@ export function createTheme({ root = document } = {}) {
     root.dispatchEvent(new CustomEvent("deeplog:themechange", { detail: { theme, preference } }));
   }
 
-  function set(next) {
+  // `origin` is the control that was used: the new theme spreads from it.
+  function set(next, origin) {
     if (!PREFERENCES.includes(next) || next === preference) return sync();
+    const before = resolveTheme(preference, media.matches);
     preference = next;
     writePreference(preference);
-    sync();
+    if (resolveTheme(preference, media.matches) === before || !origin) return sync();
+    const box = origin.getBoundingClientRect();
+    withRevealTransition(sync, { x: box.left + box.width / 2, y: box.top + box.height / 2 });
   }
 
   root.addEventListener("click", (event) => {
     const control = event.target.closest("button[data-theme-choice]");
-    if (control) set(control.dataset.themeChoice);
+    if (control) set(control.dataset.themeChoice, control);
   });
   root.addEventListener("change", (event) => {
-    if (event.target.matches('input[type="radio"][data-theme-choice]')) set(event.target.dataset.themeChoice);
+    const control = event.target;
+    if (control.matches('input[type="radio"][data-theme-choice]')) {
+      set(control.dataset.themeChoice, control.closest("label") || control);
+    }
   });
   media.addEventListener("change", () => {
     if (preference === "auto") sync();

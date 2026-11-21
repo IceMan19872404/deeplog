@@ -11,4 +11,9 @@
   var dark = preference === "dark" ||
     (preference !== "light" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
+  try {
+    if (localStorage.getItem("deeplog.motion") === "reduced") document.documentElement.dataset.motion = "reduced";
+  } catch (_error) {
+    // Same as above: the system setting still applies through CSS.
+  }
 })();

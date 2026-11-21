@@ -1022,3 +1022,37 @@ Consecuencias:
 Validacion:
 `frontend/tests/dive-profile.test.js` y capturas de todas las vistas en ambos
 temas a 1366 px y 390 px, sin avisos de la CSP.
+
+## TD-037 - Animaciones decorativas con CSS y View Transitions
+
+Fecha: 2026-11-21
+
+Estado: Aceptada
+
+Contexto:
+Se pidieron animaciones de seleccion y de transicion entre paginas y entre
+modo claro y oscuro, sin perjudicar la accesibilidad ni el rendimiento.
+
+Decision:
+Todo el movimiento es CSS salvo dos piezas pequeñas en `js/motion.js`: el
+contador de cifras (`requestAnimationFrame`) y el cambio de tema dentro de
+`document.startViewTransition`, que recorta la vista nueva con un circulo que
+nace del boton pulsado. La direccion de la transicion entre pestañas
+(`data-direction="deeper|shallower"`) sale del orden de las pestañas, que ya
+representan profundidades. No se añade ninguna libreria. Ninguna animacion
+transmite informacion: con `prefers-reduced-motion` o con la opcion «Reducir
+animaciones» (`localStorage deeplog.motion`, aplicada antes de pintar por
+`theme-init.js`) se anulan animaciones y transiciones y el tema cambia sin
+View Transition.
+
+Consecuencias:
+- Navegadores sin View Transitions cambian de tema al instante, sin error.
+- La linea del perfil usa `pathLength="1"` y deja de usar
+  `vector-effect: non-scaling-stroke`, que medía el trazo en pixeles de
+  pantalla y rompia el dibujo; el SVG escala de forma uniforme.
+
+Validacion:
+`frontend/tests/motion.test.js` y comprobacion en Chromium a 1366 px y 390 px:
+direccion de cada cambio de pestaña, circulo del tema fotograma a fotograma,
+dibujo del perfil, contador, persistencia de «Reducir animaciones» tras
+recargar y ausencia de avisos de la CSP.
