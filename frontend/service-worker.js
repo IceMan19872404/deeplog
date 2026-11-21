@@ -1,6 +1,6 @@
-const CACHE = "deeplog-shell-v9";
+const CACHE = "deeplog-shell-v10";
 const SHELL = [
-  "/", "/index.html", "/styles.css?v=20261121-4",
+  "/", "/index.html", "/styles.css?v=20261121-5",
   "/js/app.js?v=20261121-4", "/js/api.js?v=20260930-1",
   "/js/dive-form.js?v=20261019-1",
   "/js/dive-map.js?v=20261030-1", "/js/tabs.js?v=20261121-1", "/js/theme.js?v=20261121-2", "/js/theme-init.js?v=20261121-2", "/js/dive-profile.js?v=20261121-2", "/js/motion.js?v=20261121-1",
