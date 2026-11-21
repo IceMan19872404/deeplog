@@ -771,9 +771,7 @@ button:disabled {
 }
 
 @media (hover: hover) {
-  .text-button:hover {
-  text-decoration: underline;
-}
+  .text-button:hover { text-decoration: underline; }
 }
 
 .auth-back-button {
@@ -821,8 +819,8 @@ button:disabled {
 @media (hover: hover) {
   .primary-button:hover,
   .ghost-button:hover {
-  transform: translateY(-2px);
-}
+    transform: translateY(-2px);
+  }
 }
 
 .primary-button.is-loading {
@@ -995,7 +993,10 @@ button:disabled {
 }
 
 @media (hover: hover) {
-  .tab-link:hover { background: var(--c-bg-23); color: var(--ink); }
+  .tab-link:hover {
+    background: var(--c-bg-23);
+    color: var(--ink);
+  }
 }
 .tab-link[aria-current="page"] { background: var(--accent-strong); color: var(--on-accent-strong); }
 
@@ -1494,10 +1495,10 @@ button:disabled {
 
 @media (hover: hover) {
   .dive-card:hover {
-  border-color: var(--c-line-19);
-  box-shadow: 0 10px 28px var(--c-shadow-15);
-  transform: translateY(-2px);
-}
+    border-color: var(--c-line-19);
+    box-shadow: 0 10px 28px var(--c-shadow-15);
+    transform: translateY(-2px);
+  }
 }
 
 .dive-card:focus-visible {
@@ -1535,9 +1536,7 @@ button:disabled {
 }
 
 @media (hover: hover) {
-  .card-action:hover {
-  background: var(--c-bg-47);
-}
+  .card-action:hover { background: var(--c-bg-47); }
 }
 
 .card-action-danger {
@@ -1545,9 +1544,7 @@ button:disabled {
 }
 
 @media (hover: hover) {
-  .card-action-danger:hover {
-  background: var(--c-bg-13);
-}
+  .card-action-danger:hover { background: var(--c-bg-13); }
 }
 
 .dive-date strong {
@@ -1579,9 +1576,9 @@ button:disabled {
 
 @media (hover: hover) {
   .dive-card:hover .card-open-hint {
-  opacity: 1;
-  transform: translateY(0);
-}
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dive-equipment {
@@ -2287,6 +2284,17 @@ button:disabled {
     grid-template-columns: 1fr auto;
   }
 
+  /* Nº 21 · date · depth on one row, depth bar underneath */
+  .dive-date:has(.dive-number) {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    column-gap: 10px;
+  }
+
+  .dive-date:has(.dive-number) .depth-bar {
+    grid-column: 1 / -1;
+  }
+
   .dive-comments {
     grid-column: 1 / -1;
   }
@@ -2544,7 +2552,12 @@ button:disabled {
 .map-cluster:focus-visible { z-index: 2; background: var(--accent-strong); color: var(--on-accent-strong); transform: translate(-50%, -50%) scale(1.12); }
 
 @media (hover: hover) {
-  .map-cluster:hover { z-index: 2; background: var(--accent-strong); color: var(--on-accent-strong); transform: translate(-50%, -50%) scale(1.12); }
+  .map-cluster:hover {
+    z-index: 2;
+    background: var(--accent-strong);
+    color: var(--on-accent-strong);
+    transform: translate(-50%, -50%) scale(1.12);
+  }
 }
 .map-cluster.is-stack { cursor: pointer; background: var(--accent-strong); color: var(--on-accent-strong); }
 .map-stack-list {
@@ -2604,7 +2617,11 @@ button:disabled {
 .map-pin:focus-visible { z-index: 2; background: var(--accent-strong); transform: translate(-50%, -100%) rotate(-45deg) scale(1.25); }
 
 @media (hover: hover) {
-  .map-pin:hover { z-index: 2; background: var(--accent-strong); transform: translate(-50%, -100%) rotate(-45deg) scale(1.25); }
+  .map-pin:hover {
+    z-index: 2;
+    background: var(--accent-strong);
+    transform: translate(-50%, -100%) rotate(-45deg) scale(1.25);
+  }
 }
 .map-privacy-note { margin: 14px 0 0; color: var(--muted); font-size: .88rem; }
 .location-section { margin: 22px 0; padding: 20px; border: 1px solid var(--line); border-radius: 22px; background: var(--c-bg-84); }
@@ -2912,9 +2929,9 @@ h1, h2, h3, .brand-compact span { letter-spacing: -0.035em; }
   .home-last-open:hover,
   .stat-card:hover,
   .insight-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--glow);
-}
+    transform: translateY(-3px);
+    box-shadow: var(--glow);
+  }
 }
 
 /* Staggered entry, like bubbles rising one after another */
@@ -3002,3 +3019,18 @@ h1, h2, h3, .brand-compact span { letter-spacing: -0.035em; }
 .motion-choice span { display: grid; gap: 2px; }
 .motion-choice small { color: var(--muted); font-size: 0.78rem; line-height: 1.45; }
 .motion-choice:has(input:focus-visible) { outline: 3px solid var(--aqua-dark); outline-offset: 3px; }
+
+/* Logbook number (nº 1 = first dive), always counted over every dive */
+.dive-date .dive-number {
+  justify-self: start;
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--aqua-dark);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.dive-number abbr { text-decoration: none; }

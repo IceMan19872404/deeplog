@@ -2515,6 +2515,11 @@
               "id": {
                 "type": "integer"
               },
+              "diveNumber": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Position in the diver logbook, 1 = oldest dive. Counted over all dives, so filters and pages do not change it. Present on list and detail reads."
+              },
               "ballastKg": {
                 "type": [
                   "number",

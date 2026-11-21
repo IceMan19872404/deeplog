@@ -511,6 +511,21 @@ test("filters and pagination only consider the authenticated user", async () => 
   assert.equal(filteredResponse.body.meta.total, 1);
   assert.equal(filteredResponse.body.meta.totalPages, 1);
   assert.equal(filteredResponse.body.data.dives[0].id, firstDiveId);
+  // Logbook numbers are chronological over every dive: the older Shallow Bay
+  // is nº 1 even though the filter hides it.
+  assert.equal(filteredResponse.body.data.dives[0].diveNumber, 2);
+
+  const allResponse = await request(app)
+    .get("/api/v1/dives")
+    .set("Authorization", `Bearer ${firstToken}`);
+  assert.deepEqual(
+    allResponse.body.data.dives.map((dive) => dive.diveNumber),
+    [2, 1]
+  );
+  const detailResponse = await request(app)
+    .get(`/api/v1/dives/${secondDiveResponse.body.data.dive.id}`)
+    .set("Authorization", `Bearer ${firstToken}`);
+  assert.equal(detailResponse.body.data.dive.diveNumber, 1);
 
   const outOfRangeResponse = await request(app)
     .get("/api/v1/dives?page=99&limit=1")

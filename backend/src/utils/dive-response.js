@@ -9,6 +9,8 @@ function toDateOnly(value) {
 function toDiveResponse(dive) {
   return {
     id: dive.id,
+    // Position in the logbook (1 = first dive). Only on reads that number dives.
+    ...(dive.dive_number ? { diveNumber: dive.dive_number } : {}),
     name: dive.name,
     date: toDateOnly(dive.dive_date),
     durationMinutes: dive.duration_minutes,

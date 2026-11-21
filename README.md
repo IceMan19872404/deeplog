@@ -401,6 +401,9 @@ Estilo visual «B · Abismo» (elegido entre tres propuestas en Figma):
 - la tarjeta de ultima inmersion dibuja un perfil aproximado (descenso, fondo
   y parada de seguridad) calculado solo con la profundidad maxima y la
   duracion, y lo indica asi; DeepLog no guarda datos de ordenador de buceo,
+- cada inmersion de la bitacora empieza con su numero (Nº 1 es la primera),
+  contado siempre sobre todas tus inmersiones, asi que no cambia al filtrar
+  ni al pasar de pagina; la ficha lo muestra como «Inmersion nº 21»,
 - cada inmersion de la bitacora muestra una barra de profundidad (0-40 m),
 - el mapa ocupa la pantalla en su propia pestaña.
 

@@ -55,12 +55,21 @@ async function create(userId, dive) {
   return result.rows[0];
 }
 
+// A dive's number in the diver's logbook: 1 is the oldest. Ties on the same
+// day follow the order in which they were logged. It is always counted over
+// every dive of the user, so filters and pagination never renumber anything.
+const numberedDives = `
+  (SELECT ${diveColumns},
+          ROW_NUMBER() OVER (ORDER BY dive_date, id)::INTEGER AS dive_number
+     FROM dives
+    WHERE user_id = $1) AS numbered`;
+
 async function findByIdAndUserId(diveId, userId) {
   const result = await database.query(
-    `SELECT ${diveColumns}
-       FROM dives
-      WHERE id = $1 AND user_id = $2`,
-    [diveId, userId]
+    `SELECT *
+       FROM ${numberedDives}
+      WHERE id = $2`,
+    [userId, diveId]
   );
 
   return result.rows[0] || null;
@@ -106,8 +115,8 @@ async function findAllByUserId(userId, filters) {
   const paginatedValues = [...values, filters.limit, offset];
 
   const result = await database.query(
-    `SELECT ${diveColumns}
-       FROM dives
+    `SELECT *
+       FROM ${numberedDives}
       WHERE ${whereClause}
       ORDER BY dive_date DESC, id DESC
       LIMIT $${paginatedValues.length - 1} OFFSET $${paginatedValues.length}`,
