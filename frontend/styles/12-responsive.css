@@ -1,0 +1,197 @@
+/* Tablet (<= 900px) and phone (<= 620px) layouts. */
+
+@media (max-width: 900px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+    padding: 42px 0;
+  }
+
+  .brand-panel h1 {
+    margin-top: 35px;
+    font-size: clamp(3rem, 11vw, 5rem);
+  }
+
+  .depth-scale {
+    display: none;
+  }
+
+  .auth-card {
+    max-width: none;
+    justify-self: stretch;
+  }
+
+  .dive-card {
+    grid-template-columns: 130px 1fr 60px auto;
+  }
+
+  .dive-comments {
+    grid-column: 1 / 4;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .activity-card {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .auth-layout,
+  .dashboard-content {
+    width: min(100% - 28px, 1180px);
+  }
+
+  .brand-panel h1 {
+    font-size: 2.9rem;
+  }
+
+  .field-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .profile-summary {
+    gap: 20px;
+  }
+  .profile-identity {
+    align-items: flex-start;
+  }
+  .avatar-large {
+    width: 68px;
+    height: 68px;
+  }
+  .profile-facts {
+    grid-template-columns: 1fr;
+  }
+  .profile-summary > button {
+    width: 100%;
+  }
+  .profile-photo-editor {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-content {
+    padding-top: 36px;
+  }
+
+  .dashboard-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .insights-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .favorite-center {
+    text-align: left;
+  }
+
+  .metric-card {
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: end;
+  }
+
+  .stat-card {
+    min-height: 128px;
+    padding: 16px;
+  }
+
+  .activity-card {
+    padding: 20px 16px;
+  }
+
+  .activity-chart {
+    height: 130px;
+    gap: 6px;
+  }
+
+  .metric-card strong {
+    font-size: 2.7rem;
+  }
+
+  .section-heading {
+    align-items: flex-end;
+  }
+
+  .section-heading.insights-heading {
+    align-items: flex-start;
+  }
+
+  .dive-card {
+    grid-template-columns: 1fr auto;
+  }
+
+  .dive-date {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr auto;
+  }
+
+  /* Nº 21 · date · depth on one row, depth bar underneath */
+  .dive-date:has(.dive-number) {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    column-gap: 10px;
+  }
+
+  .dive-date:has(.dive-number) .depth-bar {
+    grid-column: 1 / -1;
+  }
+
+  .dive-comments {
+    grid-column: 1 / -1;
+  }
+
+  .dive-actions {
+    grid-column: 1 / -1;
+  }
+
+  .dive-actions .card-action {
+    flex: 1;
+  }
+
+  .app-dialog {
+    border-radius: 24px;
+  }
+
+  .detail-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dive-form .field-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .dialog-actions {
+    flex-direction: column-reverse;
+  }
+
+  .photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .detail-export-section {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-export-section .primary-button {
+    width: 100%;
+  }
+
+  .dialog-actions .primary-button,
+  .dialog-actions .danger-button,
+  .dialog-actions .ghost-button {
+    width: 100%;
+  }
+}

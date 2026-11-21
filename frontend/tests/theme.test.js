@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { readAllStyles } from "./styles.js";
 import { THEME_KEY, readPreference, resolveTheme } from "../js/theme.js";
 
 const memory = (value) => ({ getItem: (key) => (key === THEME_KEY ? value : null) });
@@ -22,13 +23,13 @@ test("a missing, unknown or unreadable preference means Automático", () => {
 test("the theme is applied before the stylesheet to avoid a flash", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const init = html.indexOf("/js/theme-init.js");
-  assert.ok(init > 0 && init < html.indexOf("/styles.css"));
+  assert.ok(init > 0 && init < html.indexOf("/styles/"));
   const script = await readFile(new URL("../js/theme-init.js", import.meta.url), "utf8");
   assert.match(script, new RegExp(THEME_KEY.replace(".", "\\.")));
 });
 
 test("no hard-coded colours remain outside the token blocks", async () => {
-  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const css = await readAllStyles();
   const rules = css.replace(/:root(\[data-theme="dark"\])?\s*\{[^}]*\}/g, "");
   const literals = rules.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(\s*\d/g) || [];
   assert.deepEqual(literals, []);

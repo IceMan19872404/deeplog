@@ -1087,3 +1087,37 @@ Consecuencias:
 Validacion:
 Capturas de todas las vistas en Superficie a 1366 px y 390 px, contraste
 medido sobre el fondo real y sin avisos de la CSP.
+
+## TD-039 - Hoja de estilos dividida por secciones
+
+Fecha: 2026-11-22
+
+Estado: Aceptada
+
+Contexto:
+`frontend/styles.css` habia crecido a unas 3.100 lineas escritas en varias
+etapas, con estilos de formato distintos y reglas que ya no usaba nada (la
+cabecera anterior a las pestañas, un boton secundario, una etiqueta offline).
+
+Decision:
+Se divide en 18 archivos numerados en `frontend/styles/`, cortando por las
+secciones que ya existian y **sin cambiar el orden de ninguna regla**, de modo
+que la cascada es identica. `index.html` los enlaza con `<link>` en ese orden
+(sin `@import`, que encadenaria descargas) y el service worker los guarda para
+el modo sin conexion. Se aplica Prettier una vez, sin añadirlo como
+dependencia, y se eliminan 5 clases y 7 variables de color sin uso.
+
+Consecuencias:
+- Cada seccion se puede leer y revisar por separado; los temas y las
+  animaciones quedan al final porque sobrescriben a lo anterior.
+- `tests/pwa-shell.test.js` falla si se añade un archivo sin enlazarlo o sin
+  guardarlo para el modo sin conexion; los tests de CSS leen todos los
+  archivos en orden (`tests/styles.js`).
+- Los nombres de los tokens generados (`--c-bg-23`...) siguen sin significado;
+  renombrarlos es un trabajo aparte.
+
+Validacion:
+36 capturas (todas las pestañas, acceso, ficha y formulario, en ambos temas,
+escritorio y movil) comparadas pixel a pixel antes y despues: solo difieren
+pixeles sueltos de antialiasing en zonas con desenfoque, igual que entre dos
+capturas del mismo codigo.

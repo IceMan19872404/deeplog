@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -14,7 +14,7 @@ test("the offline shell caches the exact versions the page loads", async () => {
   assert.match(worker, /const CACHE = "deeplog-shell-v\d+"/);
 
   // Entry points referenced by index.html must be cached with the same version.
-  const entryPoints = [...html.matchAll(/(?:href|src)="(\/(?:styles\.css|js\/[\w-]+\.js)\?v=[\w-]+)"/g)]
+  const entryPoints = [...html.matchAll(/(?:href|src)="(\/(?:styles\/[\w-]+\.css|js\/[\w-]+\.js)\?v=[\w-]+)"/g)]
     .map((match) => match[1]);
   assert.ok(entryPoints.length >= 2, "index.html should load versioned CSS and JS");
 
@@ -25,4 +25,13 @@ test("the offline shell caches the exact versions the page loads", async () => {
   for (const url of [...entryPoints, ...modules]) {
     assert.ok(worker.includes(`"${url}"`), `service worker does not cache ${url}`);
   }
+});
+
+test("every stylesheet in styles/ is linked once, in file-name order", async () => {
+  const html = await read("../index.html");
+  const files = (await readdir(new URL("../styles/", import.meta.url)))
+    .filter((name) => name.endsWith(".css"))
+    .sort();
+  const linked = [...html.matchAll(/href="\/styles\/([\w-]+\.css)\?v=[\w-]+"/g)].map((match) => match[1]);
+  assert.deepEqual(linked, files);
 });

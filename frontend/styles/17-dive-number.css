@@ -1,0 +1,18 @@
+/* Logbook number on each dive card. */
+
+/* Logbook number (nº 1 = first dive), always counted over every dive */
+.dive-date .dive-number {
+  justify-self: start;
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--aqua-dark);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.dive-number abbr {
+  text-decoration: none;
+}
