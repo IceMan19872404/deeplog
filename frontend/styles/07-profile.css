@@ -163,6 +163,10 @@
   overflow: hidden;
   clip-path: inset(50%);
 }
+.file-button:has(input:focus-visible) {
+  outline: 3px solid var(--c-line-1);
+  outline-offset: 3px;
+}
 .privacy-choice {
   margin: 0;
   padding: 18px;
