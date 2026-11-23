@@ -1322,6 +1322,7 @@ function daysAgoLabel(date) {
 // first page of the logbook already holds them.
 function renderHome(dives) {
   const [latest, ...rest] = dives;
+  elements.homeLastDive.removeAttribute("data-loading");
   if (!latest) {
     elements.homeLastDive.innerHTML = `
       <p class="muted">Todavía no hay inmersiones registradas.</p>
@@ -1381,6 +1382,7 @@ async function loadDives() {
   } finally {
     elements.divesLoading.hidden = true;
     elements.divesList.hidden = false;
+    elements.homeLastDive.removeAttribute("data-loading");
   }
 }
 
