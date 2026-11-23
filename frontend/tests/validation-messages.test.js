@@ -99,3 +99,12 @@ test("numbers that cannot be parsed or have too many decimals say how to fix the
 test("profile photo has a Spanish label", () => {
   assert.equal(apiValidationMessage("photo"), "Revisa la fotografía.");
 });
+
+test("profile photo is checked against the API's type and 3 MB limit before saving", async () => {
+  const { profilePhotoMessage } = await import("../js/validation-messages.js");
+  const tooBig = "La fotografía debe ser JPEG, PNG o WebP y ocupar 3 MB o menos.";
+  assert.equal(profilePhotoMessage(undefined), "");
+  assert.equal(profilePhotoMessage({ type: "image/webp", size: 3 * 1024 * 1024 }), "");
+  assert.equal(profilePhotoMessage({ type: "image/jpeg", size: 3 * 1024 * 1024 + 1 }), tooBig);
+  assert.equal(profilePhotoMessage({ type: "image/heic", size: 1000 }), tooBig);
+});

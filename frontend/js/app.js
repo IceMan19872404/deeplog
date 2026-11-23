@@ -38,7 +38,8 @@ import { initializePublicShare } from "./public-share.js?v=20260902-2";
 import { initializeClientMonitoring } from "./client-monitoring.js?v=20260916-1";
 import {
   apiValidationMessage,
-  nativeValidationMessage
+  nativeValidationMessage,
+  profilePhotoMessage
 } from "./validation-messages.js?v=20261019-2";
 import { localIsoDate, populateDiveForm } from "./dive-form.js?v=20261019-1";
 import { createDiveMap } from "./dive-map.js?v=20261030-1";
@@ -395,6 +396,14 @@ function validateForm(form) {
     } else if (files.some((file) => file.size > 8 * 1024 * 1024)) {
       setFieldError(form, "photos", "Cada fotografía debe ocupar 8 MB o menos.");
       firstInvalid ||= form.elements.photos;
+    }
+  }
+
+  if (form === elements.profileForm) {
+    const photoMessage = profilePhotoMessage(form.elements.photo.files[0]);
+    if (photoMessage) {
+      setFieldError(form, "photo", photoMessage);
+      firstInvalid ||= form.elements.photo;
     }
   }
 
@@ -2022,6 +2031,11 @@ elements.closeProfile.addEventListener("click", closeProfileDialog);
 elements.cancelProfile.addEventListener("click", closeProfileDialog);
 elements.profileForm.addEventListener("submit", handleProfileSubmit);
 elements.removeProfilePhoto.addEventListener("click", handleProfilePhotoDelete);
+elements.profileForm.elements.photo.addEventListener("change", (event) => {
+  const message = profilePhotoMessage(event.target.files[0]);
+  if (message) setFieldError(elements.profileForm, "photo", message);
+  else clearFieldError(event.target);
+});
 elements.profileDialog.addEventListener("click", (event) => {
   if (event.target === elements.profileDialog) closeProfileDialog();
 });

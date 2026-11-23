@@ -110,3 +110,16 @@ export function apiValidationMessage(field, message = "") {
   const { label, article } = fieldReference(field);
   return `Revisa ${article} ${label}.`;
 }
+
+const profilePhotoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const PROFILE_PHOTO_MAX_BYTES = 3 * 1024 * 1024;
+
+// Same rule the API applies to the profile photo, checked before anything is
+// saved so a bad file never leaves the profile half updated.
+export function profilePhotoMessage(file) {
+  if (!file) return "";
+  if (!profilePhotoTypes.has(file.type) || file.size > PROFILE_PHOTO_MAX_BYTES) {
+    return "La fotografía debe ser JPEG, PNG o WebP y ocupar 3 MB o menos.";
+  }
+  return "";
+}
