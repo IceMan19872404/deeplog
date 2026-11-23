@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { readAllStyles } from "./styles.js";
 import { MOTION_KEY, countUp, easeOutCubic, prefersReducedMotion } from "../js/motion.js";
 import { profileSvg } from "../js/dive-profile.js";
 
@@ -33,10 +34,18 @@ test("the motion preference is applied before the first paint", async () => {
 });
 
 test("reduced motion also stops transitions and covers the in-app setting", async () => {
-  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const css = await readAllStyles();
   assert.match(css, /:root\[data-motion="reduced"\] \*/);
   const reduced = css.slice(css.indexOf("@media (prefers-reduced-motion: reduce)"));
   assert.match(reduced.slice(0, 400), /transition-duration/);
+});
+
+test("spinners keep turning slowly under both reduced-motion switches", async () => {
+  const css = await readAllStyles();
+  const system = /@media \(prefers-reduced-motion: reduce\) \{\s*:root \.primary-button\.is-loading::after,[^}]*\.loader \{[^}]*animation-iteration-count: infinite !important;/;
+  const inApp = /:root\[data-motion="reduced"\] \.loader \{[^}]*animation-duration: [\d.]+s !important;[^}]*infinite !important;/;
+  assert.match(css, system);
+  assert.match(css, inApp);
 });
 
 test("the profile line is normalised so it can draw itself at any size", () => {

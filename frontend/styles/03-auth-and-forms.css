@@ -1,0 +1,359 @@
+/* Sign-in screen, shared form fields, buttons and messages. */
+
+.auth-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(380px, 0.85fr);
+  gap: clamp(42px, 8vw, 130px);
+  align-items: center;
+  width: min(1240px, calc(100% - 64px));
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: auto;
+  padding: 48px 0;
+}
+
+.brand-panel {
+  position: relative;
+  color: var(--ink);
+}
+
+.brand {
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+  color: inherit;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  text-decoration: none;
+}
+
+.brand-mark {
+  display: block;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 7px 12px var(--c-shadow-3));
+}
+
+.brand-panel h1 {
+  max-width: 720px;
+  margin: 54px 0 24px;
+  font-size: clamp(3.3rem, 6.2vw, 6rem);
+  font-weight: 700;
+  line-height: 0.96;
+  letter-spacing: -0.065em;
+}
+
+.brand-copy {
+  max-width: 560px;
+  color: var(--muted);
+  font-size: 1.22rem;
+  line-height: 1.6;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--aqua-dark);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.brand-panel > .eyebrow {
+  color: var(--aqua-dark);
+}
+
+.depth-scale {
+  display: flex;
+  justify-content: space-between;
+  max-width: 520px;
+  margin-top: 70px;
+  padding-top: 14px;
+  border-top: 1px solid var(--c-line-4);
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 520px;
+  justify-self: end;
+  padding: clamp(24px, 4vw, 46px);
+  border: 1px solid var(--c-line-5);
+  border-radius: 32px;
+  background: var(--c-bg-7);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(28px) saturate(135%);
+  animation: enter 650ms ease-out both;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 36px;
+  padding: 5px;
+  border-radius: 999px;
+  background: var(--c-bg-8);
+}
+
+.auth-tab {
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  background: transparent;
+  font-weight: 700;
+}
+
+.auth-tab.is-active {
+  color: var(--ink);
+  background: var(--c-bg-9);
+  box-shadow: 0 4px 14px var(--c-shadow-4);
+}
+
+.form-heading {
+  margin-bottom: 28px;
+}
+
+.form-heading h2,
+.section-heading :is(h1, h2) {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: -0.045em;
+}
+
+.form-heading > p:last-child:not(.eyebrow) {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.auth-form {
+  animation: enter 300ms ease-out both;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 14px 15px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  outline: none;
+  background: var(--c-bg-10);
+  color: var(--ink);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.auth-form input:focus {
+  border-color: var(--aqua);
+  box-shadow: 0 0 0 4px var(--c-shadow-5);
+}
+
+/* «Mostrar contraseña»: the eye button sits inside the field's right edge. */
+.password-input {
+  position: relative;
+  display: block;
+}
+
+.auth-form .password-input input {
+  padding-inline-end: 52px;
+}
+
+.password-toggle {
+  position: absolute;
+  inset-block: 4px;
+  inset-inline-end: 4px;
+  display: grid;
+  width: 42px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--muted);
+  transition: color 160ms ease;
+}
+
+.password-toggle:focus-visible {
+  outline-offset: 0;
+}
+
+.password-toggle[aria-pressed="true"] {
+  color: var(--aqua-dark);
+}
+
+@media (hover: hover) {
+  .password-toggle:hover {
+    color: var(--aqua-dark);
+  }
+}
+
+.password-icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.password-toggle[aria-pressed="true"] .password-icon-show,
+.password-toggle[aria-pressed="false"] .password-icon-hide {
+  display: none;
+}
+
+.auth-form input[aria-invalid="true"],
+.dive-form input[aria-invalid="true"],
+.dive-form textarea[aria-invalid="true"],
+.dive-form select[aria-invalid="true"] {
+  border-color: var(--c-line-6);
+  box-shadow: 0 0 0 4px var(--c-shadow-6);
+}
+
+.field-error {
+  color: var(--c-text-2);
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.text-button {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--aqua-dark);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+@media (hover: hover) {
+  .text-button:hover {
+    text-decoration: underline;
+  }
+}
+
+.auth-back-button {
+  display: block;
+  margin: 18px auto 0;
+  text-align: center;
+}
+
+.auth-form small,
+.optional {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.primary-button,
+.ghost-button,
+.danger-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  border-radius: 999px;
+  font-weight: 700;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.primary-button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 15px 18px;
+  border: 0;
+  background: linear-gradient(135deg, var(--c-bg-11) 0%, var(--c-bg-12) 100%);
+  color: var(--c-text-1);
+  box-shadow: 0 12px 28px var(--c-shadow-7);
+}
+
+@media (hover: hover) {
+  .primary-button:hover,
+  .ghost-button:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.primary-button.is-loading {
+  color: transparent;
+}
+
+.primary-button.is-loading::after,
+.danger-button.is-loading::after {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--c-line-7);
+  border-top-color: var(--c-line-8);
+  border-radius: 50%;
+  content: "";
+  animation: spin 700ms linear infinite;
+}
+
+.message {
+  margin-bottom: 22px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.message-error {
+  border: 1px solid var(--c-line-9);
+  background: var(--c-bg-13);
+  color: var(--c-text-2);
+}
+
+.message-success {
+  border: 1px solid var(--c-line-10);
+  background: var(--c-bg-14);
+  color: var(--c-text-3);
+}
+
+/* Textareas grow with their text. min-block-size keeps the height the rows
+   attribute gives today (rows × line + padding and border); browsers without
+   field-sizing keep that fixed height and scroll, as before. */
+@supports (field-sizing: content) {
+  :is(.dive-form, .profile-form, .reflection-form) textarea {
+    --textarea-rows: 2;
+    --textarea-chrome: 30px;
+    field-sizing: content;
+    min-block-size: calc(var(--textarea-rows) * 1lh + var(--textarea-chrome));
+    max-block-size: calc(12lh + var(--textarea-chrome));
+  }
+
+  :is(.dive-form, .profile-form, .reflection-form) textarea[rows="3"] {
+    --textarea-rows: 3;
+  }
+
+  :is(.dive-form, .profile-form, .reflection-form) textarea[rows="4"] {
+    --textarea-rows: 4;
+  }
+
+  .profile-form textarea {
+    --textarea-chrome: 28px;
+  }
+}

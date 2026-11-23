@@ -1,0 +1,419 @@
+/* Dialogs: dive detail, dive form, photos and confirmations. */
+
+.app-dialog {
+  width: min(760px, calc(100% - 28px));
+  max-height: min(880px, calc(100vh - 32px));
+  max-height: min(880px, calc(100dvh - 32px));
+  padding: 0;
+  border: 1px solid var(--c-line-22);
+  border-radius: 30px;
+  background: var(--c-bg-49);
+  color: var(--ink);
+  box-shadow: 0 38px 110px var(--c-shadow-16);
+}
+
+.app-dialog::backdrop {
+  background: var(--c-bg-50);
+  backdrop-filter: blur(10px);
+  /* A scroll container that keeps wheel/touch over the backdrop off the page. */
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+/* Scrolling inside an open modal never chains to the page behind it. */
+.app-dialog:modal {
+  overscroll-behavior: contain;
+}
+
+.dive-form {
+  padding: clamp(24px, 5vw, 48px);
+}
+
+.dive-detail {
+  padding: clamp(24px, 5vw, 48px);
+}
+
+.detail-loading {
+  display: flex;
+  min-height: 180px;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.detail-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 24px;
+}
+
+.detail-facts > div {
+  padding: 16px;
+  border: 1px solid var(--c-line-17);
+  border-radius: 16px;
+  background: var(--c-bg-51);
+}
+
+.detail-facts dt {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.detail-facts dd {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 750;
+}
+
+.detail-section {
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+}
+
+.detail-section > p:last-child {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.detail-photo-grid {
+  margin: 14px 0 0;
+}
+
+.detail-gallery-help {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.photo-card-selectable {
+  padding: 7px;
+  border: 1px solid var(--c-line-17);
+  border-radius: 17px;
+  background: var(--c-bg-34);
+}
+
+.photo-export-toggle {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  margin-top: 8px;
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.photo-export-toggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--aqua-dark);
+}
+
+.detail-export-section {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px 24px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 22px;
+  border: 1px solid var(--c-line-23);
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--c-bg-52), var(--c-bg-53));
+}
+
+.detail-export-section h3 {
+  margin: 3px 0 5px;
+  font-size: 1.12rem;
+}
+
+.detail-export-section div > p:last-child,
+.detail-export-message {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.detail-export-message {
+  grid-column: 1 / -1;
+}
+
+.dialog-heading {
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 30px;
+}
+
+.dialog-heading h2,
+.confirm-content h2 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+  letter-spacing: -0.055em;
+}
+
+.dialog-heading p:last-child,
+.confirm-content > p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.dialog-close {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--c-bg-36);
+  color: var(--muted);
+  font-size: 1.4rem;
+}
+
+.dive-form > label,
+.dive-form .field-grid label {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.dive-form input,
+.dive-form textarea,
+.dive-form select {
+  width: 100%;
+  padding: 14px 15px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  outline: none;
+  background: var(--c-bg-36);
+  color: var(--ink);
+  resize: vertical;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.dive-form select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 19px) 50%,
+    calc(100% - 14px) 50%;
+  background-repeat: no-repeat;
+  background-size:
+    5px 5px,
+    5px 5px;
+  resize: none;
+}
+
+.dive-form input:focus,
+.dive-form textarea:focus,
+.dive-form select:focus {
+  border-color: var(--aqua);
+  box-shadow: 0 0 0 4px var(--c-shadow-5);
+}
+
+.equipment-section,
+.companions-section,
+.photos-section {
+  margin: 4px 0 22px;
+  padding: 20px 20px 2px;
+  border: 1px solid var(--c-line-23);
+  border-radius: 18px;
+  background: var(--c-bg-51);
+}
+
+.equipment-section legend,
+.companions-section legend,
+.photos-section legend {
+  padding: 0 8px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.equipment-section > p,
+.companions-section > p,
+.photos-section > p {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.companions-section > label {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.photo-picker {
+  display: inline-flex !important;
+  width: auto;
+  margin-bottom: 18px !important;
+  padding: 11px 16px;
+  border: 1px solid var(--c-line-14);
+  border-radius: 999px;
+  background: var(--c-bg-36);
+  color: var(--aqua-dark);
+  cursor: pointer;
+}
+
+.photo-picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The real input is invisible, so the pill shows the keyboard focus ring. */
+.photo-picker:has(input:focus-visible) {
+  outline: 3px solid var(--c-line-1);
+  outline-offset: 3px;
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.photo-card {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+}
+
+.photo-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 13px;
+  object-fit: cover;
+}
+
+.photo-card figcaption {
+  overflow: hidden;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-remove {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--c-bg-54);
+  color: var(--c-text-1);
+  font-size: 1rem;
+}
+
+.photo-loading,
+.photo-load-error {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.dive-form input:user-invalid,
+.dive-form textarea:user-invalid {
+  border-color: var(--c-line-24);
+  box-shadow: 0 0 0 4px var(--c-shadow-17);
+}
+
+.dive-form small,
+.field-unit {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.field-example {
+  display: block;
+  margin-top: -2px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  transition: opacity 140ms ease;
+}
+
+.field-example[hidden] {
+  display: none;
+}
+
+.photo-example {
+  margin: -10px 0 18px;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.dialog-actions .primary-button {
+  width: auto;
+  min-width: 180px;
+  margin: 0;
+}
+
+.danger-button {
+  min-width: 180px;
+  padding: 12px 18px;
+  border: 0;
+  background: var(--c-bg-55);
+  color: var(--c-text-1);
+  box-shadow: 0 10px 24px var(--c-shadow-18);
+}
+
+.confirm-dialog {
+  width: min(520px, calc(100% - 28px));
+}
+
+.confirm-content {
+  padding: clamp(28px, 6vw, 48px);
+  text-align: center;
+}
+
+.confirm-symbol {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--c-bg-56);
+  color: var(--c-text-6);
+  font-size: 2rem;
+}
+
+.confirm-content .dialog-actions {
+  justify-content: center;
+}

@@ -1,0 +1,266 @@
+/* Marine ambience (design B, Abismo): fonts, light rays, glowing particles, dive profile, depth bars. */
+
+/* --- Ambiente marino (dirección B · Abismo) -------------------------------
+   Self-hosted fonts (CSP font-src 'self'), light rays, glowing particles and
+   numbers in a technical monospace. Colours stay in the token blocks. */
+@font-face {
+  font-family: "Sora";
+  src: url("/fonts/sora-latin-variable.woff2") format("woff2");
+  font-weight: 100 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/ibm-plex-mono-latin-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/ibm-plex-mono-latin-500.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/ibm-plex-mono-latin-600.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+
+:root {
+  --font-ui: "Sora", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+    sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --ray: rgba(255, 255, 255, 0.5);
+  --particle: rgba(255, 255, 255, 0.85);
+  --particle-glow: rgba(16, 122, 204, 0.18);
+  --glow: 0 12px 28px rgba(16, 122, 204, 0.22);
+  --profile-line: #9ff8ff;
+  --profile-area: rgba(159, 248, 255, 0.18);
+  --profile-stop: rgba(199, 190, 255, 0.35);
+  --profile-dot: #0b2d50;
+  --depth-start: #68d8d6;
+  --depth-end: #107acc;
+  --depth-deep: #6b5bea;
+  --depth-track: rgba(16, 42, 67, 0.08);
+  font-family: var(--font-ui);
+}
+
+:root[data-theme="dark"] {
+  --ray: rgba(159, 248, 255, 0.075);
+  --particle: rgba(92, 242, 227, 0.9);
+  --particle-glow: rgba(92, 242, 227, 0.55);
+  --glow: 0 0 26px rgba(92, 242, 227, 0.42);
+  --profile-line: #5cf2e3;
+  --profile-area: rgba(92, 242, 227, 0.16);
+  --profile-stop: rgba(139, 124, 255, 0.35);
+  --profile-dot: #031024;
+  --depth-start: #5cf2e3;
+  --depth-end: #2bb5c9;
+  --depth-deep: #8b7cff;
+  --depth-track: rgba(232, 243, 255, 0.07);
+  --abyss-top: #0b2d50;
+  --abyss-mid: #071a33;
+  --abyss-bottom: #02060f;
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-ui);
+}
+
+h1,
+h2,
+h3,
+.brand-compact span {
+  letter-spacing: -0.035em;
+}
+.dashboard-hero h1 {
+  letter-spacing: -0.05em;
+}
+
+/* Numbers and small labels in a technical monospace */
+.eyebrow,
+.tab-depth,
+.home-stat strong,
+.stat-card strong,
+.metric-card strong,
+.dive-date strong,
+.dive-duration strong,
+.home-recent-depth,
+.home-last-facts b,
+.activity-value,
+.ballast-pattern b,
+.ownership-row b,
+#page-label {
+  font-family: var(--font-mono);
+  font-feature-settings: "zero" 0;
+  letter-spacing: 0;
+}
+
+.eyebrow {
+  font-weight: 500;
+  letter-spacing: 0.12em;
+}
+.home-stat strong,
+.stat-card strong {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.metric-card strong {
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+/* Light rays from the surface */
+.ocean-backdrop::before {
+  position: absolute;
+  top: -10vh;
+  right: 0;
+  left: 18vw;
+  height: 95vh;
+  background: linear-gradient(
+    100deg,
+    transparent 0 18%,
+    var(--ray) 20% 26%,
+    transparent 28% 41%,
+    var(--ray) 43% 45%,
+    transparent 47% 58%,
+    var(--ray) 60% 67%,
+    transparent 69%
+  );
+  content: "";
+  filter: blur(6px);
+  mask-image: linear-gradient(to bottom, black 0%, transparent 85%);
+  transform: skewX(-14deg);
+}
+
+/* Abismo: the page is the deep sea; bubbles become glowing particles */
+:root[data-theme="dark"] body {
+  background: radial-gradient(
+      ellipse 80% 50% at 60% -10%,
+      var(--abyss-top),
+      transparent 70%
+    ),
+    linear-gradient(180deg, var(--abyss-mid) 0%, var(--abyss-bottom) 100%);
+  background-attachment: fixed;
+}
+
+:root[data-theme="dark"] .dashboard {
+  background: transparent;
+}
+:root[data-theme="dark"] .current {
+  opacity: 0.35;
+}
+
+:root[data-theme="dark"] .bubble-stream span {
+  width: calc(var(--size) * 0.28);
+  height: calc(var(--size) * 0.28);
+  border: 0;
+  background: var(--particle);
+  box-shadow: 0 0 12px var(--particle-glow);
+}
+
+:root[data-theme="dark"] .primary-button {
+  background: var(--accent-strong);
+  color: var(--on-accent-strong);
+  box-shadow: var(--glow);
+}
+
+:root[data-theme="dark"] .tab-link[aria-current="page"],
+:root[data-theme="dark"] .theme-option[aria-pressed="true"] {
+  box-shadow: var(--glow);
+}
+
+:root[data-theme="dark"] .home-last-open {
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, var(--abyss-top), var(--abyss-bottom));
+}
+
+/* Approximate profile of the latest dive (Inicio) */
+.home-last-profile {
+  display: block;
+  margin-top: 6px;
+}
+.dive-profile {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.dive-profile-area {
+  fill: var(--profile-area);
+}
+/* No non-scaling-stroke here: it would measure the dash in screen pixels and
+   break the pathLength-based drawing animation. The SVG scales uniformly. */
+.dive-profile-line {
+  fill: none;
+  stroke: var(--profile-line);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+}
+.dive-profile-stop {
+  fill: var(--profile-stop);
+}
+.dive-profile-max {
+  fill: var(--profile-dot);
+  stroke: var(--profile-line);
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+}
+.home-last-caption {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  opacity: 0.7;
+}
+
+/* Depth bar on each logbook card: 0–40 m, violet past 30 m */
+.depth-bar {
+  position: relative;
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--depth-track);
+}
+
+.depth-bar::after {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--depth);
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    var(--depth-start),
+    var(--depth-end) 75%,
+    var(--depth-deep)
+  );
+  box-shadow: 0 0 10px var(--particle-glow);
+  content: "";
+}
+
+@media (max-width: 760px) {
+  .home-stat strong {
+    font-size: 1.05rem;
+  }
+  .home-stat span {
+    font-size: 0.64rem;
+  }
+}
+
+/* The map has its own tab now: let it use the screen. */
+#panel-mapa .dive-map {
+  min-height: clamp(360px, 62vh, 640px);
+}
+:root[data-theme="dark"] .map-cluster {
+  color: var(--on-accent-strong);
+  box-shadow: var(--glow);
+}

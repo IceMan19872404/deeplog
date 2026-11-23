@@ -31,8 +31,15 @@ const fieldLabels = {
   improveNext: ["apartado «qué quieres mejorar»", "el"],
   practicedSkill: ["habilidad practicada", "la"],
   incidents: ["incidencias", "las"],
-  nextGoal: ["próximo objetivo", "el"]
+  nextGoal: ["próximo objetivo", "el"],
+  photo: ["fotografía", "la"],
+  confirmation: ["confirmación", "la"]
 };
+
+function decimalsAllowed(step) {
+  const [, decimals = ""] = String(step).split(".");
+  return decimals.length;
+}
 
 export function fieldReference(name) {
   const [label, article] = fieldLabels[name] || [name || "campo", "el"];
@@ -49,6 +56,9 @@ export function nativeValidationMessage(input) {
   const subject = `${article[0].toUpperCase()}${article.slice(1)} ${label}`;
   const verb = plural ? "deben" : "debe";
 
+  if (input.validity.badInput) {
+    return `Escribe ${article} ${label} solo con números; usa coma o punto para los decimales.`;
+  }
   if (input.validity.valueMissing) {
     const adjective = plural
       ? (feminine ? "obligatorias" : "obligatorios")
@@ -65,12 +75,23 @@ export function nativeValidationMessage(input) {
   if (input.validity.rangeUnderflow) {
     return `${subject} ${verb} ser igual o superior a ${input.min}.`;
   }
+  if (input.validity.rangeOverflow && input.type === "date") {
+    return "La fecha no puede ser posterior a hoy.";
+  }
   if (input.validity.rangeOverflow) {
     return `${subject} no ${plural ? "pueden" : "puede"} superar ${input.max}.`;
   }
-  if (input.validity.stepMismatch) return `Revisa el formato de ${article} ${label}.`;
+  if (input.validity.stepMismatch) {
+    const decimals = decimalsAllowed(input.step);
+    return decimals
+      ? `${subject} ${plural ? "admiten" : "admite"} hasta ${decimals} ${decimals === 1 ? "decimal" : "decimales"}.`
+      : `${subject} ${verb} ser un número entero.`;
+  }
   if (input.validity.patternMismatch && input.name === "password") {
     return "Usa 8 caracteres e incluye mayúscula, minúscula y número.";
+  }
+  if (input.validity.patternMismatch && input.name === "confirmation") {
+    return "Escribe ELIMINAR en mayúsculas para confirmar.";
   }
   return `Revisa ${article} ${label}.`;
 }
@@ -88,4 +109,17 @@ export function apiValidationMessage(field, message = "") {
   }
   const { label, article } = fieldReference(field);
   return `Revisa ${article} ${label}.`;
+}
+
+const profilePhotoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const PROFILE_PHOTO_MAX_BYTES = 3 * 1024 * 1024;
+
+// Same rule the API applies to the profile photo, checked before anything is
+// saved so a bad file never leaves the profile half updated.
+export function profilePhotoMessage(file) {
+  if (!file) return "";
+  if (!profilePhotoTypes.has(file.type) || file.size > PROFILE_PHOTO_MAX_BYTES) {
+    return "La fotografía debe ser JPEG, PNG o WebP y ocupar 3 MB o menos.";
+  }
+  return "";
 }

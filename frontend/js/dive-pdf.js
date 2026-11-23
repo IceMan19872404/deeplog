@@ -1,3 +1,5 @@
+import { formatNumber } from "./format.js?v=20261123-2";
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -23,12 +25,12 @@ function equipmentLabel(value) {
 
 function suitLabel(dive) {
   const labels = { wetsuit: "Húmedo", drysuit: "Seco", shorty: "Shorty", none: "Sin traje" };
-  return [labels[dive.suitType], dive.suitThicknessMm === null ? null : `${dive.suitThicknessMm} mm`].filter(Boolean).join(" · ") || "No indicado";
+  return [labels[dive.suitType], dive.suitThicknessMm === null ? null : `${formatNumber(dive.suitThicknessMm)} mm`].filter(Boolean).join(" · ") || "No indicado";
 }
 
 function cylinderLabel(dive) {
   const labels = { steel: "Acero", aluminum: "Aluminio" };
-  return [labels[dive.cylinderMaterial], dive.cylinderVolumeLiters === null ? null : `${dive.cylinderVolumeLiters} L`].filter(Boolean).join(" · ") || "No indicada";
+  return [labels[dive.cylinderMaterial], dive.cylinderVolumeLiters === null ? null : `${formatNumber(dive.cylinderVolumeLiters)} L`].filter(Boolean).join(" · ") || "No indicada";
 }
 
 function comfortLabel(value) {
@@ -53,7 +55,7 @@ export function buildDivePrintDocument({ dive, photos, diverName }) {
   const buddies = dive.buddies.length
     ? dive.buddies.join(", ")
     : "No se indicaron compañeros.";
-  const narrative = `${date}, ${center}. ${dive.durationMinutes} minutos bajo la superficie y una profundidad máxima de ${dive.maxDepthMeters} metros.`;
+  const narrative = `${date}, ${center}. ${formatNumber(dive.durationMinutes)} minutos bajo la superficie y una profundidad máxima de ${formatNumber(dive.maxDepthMeters)} metros.`;
   const gallery = photos.length
     ? `<section class="story-section gallery-section">
         <p class="eyebrow">Recuerdos visuales</p>
@@ -141,10 +143,10 @@ export function buildDivePrintDocument({ dive, photos, diverName }) {
       <div class="content">
         <dl class="facts">
           ${fact("Fecha", date)}
-          ${fact("Duración", `${dive.durationMinutes} minutos`)}
-          ${fact("Profundidad máxima", `${dive.maxDepthMeters} metros`)}
+          ${fact("Duración", `${formatNumber(dive.durationMinutes)} minutos`)}
+          ${fact("Profundidad máxima", `${formatNumber(dive.maxDepthMeters)} metros`)}
           ${fact("Centro de buceo", dive.diveCenter || "No indicado")}
-          ${fact("Lastre", dive.ballastKg === null ? "No indicado" : `${dive.ballastKg} kg`)}
+          ${fact("Lastre", dive.ballastKg === null ? "No indicado" : `${formatNumber(dive.ballastKg)} kg`)}
           ${fact("Material", equipmentLabel(dive.equipmentOwnership))}
           ${fact("Traje", suitLabel(dive))}
           ${fact("Botella", cylinderLabel(dive))}

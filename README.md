@@ -390,7 +390,7 @@ Modo claro y oscuro:
   eleccion se recuerda en ese dispositivo,
 - el tema se aplica antes de pintar la pagina (`js/theme-init.js`), sin
   parpadeos, y respeta la CSP porque el script se sirve desde la propia app,
-- todos los colores de `styles.css` son variables: cada tema solo cambia sus
+- todos los colores de `frontend/styles/` son variables: cada tema solo cambia sus
   valores.
 
 Estilo visual «B · Abismo» (elegido entre tres propuestas en Figma):
@@ -408,6 +408,22 @@ Estilo visual «B · Abismo» (elegido entre tres propuestas en Figma):
   ni al pasar de pagina; la ficha lo muestra como «Inmersion nº 21»,
 - cada inmersion de la bitacora muestra una barra de profundidad (0-40 m),
 - el mapa ocupa la pantalla en su propia pestaña.
+
+Estilos (`frontend/styles/`): la hoja se divide por secciones en archivos
+numerados que se cargan en ese orden (los posteriores ganan): tokens, base,
+componentes, pestañas, responsive, temas y animaciones. Formato con Prettier
+(`npx prettier@3 --write "frontend/styles/*.css"`); un test comprueba que
+`index.html` enlaza todos los archivos en orden y que el modo sin conexion
+los guarda.
+
+Buenas practicas web: el frontend se revisa con la skill
+[Modern Web Guidance](https://github.com/GoogleChrome/modern-web-guidance)
+(equipos de Chrome, Edge, Firefox y MDN). Lo aplicado esta en TD-040: dialogos
+nativos con cierre seguro y «¿Descartar cambios?», errores accesibles en los
+formularios, fecha local, modo sin conexion arreglado, cache por version,
+arranque sin destello del acceso, barra inferior hasta 960 px y Forced Colors.
+Politica de navegadores: lo que es Baseline ampliamente disponible se usa sin
+mas; lo mas nuevo, solo con la alternativa que indica la guia.
 
 Animaciones:
 - al cambiar de pestaña hacia la derecha el contenido sube como si bajaras

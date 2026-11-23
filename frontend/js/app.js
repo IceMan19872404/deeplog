@@ -32,20 +32,28 @@ import {
   deleteProfilePhoto,
   updateDive,
   uploadDivePhotos
-} from "./api.js?v=20260930-1";
-import { openDivePrintPreview } from "./dive-pdf.js?v=20260902-2";
-import { initializePublicShare } from "./public-share.js?v=20260902-2";
-import { initializeClientMonitoring } from "./client-monitoring.js?v=20260916-1";
+} from "./api.js?v=20261123-2";
+import { openDivePrintPreview } from "./dive-pdf.js?v=20261123-2";
+import { initializeClientMonitoring } from "./client-monitoring.js?v=20261123-2";
 import {
   apiValidationMessage,
-  nativeValidationMessage
-} from "./validation-messages.js?v=20261019-2";
-import { populateDiveForm } from "./dive-form.js?v=20261019-1";
-import { createDiveMap } from "./dive-map.js?v=20261030-1";
-import { TABS, createTabs } from "./tabs.js?v=20261121-1";
-import { createTheme } from "./theme.js?v=20261122-1";
+  nativeValidationMessage,
+  profilePhotoMessage
+} from "./validation-messages.js?v=20261123-2";
+import { localIsoDate, populateDiveForm } from "./dive-form.js?v=20261123-2";
+import { TABS, createTabs } from "./tabs.js?v=20261123-2";
+import { createTheme } from "./theme.js?v=20261123-2";
 import { profileSvg } from "./dive-profile.js?v=20261121-2";
 import { countUp, createMotionPreference } from "./motion.js?v=20261121-1";
+import {
+  closeAllDialogs,
+  createConfirmDialog,
+  createUnsavedChanges,
+  guardDialogClose,
+  installLightDismissFallback,
+  requestDialogClose
+} from "./dialogs.js?v=20261123-2";
+import { formatNumber } from "./format.js?v=20261123-2";
 
 initializeClientMonitoring();
 createTheme();
@@ -201,8 +209,16 @@ const elements = {
   shareList: document.querySelector("#share-list"),
   useCurrentLocation: document.querySelector("#use-current-location"),
   clearLocation: document.querySelector("#clear-location"),
-  locationMessage: document.querySelector("#location-message")
+  locationMessage: document.querySelector("#location-message"),
+  discardDialog: document.querySelector("#discard-dialog"),
+  deleteReflectionDialog: document.querySelector("#delete-reflection-dialog")
 };
+
+const confirmDiscard = createConfirmDialog(elements.discardDialog);
+const confirmDeleteReflection = createConfirmDialog(elements.deleteReflectionDialog);
+const diveFormChanges = createUnsavedChanges(elements.diveForm);
+const profileFormChanges = createUnsavedChanges(elements.profileForm);
+const isFormBusy = (form) => form.getAttribute("aria-busy") === "true";
 
 // Each tab sits one "depth" lower than the previous one, so moving right dives
 // deeper and moving left rises to the surface; CSS animates the panel to match.
@@ -215,7 +231,17 @@ const tabs = createTabs({
       content.dataset.direction = from < 0 ? "none" : TABS.indexOf(tab) > from ? "deeper" : "shallower";
     }
     document.title = id === "inicio" ? "Mi bitácora | DeepLog" : `${tab.label} | DeepLog`;
+    if (id === "mapa") drawDiveMap();
   }
+});
+
+// The skip link's href (#main-content) would replace the #/<tab> route and
+// leave focus before the header and tab bar. On the dashboard it jumps to the
+// current panel's heading instead; elsewhere the browser handles it.
+document.querySelector(".skip-link")?.addEventListener("click", (event) => {
+  if (elements.dashboardView.hidden || !tabs.current) return;
+  event.preventDefault();
+  tabs.focusCurrent();
 });
 
 function setMessage(element, message, type = "error") {
@@ -246,7 +272,20 @@ function syncDisappearingExamples() {
   });
 }
 
+// The eye button unmasks the field it controls. The field goes back to
+// type="password" on submit, reset and auth tab changes, so password managers
+// always see a password field and the next visit starts masked.
+function setPasswordVisible(button, visible) {
+  document.getElementById(button.getAttribute("aria-controls")).type = visible ? "text" : "password";
+  button.setAttribute("aria-pressed", String(visible));
+}
+
+function maskPasswords(container) {
+  container.querySelectorAll(".password-toggle").forEach((button) => setPasswordVisible(button, false));
+}
+
 function switchAuthMode(mode) {
+  maskPasswords(elements.authView);
   const loginActive = mode === "login";
   const registerActive = mode === "register";
 
@@ -265,10 +304,35 @@ function switchAuthMode(mode) {
   clearFormErrors(elements.authView);
 }
 
+// One polite live region reads an error that appears when the user leaves a
+// field, a moment later so it does not talk over the next field. Errors shown
+// on submit are read with the field that receives focus instead.
+const announcement = { region: null, field: null, timer: 0 };
+
+function fieldErrorId(input) {
+  return `${input.form?.id || "form"}-${input.name}-error`;
+}
+
+// Errors and hints live inside the <label>, so they are aria-hidden there to
+// keep them out of the field's name, and read as its description instead.
+function linkDescription(input, id, linked) {
+  const ids = (input.getAttribute("aria-describedby") || "")
+    .split(/\s+/)
+    .filter((value) => value && value !== id);
+  if (linked) ids.push(id);
+  if (ids.length) input.setAttribute("aria-describedby", ids.join(" "));
+  else input.removeAttribute("aria-describedby");
+}
+
 function clearFieldError(input) {
-  input.removeAttribute("aria-invalid");
-  const error = input.closest("label")?.querySelector(".field-error");
-  if (error) error.remove();
+  input.setAttribute("aria-invalid", "false");
+  const id = fieldErrorId(input);
+  linkDescription(input, id, false);
+  document.getElementById(id)?.remove();
+  if (announcement.field === input) {
+    clearTimeout(announcement.timer);
+    announcement.region.textContent = "";
+  }
 }
 
 function clearFormErrors(container) {
@@ -283,8 +347,41 @@ function setFieldError(form, field, message) {
   input.setAttribute("aria-invalid", "true");
   const error = document.createElement("span");
   error.className = "field-error";
+  error.id = fieldErrorId(input);
+  error.setAttribute("aria-hidden", "true");
   error.textContent = message;
-  input.insertAdjacentElement("afterend", error);
+  const fileButton = input.closest(".file-button");
+  (fileButton || input.closest(".password-input") || input).insertAdjacentElement("afterend", error);
+  linkDescription(input, error.id, true);
+}
+
+// Announce on a delay, through the region above.
+function announceFieldError(input, message) {
+  if (!announcement.region) {
+    announcement.region = document.createElement("div");
+    announcement.region.className = "visually-hidden";
+    announcement.region.setAttribute("aria-live", "polite");
+    document.body.append(announcement.region);
+  }
+  const label = input.labels?.[0]?.firstChild?.textContent.trim();
+  clearTimeout(announcement.timer);
+  announcement.region.textContent = "";
+  announcement.field = input;
+  announcement.timer = setTimeout(() => {
+    announcement.region.textContent = label ? `${label}: ${message}` : message;
+  }, 500);
+}
+
+// :user-invalid already paints the field red once the user leaves it; show
+// the same message and state that a submit would, so colour is never alone.
+function showErrorOnLeave(event) {
+  const input = event.target;
+  if (!input.form?.noValidate || !input.matches("input, select, textarea")) return;
+  if (input.type === "hidden" || input.getAttribute("aria-invalid") === "true") return;
+  if (!input.matches(":user-invalid")) return;
+  const message = nativeValidationMessage(input);
+  setFieldError(input.form, input.name, message);
+  announceFieldError(input, message);
 }
 
 function validateForm(form) {
@@ -337,6 +434,14 @@ function validateForm(form) {
     } else if (files.some((file) => file.size > 8 * 1024 * 1024)) {
       setFieldError(form, "photos", "Cada fotografía debe ocupar 8 MB o menos.");
       firstInvalid ||= form.elements.photos;
+    }
+  }
+
+  if (form === elements.profileForm) {
+    const photoMessage = profilePhotoMessage(form.elements.photo.files[0]);
+    if (photoMessage) {
+      setFieldError(form, "photo", photoMessage);
+      firstInvalid ||= form.elements.photo;
     }
   }
 
@@ -433,7 +538,14 @@ function readOfflineSnapshot() {
   try { return JSON.parse(localStorage.getItem(offlineKey)); } catch (_error) { return null; }
 }
 
+// Data for a tab that is not on screen is fetched with low priority so it
+// does not compete with the visible one (Fetch priority; ignored if unsupported).
+function backgroundPriority(tab) {
+  return tabs.current === tab ? "auto" : "low";
+}
+
 let diveMap = null;
+let mapDives = null; // dives waiting to be drawn when the Mapa tab is shown
 
 function describeMapDive(dive) {
   return `${dive.name} · ${formatDate(dive.date)} · ${dive.precision === "approximate" ? "ubicación aproximada" : "ubicación exacta privada"}`;
@@ -441,19 +553,38 @@ function describeMapDive(dive) {
 
 function renderDiveMap(dives = []) {
   if (!dives.length) {
+    mapDives = null;
     diveMap?.update([]);
     elements.diveMap.innerHTML = '<p class="map-empty">Añade coordenadas a una inmersión para situarla en tu mapa privado.</p>';
     elements.diveMap.setAttribute("aria-label", "Sin ubicaciones registradas");
     return;
   }
   elements.diveMap.setAttribute("aria-label", `Mapa con ${dives.length} ubicaciones de inmersión registradas`);
-  diveMap ||= createDiveMap(elements.diveMap, { onSelect: openDiveDetail, describe: describeMapDive });
-  diveMap.update(dives);
+  mapDives = dives;
+  if (tabs.current === "mapa") drawDiveMap();
+}
+
+// dive-map.js brings ~140 KB of coastline data, so it is imported only when
+// the Mapa tab is shown with dives to place (it stays in the offline shell).
+async function drawDiveMap() {
+  if (!mapDives) return;
+  try {
+    if (!diveMap) {
+      const { createDiveMap } = await import("./dive-map.js?v=20261123-2");
+      diveMap ||= createDiveMap(elements.diveMap, { onSelect: openDiveDetail, describe: describeMapDive });
+    }
+  } catch (_error) {
+    elements.mapStatus.textContent = "No se pudo cargar el mapa. Inténtalo de nuevo más tarde.";
+    return;
+  }
+  if (!mapDives) return;
+  diveMap.update(mapDives);
+  mapDives = null;
 }
 
 async function loadDiveMap() {
   try {
-    const response = await getDiveMap();
+    const response = await getDiveMap({ priority: backgroundPriority("mapa") });
     renderDiveMap(response.data.dives);
     writeOfflineSnapshot({ ...(readOfflineSnapshot() || {}), map: response.data.dives });
   } catch (error) {
@@ -589,13 +720,13 @@ const comfortLabels = {
 
 function suitDescription(dive) {
   if (!dive.suitType && dive.suitThicknessMm === null) return "No indicado";
-  return [suitLabels[dive.suitType], dive.suitThicknessMm === null ? null : `${dive.suitThicknessMm} mm`]
+  return [suitLabels[dive.suitType], dive.suitThicknessMm === null ? null : `${formatNumber(dive.suitThicknessMm)} mm`]
     .filter(Boolean).join(" · ");
 }
 
 function cylinderDescription(dive) {
   if (!dive.cylinderMaterial && dive.cylinderVolumeLiters === null) return "No indicada";
-  return [cylinderLabels[dive.cylinderMaterial], dive.cylinderVolumeLiters === null ? null : `${dive.cylinderVolumeLiters} L`]
+  return [cylinderLabels[dive.cylinderMaterial], dive.cylinderVolumeLiters === null ? null : `${formatNumber(dive.cylinderVolumeLiters)} L`]
     .filter(Boolean).join(" · ");
 }
 
@@ -626,7 +757,7 @@ async function searchConfigurationMemory() {
     elements.configurationMemoryResults.innerHTML = dives.map((dive) => `
       <article class="memory-card">
         <div><strong>${escapeHtml(dive.name)}</strong><span>${escapeHtml(formatDate(dive.date))}${dive.diveCenter ? ` · ${escapeHtml(dive.diveCenter)}` : ""}</span></div>
-        <div class="memory-ballast"><strong>${escapeHtml(dive.ballastKg)} kg</strong><span>lastre registrado</span></div>
+        <div class="memory-ballast"><strong>${escapeHtml(formatNumber(dive.ballastKg))} kg</strong><span>lastre registrado</span></div>
       </article>`).join("");
   } catch (error) {
     if (!handleUnauthorized(error)) elements.configurationMemoryMessage.textContent = "No se pudo consultar tu historial.";
@@ -667,24 +798,26 @@ function renderDives(dives) {
           class="dive-card"
           style="--delay: ${index * 70}ms"
           data-dive-id="${escapeHtml(dive.id)}"
-          role="button"
-          tabindex="0"
-          aria-label="Ver toda la información de ${dive.diveNumber ? `la inmersión nº ${escapeHtml(dive.diveNumber)}, ` : ""}${escapeHtml(dive.name)}"
         >
           <div class="dive-date">
             ${dive.diveNumber ? `<span class="dive-number"><abbr title="Número de inmersión">Nº</abbr> ${escapeHtml(dive.diveNumber)}</span>` : ""}
             <span>${escapeHtml(formatDate(dive.date))}</span>
-            <strong>${escapeHtml(dive.maxDepthMeters)} m</strong>
+            <strong>${escapeHtml(formatNumber(dive.maxDepthMeters))} m</strong>
             <span class="depth-bar" style="--depth: ${Math.min(100, Math.round((Number(dive.maxDepthMeters) / 40) * 100))}%" aria-hidden="true"></span>
           </div>
           <div class="dive-main">
-            <h3>${escapeHtml(dive.name)}</h3>
+            <h3><button
+              class="dive-open"
+              type="button"
+              data-dive-id="${escapeHtml(dive.id)}"
+              aria-label="${escapeHtml(dive.name)}: ver toda la información${dive.diveNumber ? ` de la inmersión nº ${escapeHtml(dive.diveNumber)}` : ""}"
+            >${escapeHtml(dive.name)}</button></h3>
             <p>${escapeHtml(dive.diveCenter || "Centro no indicado")}</p>
             <div class="dive-equipment">
               ${
                 dive.ballastKg === null
                   ? ""
-                  : `<span>${escapeHtml(dive.ballastKg)} kg de lastre</span>`
+                  : `<span>${escapeHtml(formatNumber(dive.ballastKg))} kg de lastre</span>`
               }
               ${
                 dive.equipmentOwnership
@@ -710,7 +843,7 @@ function renderDives(dives) {
             }
           </div>
           <div class="dive-duration">
-            <strong>${escapeHtml(dive.durationMinutes)}</strong>
+            <strong>${escapeHtml(formatNumber(dive.durationMinutes))}</strong>
             <span>min</span>
           </div>
           <p class="dive-comments">
@@ -745,10 +878,6 @@ function renderDives(dives) {
 function handleUnauthorized(error) {
   if (error.status !== 401) return false;
 
-  elements.diveDialog.close();
-  elements.detailDialog.close();
-  elements.shareDialog.close();
-  elements.deleteDialog.close();
   endSessionLocally();
   setMessage(
     elements.authMessage,
@@ -759,6 +888,9 @@ function handleUnauthorized(error) {
 
 function closeDiveDetail() {
   elements.detailDialog.close();
+}
+
+function clearDiveDetail() {
   clearPhotoUrls("detail");
   state.detailDive = null;
   state.detailPrintPhotos = [];
@@ -820,6 +952,7 @@ async function loadShares() {
 function openShareDialog() {
   if (!state.detailDive) return;
   elements.shareForm.reset();
+  clearFormErrors(elements.shareForm);
   elements.shareForm.elements.expiresInDays.value = "7";
   [...elements.shareForm.querySelectorAll('.share-options input[type="checkbox"]')].forEach((input) => { input.checked = true; });
   elements.shareForm.elements.includeDiverName.checked = Boolean(state.profile?.shareNameByDefault);
@@ -913,14 +1046,14 @@ async function openDiveDetail(diveId) {
     elements.detailSubtitle.textContent = [
       dive.diveNumber ? `Inmersión nº ${dive.diveNumber}` : "",
       formatDate(dive.date),
-      `${dive.maxDepthMeters} m`
+      `${formatNumber(dive.maxDepthMeters)} m`
     ].filter(Boolean).join(" · ");
     elements.detailDate.textContent = formatDate(dive.date);
-    elements.detailDuration.textContent = `${dive.durationMinutes} minutos`;
-    elements.detailDepth.textContent = `${dive.maxDepthMeters} metros`;
+    elements.detailDuration.textContent = `${formatNumber(dive.durationMinutes)} minutos`;
+    elements.detailDepth.textContent = `${formatNumber(dive.maxDepthMeters)} metros`;
     elements.detailCenter.textContent = dive.diveCenter || "No indicado";
     elements.detailBallast.textContent =
-      dive.ballastKg === null ? "No indicado" : `${dive.ballastKg} kg`;
+      dive.ballastKg === null ? "No indicado" : `${formatNumber(dive.ballastKg)} kg`;
     elements.detailEquipment.textContent = dive.equipmentOwnership
       ? dive.equipmentOwnership === "owned"
         ? "Material propio"
@@ -978,13 +1111,15 @@ async function handleReflectionSubmit(event) {
 }
 
 async function handleReflectionDelete() {
-  if (!state.detailDive || !window.confirm("¿Borrar esta reflexión personal?")) return;
+  if (!state.detailDive || !(await confirmDeleteReflection()) || !state.detailDive) return;
   elements.deleteReflection.disabled = true;
   try {
     await deleteDiveReflection(state.detailDive.id);
     state.detailDive.reflection = null;
     elements.reflectionForm.reset();
     elements.deleteReflection.hidden = true;
+    // The button that had focus is now hidden: continue at the first field.
+    elements.reflectionForm.elements.wentWell.focus();
     setMessage(elements.reflectionMessage, "Reflexión borrada.", "success");
     await loadAdvancedInsights();
   } catch (error) {
@@ -1050,10 +1185,10 @@ function renderStats(stats) {
   elements.totalTime.textContent = formatTotalTime(stats.totalMinutes);
   elements.maxDepth.textContent = stats.maxDepthMeters === null
     ? "—"
-    : `${stats.maxDepthMeters} m`;
+    : `${formatNumber(stats.maxDepthMeters)} m`;
   elements.longestDuration.textContent = stats.longestDurationMinutes === null
     ? "—"
-    : `${stats.longestDurationMinutes} min`;
+    : `${formatNumber(stats.longestDurationMinutes)} min`;
   elements.divesThisYear.textContent = stats.divesThisYear;
   elements.homeTotalTime.textContent = elements.totalTime.textContent;
   elements.homeMaxDepth.textContent = elements.maxDepth.textContent;
@@ -1073,8 +1208,8 @@ function frequencyMarkup(items, emptyLabel) {
 }
 
 function configurationName(item) {
-  const suit = [suitLabels[item.suitType], item.suitThicknessMm === null ? null : `${item.suitThicknessMm} mm`].filter(Boolean).join(" ");
-  const cylinder = [cylinderLabels[item.cylinderMaterial], item.cylinderVolumeLiters === null ? null : `${item.cylinderVolumeLiters} L`].filter(Boolean).join(" ");
+  const suit = [suitLabels[item.suitType], item.suitThicknessMm === null ? null : `${formatNumber(item.suitThicknessMm)} mm`].filter(Boolean).join(" ");
+  const cylinder = [cylinderLabels[item.cylinderMaterial], item.cylinderVolumeLiters === null ? null : `${formatNumber(item.cylinderVolumeLiters)} L`].filter(Boolean).join(" ");
   return [suit, cylinder, waterLabels[item.waterType]].filter(Boolean).join(" · ") || "Configuración parcial";
 }
 
@@ -1087,7 +1222,7 @@ function renderEvolution(items) {
   const maxDepth = Math.max(...items.map((item) => item.maxDepthMeters), 1);
   const maxDuration = Math.max(...items.map((item) => item.durationMinutes), 1);
   elements.evolutionChart.innerHTML = items.map((item) => `
-    <div class="evolution-point" title="${escapeHtml(formatDate(item.date))}: ${escapeHtml(item.maxDepthMeters)} m, ${escapeHtml(item.durationMinutes)} min">
+    <div class="evolution-point" title="${escapeHtml(formatDate(item.date))}: ${escapeHtml(formatNumber(item.maxDepthMeters))} m, ${escapeHtml(formatNumber(item.durationMinutes))} min">
       <div class="evolution-bars">
         <span class="evolution-depth" style="--value:${Math.max(6, item.maxDepthMeters / maxDepth * 100)}%"></span>
         <span class="evolution-duration" style="--value:${Math.max(6, item.durationMinutes / maxDuration * 100)}%"></span>
@@ -1111,11 +1246,11 @@ function renderAdvancedInsights(insights) {
   elements.frequentCenters.innerHTML = frequencyMarkup(insights.frequentCenters, "Aún no hay centros registrados.");
   elements.ownershipComparison.innerHTML = insights.equipmentOwnership.length
     ? insights.equipmentOwnership.map((item) => `
-      <div class="ownership-row"><div><strong>${item.type === "owned" ? "Material propio" : "Material de alquiler"}</strong><span>${escapeHtml(item.sampleSize)} ${item.sampleSize === 1 ? "inmersión" : "inmersiones"}</span></div><p><b>${escapeHtml(item.averageDurationMinutes)} min</b><span>duración media</span></p><p><b>${escapeHtml(item.averageDepthMeters)} m</b><span>profundidad media</span></p></div>`).join("")
+      <div class="ownership-row"><div><strong>${item.type === "owned" ? "Material propio" : "Material de alquiler"}</strong><span>${escapeHtml(item.sampleSize)} ${item.sampleSize === 1 ? "inmersión" : "inmersiones"}</span></div><p><b>${escapeHtml(formatNumber(item.averageDurationMinutes))} min</b><span>duración media</span></p><p><b>${escapeHtml(formatNumber(item.averageDepthMeters))} m</b><span>profundidad media</span></p></div>`).join("")
     : '<p class="frequency-empty">Indica si el material es propio o alquilado para comparar.</p>';
   elements.ballastPatterns.innerHTML = insights.ballastConfigurations.length
     ? insights.ballastConfigurations.map((item) => `
-      <article class="ballast-pattern"><div><strong>${escapeHtml(configurationName(item))}</strong><span>${escapeHtml(item.sampleSize)} ${item.sampleSize === 1 ? "registro" : "registros"}</span></div><p><b>${escapeHtml(item.averageBallastKg)} kg</b><span>media observada</span></p><p><b>${escapeHtml(item.minimumBallastKg)}-${escapeHtml(item.maximumBallastKg)} kg</b><span>rango registrado</span></p></article>`).join("")
+      <article class="ballast-pattern"><div><strong>${escapeHtml(configurationName(item))}</strong><span>${escapeHtml(item.sampleSize)} ${item.sampleSize === 1 ? "registro" : "registros"}</span></div><p><b>${escapeHtml(formatNumber(item.averageBallastKg))} kg</b><span>media observada</span></p><p><b>${escapeHtml(formatNumber(item.minimumBallastKg))}-${escapeHtml(formatNumber(item.maximumBallastKg))} kg</b><span>rango registrado</span></p></article>`).join("")
     : '<p class="frequency-empty">Completa lastre y configuración para crear grupos comparables.</p>';
   elements.reflectionEvolution.innerHTML = insights.reflectionEvolution.length
     ? insights.reflectionEvolution.map((item) => `
@@ -1133,7 +1268,7 @@ function renderAdvancedInsights(insights) {
 async function loadAdvancedInsights() {
   elements.advancedInsightsLoading.hidden = false;
   try {
-    const response = await getDiveInsights();
+    const response = await getDiveInsights({ priority: backgroundPriority("estadisticas") });
     renderAdvancedInsights(response.data.insights);
   } catch (error) {
     if (handleUnauthorized(error)) return;
@@ -1226,11 +1361,12 @@ function openProfileDialog() {
   elements.profileForm.elements.photo.value = "";
   setMessage(elements.profileMessage, "");
   clearFormErrors(elements.profileForm);
+  profileFormChanges.markClean();
   elements.profileDialog.showModal();
 }
 
 function closeProfileDialog() {
-  elements.profileDialog.close();
+  requestDialogClose(elements.profileDialog);
 }
 
 async function handleProfileSubmit(event) {
@@ -1254,12 +1390,14 @@ async function handleProfileSubmit(event) {
       } catch (photoError) {
         renderProfile(profile);
         await loadProfilePhoto(profile);
+        profileFormChanges.markClean();
         setMessage(elements.profileMessage, "Los datos se guardaron, pero la fotografía no era válida o superaba 3 MB.");
         return;
       }
     }
     renderProfile(profile);
     await loadProfilePhoto(profile);
+    profileFormChanges.markClean();
     setMessage(elements.profileMessage, "Perfil actualizado.", "success");
     setTimeout(() => { if (elements.profileDialog.open) closeProfileDialog(); }, 500);
   } catch (error) {
@@ -1303,12 +1441,13 @@ function daysAgoLabel(date) {
 // first page of the logbook already holds them.
 function renderHome(dives) {
   const [latest, ...rest] = dives;
+  elements.homeLastDive.removeAttribute("data-loading");
   if (!latest) {
     elements.homeLastDive.innerHTML = `
       <p class="muted">Todavía no hay inmersiones registradas.</p>
       <button class="primary-button" data-open-dive-form type="button">Registrar la primera</button>`;
     elements.homeLastDive.querySelector("[data-open-dive-form]").addEventListener("click", openCreateDiveForm);
-    elements.homeRecent.innerHTML = "";
+    elements.homeRecent.replaceChildren();
     return;
   }
   elements.homeLastDive.innerHTML = `
@@ -1316,8 +1455,8 @@ function renderHome(dives) {
       <span class="home-last-name">${escapeHtml(latest.name)}</span>
       <span class="home-last-meta">${escapeHtml(formatDate(latest.date))} · ${escapeHtml(daysAgoLabel(latest.date))}${latest.diveCenter ? ` · ${escapeHtml(latest.diveCenter)}` : ""}</span>
       <span class="home-last-facts">
-        <span><b>${escapeHtml(latest.maxDepthMeters)}</b> m</span>
-        <span><b>${escapeHtml(latest.durationMinutes)}</b> min</span>
+        <span><b>${escapeHtml(formatNumber(latest.maxDepthMeters))}</b> m</span>
+        <span><b>${escapeHtml(formatNumber(latest.durationMinutes))}</b> min</span>
         ${latest.buddies.length ? `<span>Con ${escapeHtml(latest.buddies.join(", "))}</span>` : ""}
       </span>
       <span class="home-last-profile">${profileSvg(latest.maxDepthMeters, latest.durationMinutes)}</span>
@@ -1326,7 +1465,7 @@ function renderHome(dives) {
     </button>`;
   elements.homeRecent.innerHTML = rest.slice(0, 4).map((dive) => `
     <li><button type="button" data-dive-id="${escapeHtml(dive.id)}">
-      <span class="home-recent-depth">${escapeHtml(dive.maxDepthMeters)} m</span>
+      <span class="home-recent-depth">${escapeHtml(formatNumber(dive.maxDepthMeters))} m</span>
       <span class="home-recent-text"><strong>${escapeHtml(dive.name)}</strong><small>${escapeHtml(formatDate(dive.date))}</small></span>
     </button></li>`).join("") || '<li class="muted">Las siguientes inmersiones aparecerán aquí.</li>';
 }
@@ -1338,6 +1477,7 @@ function handleHomeClick(event) {
 
 async function loadDives() {
   elements.divesLoading.hidden = false;
+  elements.divesList.setAttribute("aria-busy", "true");
   elements.divesList.hidden = true;
   elements.divesEmpty.hidden = true;
   setMessage(elements.dashboardMessage, "");
@@ -1362,13 +1502,15 @@ async function loadDives() {
   } finally {
     elements.divesLoading.hidden = true;
     elements.divesList.hidden = false;
+    elements.divesList.removeAttribute("aria-busy");
+    elements.homeLastDive.removeAttribute("data-loading");
   }
 }
 
 function resetDiveForm() {
   state.editingDiveId = null;
   elements.diveForm.reset();
-  elements.diveForm.elements.date.max = new Date().toISOString().slice(0, 10);
+  elements.diveForm.elements.date.max = localIsoDate();
   elements.diveFormTitle.textContent = "Registrar inmersión";
   elements.diveFormEyebrow.textContent = "Nueva experiencia";
   elements.saveDiveButton.textContent = "Guardar inmersión";
@@ -1383,6 +1525,7 @@ function resetDiveForm() {
   elements.locationMessage.textContent = "";
   setMessage(elements.diveFormMessage, "");
   syncDisappearingExamples();
+  diveFormChanges.markClean();
 }
 
 function openCreateDiveForm() {
@@ -1392,9 +1535,7 @@ function openCreateDiveForm() {
 }
 
 function closeDiveForm() {
-  if (elements.diveForm.classList.contains("is-busy")) return;
-  elements.diveDialog.close();
-  resetDiveForm();
+  requestDialogClose(elements.diveDialog);
 }
 
 async function openEditDiveForm(diveId) {
@@ -1413,6 +1554,7 @@ async function openEditDiveForm(diveId) {
 
     populateDiveForm(elements.diveForm, dive);
     await renderExistingPhotos(dive.photos, dive.id);
+    diveFormChanges.markClean();
     elements.diveForm.elements.name.focus();
   } catch (error) {
     if (handleUnauthorized(error)) return;
@@ -1458,6 +1600,7 @@ async function handleDiveSubmit(event) {
         elements.selectedPhotos.hidden = true;
         const refreshed = await getDive(response.data.dive.id);
         await renderExistingPhotos(refreshed.data.dive.photos, response.data.dive.id);
+        diveFormChanges.markClean();
         setMessage(
           elements.diveFormMessage,
           photoError.code === "PHOTO_LIMIT_EXCEEDED"
@@ -1468,9 +1611,10 @@ async function handleDiveSubmit(event) {
       }
     }
 
+    const savedId = state.editingDiveId;
     elements.diveDialog.close();
-    resetDiveForm();
     await loadDashboardData();
+    if (isEditing) restoreListFocus(`[data-action="edit"][data-dive-id="${CSS.escape(String(savedId))}"]`);
     setMessage(
       elements.dashboardMessage,
       isEditing
@@ -1521,8 +1665,22 @@ function openDeleteDialog(diveId, diveName) {
 }
 
 function closeDeleteDialog() {
-  state.deletingDive = null;
   elements.deleteDialog.close();
+}
+
+// After a save or delete the list is re-rendered and the card that opened the
+// dialog is gone, so focus would fall to <body>. Move it to the matching card
+// control, else the card now in the same position, else the list heading.
+function restoreListFocus(selector, index = 0) {
+  if (document.activeElement && document.activeElement !== document.body) return;
+  const cards = elements.divesList.querySelectorAll(".dive-card");
+  const card = cards[Math.min(index, cards.length - 1)];
+  const target = (selector && elements.divesList.querySelector(selector))
+    || (card && (card.tabIndex >= 0 ? card : card.querySelector("button")))
+    || document.querySelector("#inmersiones-title");
+  if (!target) return;
+  if (target.tabIndex < 0 && !target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+  target.focus();
 }
 
 async function handleDeleteDive() {
@@ -1533,6 +1691,9 @@ async function handleDeleteDive() {
   elements.cancelDeleteButton.disabled = true;
   setMessage(elements.deleteMessage, "");
 
+  const cardIndex = [...elements.divesList.querySelectorAll(".dive-card")]
+    .findIndex((card) => card.dataset.diveId === String(state.deletingDive.id));
+
   try {
     await deleteDive(state.deletingDive.id);
     closeDeleteDialog();
@@ -1542,6 +1703,7 @@ async function handleDeleteDive() {
     }
 
     await loadDashboardData();
+    restoreListFocus(null, Math.max(cardIndex, 0));
     setMessage(
       elements.dashboardMessage,
       "Inmersión eliminada de tu bitácora.",
@@ -1574,15 +1736,6 @@ function handleDiveListClick(event) {
   }
 }
 
-function handleDiveListKeydown(event) {
-  if (event.target.closest("[data-action]")) return;
-  if (event.key !== "Enter" && event.key !== " ") return;
-  const card = event.target.closest(".dive-card");
-  if (!card) return;
-  event.preventDefault();
-  openDiveDetail(card.dataset.diveId);
-}
-
 function showDashboard(user) {
   state.user = user;
   elements.userName.textContent = `${user.firstName} ${user.lastName}`;
@@ -1590,6 +1743,7 @@ function showDashboard(user) {
   elements.homeDate.textContent = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
   elements.authView.hidden = true;
   elements.dashboardView.hidden = false;
+  document.documentElement.removeAttribute("data-boot");
   tabs.start();
   loadDashboardData();
 }
@@ -1627,10 +1781,12 @@ function showAuth() {
   state.profile = null;
   elements.dashboardView.hidden = true;
   elements.authView.hidden = false;
+  document.documentElement.removeAttribute("data-boot");
   document.title = "DeepLog";
 }
 
 function endSessionLocally() {
+  closeAllDialogs();
   clearToken();
   localStorage.removeItem(offlineKey);
   showAuth();
@@ -1683,9 +1839,7 @@ function openDeleteAccountDialog() {
 }
 
 function closeDeleteAccountDialog() {
-  if (!elements.deleteAccountForm.classList.contains("is-busy")) {
-    elements.deleteAccountDialog.close();
-  }
+  requestDialogClose(elements.deleteAccountDialog);
 }
 
 async function handleDeleteAccount(event) {
@@ -1895,6 +2049,12 @@ async function handleResetPassword(event) {
 }
 
 async function restoreSession() {
+  // Without the CSRF cookie there is no refresh cookie either (both are set
+  // and cleared together): go straight to the login instead of a sure 401.
+  if (!/(?:^|;\s*)deeplog_csrf=[^;]/.test(document.cookie)) {
+    endSessionLocally();
+    return;
+  }
   try {
     const response = await restoreUserSession();
     showDashboard(response.data.user);
@@ -1948,9 +2108,21 @@ elements.forgotPasswordButton.addEventListener("click", () => {
 elements.backLoginButtons.forEach((button) =>
   button.addEventListener("click", () => switchAuthMode("login"))
 );
-document.addEventListener("input", (event) => {
-  if (event.target.matches("input, textarea")) clearFieldError(event.target);
+document.querySelectorAll("input, select, textarea").forEach((field) => {
+  field.setAttribute("aria-invalid", "false");
 });
+document.querySelectorAll(".password-toggle").forEach((button) => {
+  button.addEventListener("click", () => {
+    setPasswordVisible(button, button.getAttribute("aria-pressed") !== "true");
+  });
+});
+// Capture on document runs before each form's own submit handler.
+document.addEventListener("submit", (event) => maskPasswords(event.target), true);
+document.addEventListener("reset", (event) => maskPasswords(event.target), true);
+document.addEventListener("input", (event) => {
+  if (event.target.matches("input, textarea, select")) clearFieldError(event.target);
+});
+document.addEventListener("focusout", showErrorOnLeave);
 elements.logoutButton.addEventListener("click", logout);
 elements.openProfile.addEventListener("click", openProfileDialog);
 elements.homeLastDive.addEventListener("click", handleHomeClick);
@@ -1959,8 +2131,15 @@ elements.closeProfile.addEventListener("click", closeProfileDialog);
 elements.cancelProfile.addEventListener("click", closeProfileDialog);
 elements.profileForm.addEventListener("submit", handleProfileSubmit);
 elements.removeProfilePhoto.addEventListener("click", handleProfilePhotoDelete);
-elements.profileDialog.addEventListener("click", (event) => {
-  if (event.target === elements.profileDialog) closeProfileDialog();
+elements.profileForm.elements.photo.addEventListener("change", (event) => {
+  const message = profilePhotoMessage(event.target.files[0]);
+  if (message) setFieldError(elements.profileForm, "photo", message);
+  else clearFieldError(event.target);
+});
+guardDialogClose(elements.profileDialog, {
+  isBusy: () => isFormBusy(elements.profileForm),
+  isDirty: profileFormChanges.isDirty,
+  confirmDiscard
 });
 elements.logoutAllButton.addEventListener("click", handleLogoutAll);
 elements.exportButtons.forEach((button) =>
@@ -1969,8 +2148,8 @@ elements.exportButtons.forEach((button) =>
 elements.openDeleteAccount.addEventListener("click", openDeleteAccountDialog);
 elements.cancelDeleteAccount.addEventListener("click", closeDeleteAccountDialog);
 elements.deleteAccountForm.addEventListener("submit", handleDeleteAccount);
-elements.deleteAccountDialog.addEventListener("click", (event) => {
-  if (event.target === elements.deleteAccountDialog) closeDeleteAccountDialog();
+guardDialogClose(elements.deleteAccountDialog, {
+  isBusy: () => isFormBusy(elements.deleteAccountForm)
 });
 elements.refreshButton.addEventListener("click", loadDashboardData);
 elements.openDiveFormButtons.forEach((button) =>
@@ -1992,7 +2171,6 @@ elements.useCurrentLocation.addEventListener("click", useCurrentLocation);
 elements.clearLocation.addEventListener("click", clearLocation);
 elements.existingPhotos.addEventListener("click", handlePhotoDelete);
 elements.divesList.addEventListener("click", handleDiveListClick);
-elements.divesList.addEventListener("keydown", handleDiveListKeydown);
 elements.closeDiveDetail.addEventListener("click", closeDiveDetail);
 elements.exportDivePdf.addEventListener("click", exportDivePdf);
 elements.reflectionForm.addEventListener("submit", handleReflectionSubmit);
@@ -2005,34 +2183,20 @@ elements.copyShareLink.addEventListener("click", copyShareLink);
 elements.shareList.addEventListener("click", handleShareListClick);
 elements.cancelDeleteButton.addEventListener("click", closeDeleteDialog);
 elements.confirmDeleteButton.addEventListener("click", handleDeleteDive);
-elements.diveDialog.addEventListener("click", (event) => {
-  if (event.target === elements.diveDialog) closeDiveForm();
+guardDialogClose(elements.diveDialog, {
+  isBusy: () => isFormBusy(elements.diveForm),
+  isDirty: diveFormChanges.isDirty,
+  confirmDiscard
 });
-elements.diveDialog.addEventListener("cancel", (event) => {
-  if (elements.diveForm.classList.contains("is-busy")) {
-    event.preventDefault();
-  } else {
-    resetDiveForm();
-  }
+guardDialogClose(elements.deleteDialog, {
+  isBusy: () => elements.confirmDeleteButton.disabled
 });
-elements.deleteDialog.addEventListener("click", (event) => {
-  if (event.target === elements.deleteDialog) closeDeleteDialog();
-});
-elements.deleteDialog.addEventListener("cancel", () => {
-  state.deletingDive = null;
-});
-elements.detailDialog.addEventListener("click", (event) => {
-  if (event.target === elements.detailDialog) closeDiveDetail();
-});
-elements.detailDialog.addEventListener("cancel", () => {
-  clearPhotoUrls("detail");
-  state.detailDive = null;
-  state.detailPrintPhotos = [];
-  elements.detailPhotos.replaceChildren();
-});
-elements.shareDialog.addEventListener("click", (event) => {
-  if (event.target === elements.shareDialog) closeShareDialog();
-});
+// One `close` listener per dialog holds its cleanup, so the buttons, Esc,
+// light dismiss and closeAllDialogs() all leave the same state behind.
+elements.diveDialog.addEventListener("close", resetDiveForm);
+elements.deleteDialog.addEventListener("close", () => { state.deletingDive = null; });
+elements.detailDialog.addEventListener("close", clearDiveDetail);
+installLightDismissFallback(document.querySelectorAll('dialog[closedby="any"]'));
 elements.previousPage.addEventListener("click", () => {
   if (state.page > 1) {
     state.page -= 1;
@@ -2050,7 +2214,13 @@ const urlParameters = new URLSearchParams(location.search);
 const shareTokenFromUrl = urlParameters.get("share");
 const resetTokenFromUrl = urlParameters.get("resetToken");
 if (shareTokenFromUrl) {
-  initializePublicShare(shareTokenFromUrl);
+  // Only share recipients need this module; it stays in the offline shell.
+  import("./public-share.js?v=20261123-2")
+    .then(({ initializePublicShare }) => {
+      const loading = initializePublicShare(shareTokenFromUrl); // swaps the views synchronously
+      document.documentElement.removeAttribute("data-boot");
+      return loading;
+    });
 } else if (resetTokenFromUrl) {
   showAuth();
   switchAuthMode("reset");

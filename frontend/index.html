@@ -12,10 +12,30 @@
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#c9f6f1">
     <meta name="color-scheme" content="light dark">
-    <link rel="apple-touch-icon" href="/assets/deeplog-mark.svg">
-    <script src="/js/theme-init.js?v=20261121-2"></script>
-    <link rel="stylesheet" href="/styles.css?v=20261122-2">
-    <script type="module" src="/js/app.js?v=20261122-2"></script>
+    <link rel="apple-touch-icon" href="/assets/deeplog-apple-touch-180.png">
+    <script src="/js/theme-init.js?v=20261123-2"></script>
+    <!-- Same URL as the @font-face in 15-theme-abismo.css, so first paint uses Sora. -->
+    <link rel="preload" href="/fonts/sora-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- Styles are split by section and load in this order (later files win). -->
+    <link rel="stylesheet" href="/styles/01-tokens.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/02-base.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/03-auth-and-forms.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/04-account-and-learning.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/05-app-shell.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/06-inicio.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/07-profile.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/08-stats.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/09-logbook.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/10-dialogs.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/11-keyframes.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/12-responsive.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/13-reduced-motion.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/14-sharing-and-insights.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/15-theme-abismo.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/16-animations.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/17-dive-number.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/18-theme-superficie.css?v=20261123-2">
+    <script type="module" src="/js/app.js?v=20261123-2"></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
@@ -169,6 +189,7 @@
           </div>
 
           <div id="auth-message" class="message" role="status" hidden></div>
+          <span id="password-toggle-note" class="visually-hidden">La contraseña se verá en pantalla.</span>
 
           <form
             id="login-form"
@@ -187,20 +208,31 @@
               <input
                 name="email"
                 type="email"
-                autocomplete="email"
+                autocomplete="username"
+                spellcheck="false"
+                enterkeyhint="next"
                 placeholder="tu@email.com"
                 required
               >
             </label>
             <label>
-              Contraseña
-              <input
-                name="password"
-                type="password"
-                autocomplete="current-password"
-                placeholder="Tu contraseña"
-                required
-              >
+              <span id="login-password-label">Contraseña</span>
+              <span class="password-input">
+                <input
+                  id="login-password"
+                  name="password"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="Tu contraseña"
+                  required
+                  enterkeyhint="done"
+                  aria-labelledby="login-password-label"
+                >
+                <button class="password-toggle" type="button" aria-pressed="false" aria-label="Mostrar contraseña" aria-controls="login-password" aria-describedby="password-toggle-note">
+                  <svg class="password-icon password-icon-show" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="password-icon password-icon-hide" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 3 18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.9 8.4 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                </button>
+              </span>
             </label>
             <button id="forgot-password-button" class="text-button" type="button">
               He olvidado mi contraseña
@@ -231,6 +263,7 @@
                   name="firstName"
                   type="text"
                   autocomplete="given-name"
+                  enterkeyhint="next"
                   required
                   minlength="2"
                   maxlength="50"
@@ -242,6 +275,7 @@
                   name="lastName"
                   type="text"
                   autocomplete="family-name"
+                  enterkeyhint="next"
                   required
                   minlength="2"
                   maxlength="80"
@@ -254,6 +288,7 @@
                 name="secondLastName"
                 type="text"
                 maxlength="80"
+                enterkeyhint="next"
               >
             </label>
             <label>
@@ -261,22 +296,34 @@
               <input
                 name="email"
                 type="email"
-                autocomplete="email"
+                autocomplete="username"
+                spellcheck="false"
+                enterkeyhint="next"
                 required
               >
             </label>
             <label>
-              Contraseña
-              <input
-                name="password"
-                type="password"
-                autocomplete="new-password"
-                required
-                minlength="8"
-                maxlength="72"
-                pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,72}"
-              >
-              <small>8 caracteres, una mayúscula, una minúscula y un número.</small>
+              <span id="register-password-label">Contraseña</span>
+              <span class="password-input">
+                <input
+                  id="register-password"
+                  name="password"
+                  type="password"
+                  autocomplete="new-password"
+                  required
+                  minlength="8"
+                  maxlength="72"
+                  pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).(8, 72)"
+                  aria-labelledby="register-password-label"
+                  aria-describedby="register-password-hint"
+                  enterkeyhint="done"
+                >
+                <button class="password-toggle" type="button" aria-pressed="false" aria-label="Mostrar contraseña" aria-controls="register-password" aria-describedby="password-toggle-note">
+                  <svg class="password-icon password-icon-show" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="password-icon password-icon-hide" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 3 18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.9 8.4 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                </button>
+              </span>
+              <small id="register-password-hint" aria-hidden="true">8 caracteres, una mayúscula, una minúscula y un número.</small>
             </label>
             <button class="primary-button" type="submit">
               <span>Crear mi bitácora</span>
@@ -299,6 +346,7 @@
                 name="email"
                 type="email"
                 autocomplete="email"
+                spellcheck="false"
                 placeholder="tu@email.com"
                 required
               >
@@ -328,8 +376,9 @@
                 minlength="8"
                 maxlength="72"
                 pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,72}"
+                aria-describedby="reset-password-hint"
               >
-              <small>8 caracteres, una mayúscula, una minúscula y un número.</small>
+              <small id="reset-password-hint" aria-hidden="true">8 caracteres, una mayúscula, una minúscula y un número.</small>
             </label>
             <label>
               Repite la nueva contraseña
@@ -436,8 +485,8 @@
 
             <div class="home-grid">
               <article class="home-card home-last" aria-labelledby="home-last-title">
-                <div class="home-card-heading"><p class="eyebrow">Última inmersión</p><a href="#/inmersiones">Ver todas</a></div>
-                <div id="home-last-dive" class="home-last-dive">
+                <div class="home-card-heading"><p id="home-last-title" class="eyebrow">Última inmersión</p><a href="#/inmersiones">Ver todas</a></div>
+                <div id="home-last-dive" class="home-last-dive" data-loading>
                   <p class="muted">Aquí aparecerá tu última inmersión.</p>
                 </div>
               </article>
@@ -453,7 +502,7 @@
             <div class="section-heading">
               <div>
                 <p class="eyebrow">Logbook</p>
-                <h2 id="inmersiones-title" data-tab-heading>Mis inmersiones</h2>
+                <h1 id="inmersiones-title" data-tab-heading>Mis inmersiones</h1>
               </div>
               <div class="section-actions">
                 <button id="refresh-button" class="ghost-button" type="button">
@@ -467,7 +516,7 @@
             </div>
 
             <div id="dashboard-message" class="message" role="status" hidden></div>
-            <div id="dives-loading" class="loading-state" role="status" aria-live="polite">
+            <div id="dives-loading" class="loading-state">
               <span class="loader" aria-hidden="true"></span>
               Cargando inmersiones...
             </div>
@@ -482,13 +531,13 @@
                 Registrar mi primera inmersión
               </button>
             </div>
-            <div id="dives-list" class="dives-list" aria-live="polite"></div>
+            <div id="dives-list" class="dives-list"></div>
 
             <nav id="pagination" class="pagination" aria-label="Paginación" hidden>
               <button id="previous-page" class="ghost-button" type="button">
                 Anterior
               </button>
-              <span id="page-label"></span>
+              <span id="page-label" role="status"></span>
               <button id="next-page" class="ghost-button" type="button">
                 Siguiente
               </button>
@@ -499,7 +548,7 @@
           <section id="panel-mapa" class="tab-panel" data-tab-panel="mapa" aria-labelledby="map-title" hidden>
           <section class="map-panel" aria-labelledby="map-title">
             <div class="section-heading insights-heading">
-              <div><p class="eyebrow">Tus lugares</p><h2 id="map-title" data-tab-heading>Mapa de inmersiones</h2></div>
+              <div><p class="eyebrow">Tus lugares</p><h1 id="map-title" data-tab-heading>Mapa de inmersiones</h1></div>
               <p id="map-status" class="insight-disclaimer">Las ubicaciones son privadas y solo tú puedes verlas.</p>
             </div>
             <div id="dive-map" class="dive-map" role="group" aria-label="Sin ubicaciones registradas"></div>
@@ -512,17 +561,17 @@
             <div class="section-heading insights-heading">
               <div>
                 <p class="eyebrow">Tu trayectoria</p>
-                <h2 id="insights-title" data-tab-heading>El mar, en cifras</h2>
+                <h1 id="insights-title" data-tab-heading>El mar, en cifras</h1>
               </div>
               <p id="favorite-center" class="favorite-center">
                 Registra inmersiones para descubrir tus tendencias.
               </p>
             </div>
 
-            <div id="stats-loading" class="stats-loading" role="status" aria-live="polite">
+            <div id="stats-loading" class="stats-loading">
               Actualizando estadísticas...
             </div>
-            <div class="stats-grid" aria-live="polite">
+            <div class="stats-grid">
               <article class="stat-card stat-time">
                 <span>Tiempo bajo el agua</span>
                 <strong id="total-time">0 min</strong>
@@ -566,7 +615,7 @@
               </div>
               <p class="insight-disclaimer">Describe tus registros. No recomienda configuraciones ni prácticas de buceo.</p>
             </div>
-            <div id="advanced-insights-loading" class="stats-loading" role="status" aria-live="polite">Analizando tu historial...</div>
+            <div id="advanced-insights-loading" class="stats-loading">Analizando tu historial...</div>
             <div id="advanced-insights-empty" class="insight-empty" hidden>
               Registra más inmersiones y configuraciones para descubrir patrones personales.
             </div>
@@ -606,7 +655,7 @@
               <div>
                 <p class="eyebrow">Perfil privado</p>
                 <p class="profile-name"><strong id="user-name"></strong></p>
-                <h2 id="profile-summary-title" data-tab-heading>Tu experiencia como buceador/a</h2>
+                <h1 id="profile-summary-title" data-tab-heading>Tu experiencia como buceador/a</h1>
                 <p id="profile-summary-copy">Completa tu perfil para reunir trayectoria y preferencias.</p>
               </div>
             </div>
@@ -686,12 +735,12 @@
         <div class="profile-photo-editor">
           <span id="profile-form-avatar" class="avatar avatar-editor" aria-hidden="true"></span>
           <div>
-            <label class="file-button">Elegir fotografía<input name="photo" type="file" accept="image/jpeg,image/png,image/webp"></label>
-            <p>JPEG, PNG o WebP. Máximo 3 MB.</p>
+            <label class="file-button">Elegir fotografía<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="profile-photo-hint"></label>
+            <p id="profile-photo-hint">JPEG, PNG o WebP. Máximo 3 MB.</p>
             <button id="remove-profile-photo" class="danger-link" type="button" hidden>Eliminar fotografía</button>
           </div>
         </div>
-        <label>Sobre ti <span class="optional">(opcional)</span><textarea name="bio" maxlength="500" rows="4" placeholder="Qué te atrae del mar o qué tipo de inmersiones disfrutas."></textarea><small>Hasta 500 caracteres.</small></label>
+        <label>Sobre ti <span class="optional">(opcional)</span><textarea name="bio" maxlength="500" rows="4" placeholder="Qué te atrae del mar o qué tipo de inmersiones disfrutas." aria-describedby="profile-bio-hint"></textarea><small id="profile-bio-hint" aria-hidden="true">Hasta 500 caracteres.</small></label>
         <div class="field-grid">
           <label>Nivel o certificación
             <select name="certificationLevel">
@@ -710,7 +759,7 @@
       </form>
     </dialog>
 
-    <dialog id="dive-dialog" class="app-dialog">
+    <dialog id="dive-dialog" class="app-dialog" aria-labelledby="dive-form-title">
       <form id="dive-form" class="dive-form" method="post" novalidate>
         <div class="dialog-heading">
           <div>
@@ -744,8 +793,8 @@
           </label>
           <label>
             Fecha
-            <input name="date" type="date" required>
-            <small class="field-example" data-disappearing-example>Ej.: 18/10/2026</small>
+            <input name="date" type="date" required aria-describedby="dive-date-example">
+            <small id="dive-date-example" class="field-example" data-disappearing-example aria-hidden="true">Ej.: 18/10/2026</small>
           </label>
         </div>
 
@@ -899,8 +948,8 @@
           <legend>Ubicación de la inmersión <span class="optional">(opcional)</span></legend>
           <p>Guárdala solo si quieres. La ubicación aproximada se redondea antes de llegar al servidor.</p>
           <div class="field-grid location-grid">
-            <label>Latitud<input name="latitude" type="number" min="-90" max="90" step="0.00001" inputmode="decimal" placeholder="Ej.: 41,70210"></label>
-            <label>Longitud<input name="longitude" type="number" min="-180" max="180" step="0.00001" inputmode="decimal" placeholder="Ej.: 2,99460"></label>
+            <label>Latitud<input name="latitude" type="number" min="-90" max="90" step="0.00001" placeholder="Ej.: 41,70210"></label>
+            <label>Longitud<input name="longitude" type="number" min="-180" max="180" step="0.00001" placeholder="Ej.: 2,99460"></label>
             <label>Precisión
               <select name="locationPrecision">
                 <option value="approximate">Ej.: aproximada (~1 km)</option>
@@ -922,8 +971,9 @@
             maxlength="5000"
             rows="4"
             placeholder="Ej.: Visibilidad de 20 m, agua en calma, banco de barracudas y buena flotabilidad."
+            aria-describedby="dive-comments-hint"
           ></textarea>
-          <small>Hasta 5.000 caracteres.</small>
+          <small id="dive-comments-hint" aria-hidden="true">Hasta 5.000 caracteres.</small>
         </label>
 
         <div class="dialog-actions">
@@ -937,7 +987,7 @@
       </form>
     </dialog>
 
-    <dialog id="dive-detail-dialog" class="app-dialog detail-dialog">
+    <dialog id="dive-detail-dialog" class="app-dialog detail-dialog" closedby="any" aria-labelledby="detail-name">
       <article class="dive-detail">
         <div class="dialog-heading">
           <div>
@@ -1033,10 +1083,10 @@
       </article>
     </dialog>
 
-    <dialog id="share-dialog" class="app-dialog share-dialog">
-      <form id="share-form" class="share-form" method="post">
+    <dialog id="share-dialog" class="app-dialog share-dialog" closedby="any" aria-labelledby="share-dialog-title">
+      <form id="share-form" class="share-form" method="post" novalidate>
         <div class="dialog-heading">
-          <div><p class="eyebrow">Enlace privado</p><h2>Compartir inmersión</h2><p>Configura una cápsula de solo lectura.</p></div>
+          <div><p class="eyebrow">Enlace privado</p><h2 id="share-dialog-title">Compartir inmersión</h2><p>Configura una cápsula de solo lectura.</p></div>
           <button id="close-share-dialog" class="dialog-close" type="button" aria-label="Cerrar">×</button>
         </div>
         <fieldset class="share-options">
@@ -1074,12 +1124,12 @@
       </form>
     </dialog>
 
-    <dialog id="delete-dialog" class="app-dialog confirm-dialog">
+    <dialog id="delete-dialog" class="app-dialog confirm-dialog" closedby="any" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-description">
       <div class="confirm-content">
         <span class="confirm-symbol" aria-hidden="true">−</span>
         <p class="eyebrow">Confirmar borrado</p>
-        <h2>¿Eliminar esta inmersión?</h2>
-        <p>
+        <h2 id="delete-dialog-title">¿Eliminar esta inmersión?</h2>
+        <p id="delete-dialog-description">
           <strong id="delete-dive-name"></strong> desaparecerá de tu bitácora.
           Esta acción no se puede deshacer.
         </p>
@@ -1095,17 +1145,17 @@
       </div>
     </dialog>
 
-    <dialog id="delete-account-dialog" class="app-dialog confirm-dialog account-delete-dialog">
+    <dialog id="delete-account-dialog" class="app-dialog confirm-dialog account-delete-dialog" aria-labelledby="delete-account-title">
       <form id="delete-account-form" class="confirm-content" method="post" novalidate>
         <span class="confirm-symbol" aria-hidden="true">−</span>
         <p class="eyebrow">Control de la cuenta</p>
-        <h2>Eliminar DeepLog definitivamente</h2>
+        <h2 id="delete-account-title">Eliminar DeepLog definitivamente</h2>
         <p>Esta acción elimina tus inmersiones, fotografías y enlaces. Descarga antes una copia si quieres conservarlos.</p>
         <label>Contraseña actual
           <input name="password" type="password" minlength="8" maxlength="72" autocomplete="current-password" required>
         </label>
         <label>Escribe ELIMINAR para confirmar
-          <input name="confirmation" type="text" pattern="ELIMINAR" autocomplete="off" required>
+          <input name="confirmation" type="text" pattern="ELIMINAR" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" required>
         </label>
         <div id="delete-account-message" class="message" role="status" hidden></div>
         <div class="dialog-actions">
@@ -1113,6 +1163,32 @@
           <button id="confirm-delete-account" class="danger-button" type="submit">Eliminar definitivamente</button>
         </div>
       </form>
+    </dialog>
+
+    <dialog id="discard-dialog" class="app-dialog confirm-dialog" aria-labelledby="discard-dialog-title" aria-describedby="discard-dialog-description">
+      <div class="confirm-content">
+        <span class="confirm-symbol" aria-hidden="true">−</span>
+        <p class="eyebrow">Cambios sin guardar</p>
+        <h2 id="discard-dialog-title">¿Descartar cambios?</h2>
+        <p id="discard-dialog-description">Lo que has escrito no se guardará.</p>
+        <div class="dialog-actions">
+          <button class="ghost-button" type="button" value="cancel" autofocus>Seguir editando</button>
+          <button class="danger-button" type="button" value="confirm">Descartar cambios</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="delete-reflection-dialog" class="app-dialog confirm-dialog" aria-labelledby="delete-reflection-title" aria-describedby="delete-reflection-description">
+      <div class="confirm-content">
+        <span class="confirm-symbol" aria-hidden="true">−</span>
+        <p class="eyebrow">Diario de aprendizaje</p>
+        <h2 id="delete-reflection-title">¿Borrar esta reflexión personal?</h2>
+        <p id="delete-reflection-description">Esta acción no se puede deshacer.</p>
+        <div class="dialog-actions">
+          <button class="ghost-button" type="button" value="cancel" autofocus>Conservar</button>
+          <button class="danger-button" type="button" value="confirm">Borrar reflexión</button>
+        </div>
+      </div>
     </dialog>
   </body>
 </html>

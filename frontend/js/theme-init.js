@@ -11,9 +11,27 @@
   var dark = preference === "dark" ||
     (preference !== "light" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
+  // Browser UI before the CSS arrives: toolbar colour and canvas scheme.
+  // Keep the colours in sync with THEME_COLORS in js/theme.js.
+  var themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) themeColor.content = dark ? "#071a33" : "#c9f6f1";
+  var scheme = document.querySelector('meta[name="color-scheme"]');
+  if (scheme) scheme.content = preference === "light" || preference === "dark" ? preference : "light dark";
   try {
     if (localStorage.getItem("deeplog.motion") === "reduced") document.documentElement.dataset.motion = "reduced";
   } catch (_error) {
     // Same as above: the system setting still applies through CSS.
   }
+})();
+
+// Boot view (independent of the theme block above): choose the first view
+// before paint, so a signed-in reload or a share link does not flash the
+// login screen. deeplog_csrf is set and cleared with the refresh cookie, so
+// it only hints that a session probably exists. app.js removes data-boot as
+// soon as it shows the real view; a stale hint ends on the login screen.
+(function () {
+  var query = location.search;
+  var boot = /[?&]share=[^&]/.test(query) ? "share"
+    : !/[?&]resetToken=/.test(query) && /(?:^|;\s*)deeplog_csrf=[^;]/.test(document.cookie) ? "session" : "";
+  if (boot) document.documentElement.setAttribute("data-boot", boot);
 })();

@@ -260,6 +260,17 @@ Nginx usa `Cache-Control: no-store` para archivos estaticos y los modulos se
 referencian con version. En produccion se sustituira por nombres con hash y
 cache larga.
 
+Actualizacion (2026-11-23): se aplica el plan anunciado usando la version
+`?v=` como equivalente del hash. `nginx.conf` sirve `js/`, `styles/`, `fonts/`
+y `assets/` con `max-age=31536000, immutable` solo cuando la URL lleva `?v=`
+(sin version: `no-cache`; un 404 no se cachea). El HTML pasa a `no-cache`,
+que permite la back/forward cache, salvo las URL con `?share=` o
+`?resetToken=`, que siguen en `no-store`. `service-worker.js` y el manifiesto
+siguen en `no-cache`. El service worker usa cache-first para archivos
+versionados y network-first para navegaciones, y nunca guarda una navegacion.
+Requisito: cambiar un archivo exige subir su `?v=` (y el `CACHE` del worker);
+`tests/pwa-shell.test.js` comprueba que cada import usa la version precacheada.
+
 Correccion descubierta:
 Deshabilitar controles antes de construir `FormData` los excluia del payload.
 El estado ocupado utiliza ahora `readOnly`, conservando los valores enviados.
@@ -1087,3 +1098,87 @@ Consecuencias:
 Validacion:
 Capturas de todas las vistas en Superficie a 1366 px y 390 px, contraste
 medido sobre el fondo real y sin avisos de la CSP.
+
+## TD-039 - Hoja de estilos dividida por secciones
+
+Fecha: 2026-11-22
+
+Estado: Aceptada
+
+Contexto:
+`frontend/styles.css` habia crecido a unas 3.100 lineas escritas en varias
+etapas, con estilos de formato distintos y reglas que ya no usaba nada (la
+cabecera anterior a las pestañas, un boton secundario, una etiqueta offline).
+
+Decision:
+Se divide en 18 archivos numerados en `frontend/styles/`, cortando por las
+secciones que ya existian y **sin cambiar el orden de ninguna regla**, de modo
+que la cascada es identica. `index.html` los enlaza con `<link>` en ese orden
+(sin `@import`, que encadenaria descargas) y el service worker los guarda para
+el modo sin conexion. Se aplica Prettier una vez, sin añadirlo como
+dependencia, y se eliminan 5 clases y 7 variables de color sin uso.
+
+Consecuencias:
+- Cada seccion se puede leer y revisar por separado; los temas y las
+  animaciones quedan al final porque sobrescriben a lo anterior.
+- `tests/pwa-shell.test.js` falla si se añade un archivo sin enlazarlo o sin
+  guardarlo para el modo sin conexion; los tests de CSS leen todos los
+  archivos en orden (`tests/styles.js`).
+- Los nombres de los tokens generados (`--c-bg-23`...) siguen sin significado;
+  renombrarlos es un trabajo aparte.
+
+Validacion:
+36 capturas (todas las pestañas, acceso, ficha y formulario, en ambos temas,
+escritorio y movil) comparadas pixel a pixel antes y despues: solo difieren
+pixeles sueltos de antialiasing en zonas con desenfoque, igual que entre dos
+capturas del mismo codigo.
+
+## TD-040 - Revision del frontend con Modern Web Guidance
+
+Fecha: 2026-11-23
+
+Estado: Aceptada
+
+Contexto:
+Se adopta la skill Modern Web Guidance (Google Chrome, Microsoft Edge,
+Mozilla Firefox y MDN) para revisar el frontend frente a las practicas
+actuales de la plataforma web. Su escaneo automatico cubre ~20 % de las guias
+y encontro 3 casos; el resto se reviso tema a tema (dialogos, formularios,
+temas y tipografia, navegacion y movimiento, rendimiento/PWA/seguridad) con
+informes que citan la guia, el archivo y la linea.
+
+Decision:
+Se aplican los hallazgos con valor real, cada uno con su guia y su alternativa
+cuando la funcion no es Baseline ampliamente disponible. Decisiones del
+propietario: barra inferior hasta 960 px (tablets en vertical); preguntar
+«¿Descartar cambios?» al cerrar un formulario con cambios; boton «Mostrar
+contraseña»; el boton del tema que coincide con el sistema vuelve a
+Automatico. Lo principal:
+- Dialogos: `closedby` solo donde cerrar fuera es seguro (con alternativa
+  por puntero), nombre accesible en todos, sin desplazamiento de fondo,
+  cierre de todos al caducar la sesion, foco correcto tras borrar o editar.
+- Formularios: errores fuera del nombre accesible (`aria-describedby`,
+  `aria-invalid`), fecha maxima en hora local (Temporal o getters locales),
+  signo menos en coordenadas en iPhone, 16 px solo en pantallas tactiles,
+  `field-sizing` como mejora progresiva.
+- Tema: `theme-color` y `color-scheme` antes de pintar, sincronia entre
+  pestañas, Forced Colors, precarga de Sora, `text-wrap`.
+- Navegacion: sin desbordamiento horizontal de 320 a 1440 px, enlace de salto
+  real, `scroll-padding`, spinners lentos con movimiento reducido.
+- PWA y rendimiento: modo sin conexion arreglado (version de `api.js`), sin
+  tokens en Cache Storage, cache-first para archivos con `?v=` y cache larga en
+  nginx (aplica lo previsto en TD-011), vista inicial antes de pintar, mapa
+  bajo demanda, decimales con coma, manifiesto con `id` e iconos PNG.
+
+Consecuencias:
+- Como los archivos con `?v=` se sirven cache-first, **todo cambio de un
+  archivo exige subir su `?v=`** y el nombre de la cache del service worker.
+  `tests/pwa-shell.test.js` comprueba que todo import esta en la cache.
+- Pendiente: Trusted Types (plan en `docs/TRUSTED_TYPES_PLAN.md`), miniaturas
+  de fotos (requiere backend) y la escala de texto del sistema al 200 %.
+
+Validacion:
+Tests de frontend de 30 a 75. Scripts de Playwright por area (dialogos 17,
+formularios 21, PWA 45, tema y navegacion 17 comprobaciones) sobre la version
+integrada, barrido de anchos 320-1440 px y comparacion de capturas: solo
+cambian decimales, saltos de linea por `text-wrap` y el icono del ojo.

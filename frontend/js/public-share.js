@@ -1,4 +1,5 @@
-import { getPublicDive, getPublicPhotoBlob, unlockPublicDive } from "./api.js?v=20260902-2";
+import { getPublicDive, getPublicPhotoBlob, unlockPublicDive } from "./api.js?v=20261123-2";
+import { formatNumber } from "./format.js?v=20261123-2";
 
 const photoUrls = [];
 const byId = (id) => document.querySelector(`#${id}`);
@@ -50,17 +51,17 @@ async function renderDive(dive, accessToken) {
   const facts = byId("public-dive-facts");
   facts.replaceChildren(
     fact("Fecha", formatDate(dive.date)),
-    fact("Duración", `${dive.durationMinutes} minutos`),
-    fact("Profundidad máxima", `${dive.maxDepthMeters} metros`)
+    fact("Duración", `${formatNumber(dive.durationMinutes)} minutos`),
+    fact("Profundidad máxima", `${formatNumber(dive.maxDepthMeters)} metros`)
   );
   if (Object.hasOwn(dive, "diveCenter")) facts.append(fact("Centro de buceo", dive.diveCenter || "No indicado"));
-  if (Object.hasOwn(dive, "ballastKg")) facts.append(fact("Lastre", dive.ballastKg === null ? "No indicado" : `${dive.ballastKg} kg`));
+  if (Object.hasOwn(dive, "ballastKg")) facts.append(fact("Lastre", dive.ballastKg === null ? "No indicado" : `${formatNumber(dive.ballastKg)} kg`));
   if (Object.hasOwn(dive, "equipmentOwnership")) facts.append(fact("Material", dive.equipmentOwnership === "owned" ? "Propio" : dive.equipmentOwnership === "rented" ? "De alquiler" : "No indicado"));
   if (Object.hasOwn(dive, "suitType")) {
     const suits = { wetsuit: "Húmedo", drysuit: "Seco", shorty: "Shorty", none: "Sin traje" };
-    facts.append(fact("Traje", [suits[dive.suitType], dive.suitThicknessMm === null ? null : `${dive.suitThicknessMm} mm`].filter(Boolean).join(" · ") || "No indicado"));
+    facts.append(fact("Traje", [suits[dive.suitType], dive.suitThicknessMm === null ? null : `${formatNumber(dive.suitThicknessMm)} mm`].filter(Boolean).join(" · ") || "No indicado"));
     const cylinders = { steel: "Acero", aluminum: "Aluminio" };
-    facts.append(fact("Botella", [cylinders[dive.cylinderMaterial], dive.cylinderVolumeLiters === null ? null : `${dive.cylinderVolumeLiters} L`].filter(Boolean).join(" · ") || "No indicada"));
+    facts.append(fact("Botella", [cylinders[dive.cylinderMaterial], dive.cylinderVolumeLiters === null ? null : `${formatNumber(dive.cylinderVolumeLiters)} L`].filter(Boolean).join(" · ") || "No indicada"));
     facts.append(fact("Agua", dive.waterType === "salt" ? "Salada" : dive.waterType === "fresh" ? "Dulce" : "No indicada"));
   }
   byId("public-buddies-section").hidden = !Object.hasOwn(dive, "buddies");

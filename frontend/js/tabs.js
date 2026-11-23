@@ -68,6 +68,10 @@ export function createTabs({ root = document, onChange = () => {} } = {}) {
     start() {
       show(tabFromHash(isTabHash(location.hash) ? location.hash : ""));
     },
+    // Skip link target: the current panel's heading, without touching the hash.
+    focusCurrent() {
+      if (current) show(current, { focus: true });
+    },
     go(id) {
       const hash = hashForTab(id);
       if (location.hash === hash) show(tabFromHash(hash), { focus: true });
