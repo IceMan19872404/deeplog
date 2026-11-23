@@ -955,7 +955,7 @@
       </form>
     </dialog>
 
-    <dialog id="dive-detail-dialog" class="app-dialog detail-dialog" aria-labelledby="detail-name">
+    <dialog id="dive-detail-dialog" class="app-dialog detail-dialog" closedby="any" aria-labelledby="detail-name">
       <article class="dive-detail">
         <div class="dialog-heading">
           <div>
@@ -1051,7 +1051,7 @@
       </article>
     </dialog>
 
-    <dialog id="share-dialog" class="app-dialog share-dialog" aria-labelledby="share-dialog-title">
+    <dialog id="share-dialog" class="app-dialog share-dialog" closedby="any" aria-labelledby="share-dialog-title">
       <form id="share-form" class="share-form" method="post">
         <div class="dialog-heading">
           <div><p class="eyebrow">Enlace privado</p><h2 id="share-dialog-title">Compartir inmersión</h2><p>Configura una cápsula de solo lectura.</p></div>
@@ -1092,7 +1092,7 @@
       </form>
     </dialog>
 
-    <dialog id="delete-dialog" class="app-dialog confirm-dialog" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-description">
+    <dialog id="delete-dialog" class="app-dialog confirm-dialog" closedby="any" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-description">
       <div class="confirm-content">
         <span class="confirm-symbol" aria-hidden="true">−</span>
         <p class="eyebrow">Confirmar borrado</p>
@@ -1131,6 +1131,32 @@
           <button id="confirm-delete-account" class="danger-button" type="submit">Eliminar definitivamente</button>
         </div>
       </form>
+    </dialog>
+
+    <dialog id="discard-dialog" class="app-dialog confirm-dialog" aria-labelledby="discard-dialog-title" aria-describedby="discard-dialog-description">
+      <div class="confirm-content">
+        <span class="confirm-symbol" aria-hidden="true">−</span>
+        <p class="eyebrow">Cambios sin guardar</p>
+        <h2 id="discard-dialog-title">¿Descartar cambios?</h2>
+        <p id="discard-dialog-description">Lo que has escrito no se guardará.</p>
+        <div class="dialog-actions">
+          <button class="ghost-button" type="button" value="cancel" autofocus>Seguir editando</button>
+          <button class="danger-button" type="button" value="confirm">Descartar cambios</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="delete-reflection-dialog" class="app-dialog confirm-dialog" aria-labelledby="delete-reflection-title" aria-describedby="delete-reflection-description">
+      <div class="confirm-content">
+        <span class="confirm-symbol" aria-hidden="true">−</span>
+        <p class="eyebrow">Diario de aprendizaje</p>
+        <h2 id="delete-reflection-title">¿Borrar esta reflexión personal?</h2>
+        <p id="delete-reflection-description">Esta acción no se puede deshacer.</p>
+        <div class="dialog-actions">
+          <button class="ghost-button" type="button" value="cancel" autofocus>Conservar</button>
+          <button class="danger-button" type="button" value="confirm">Borrar reflexión</button>
+        </div>
+      </div>
     </dialog>
   </body>
 </html>
