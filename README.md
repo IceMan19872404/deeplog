@@ -416,6 +416,15 @@ componentes, pestañas, responsive, temas y animaciones. Formato con Prettier
 `index.html` enlaza todos los archivos en orden y que el modo sin conexion
 los guarda.
 
+Buenas practicas web: el frontend se revisa con la skill
+[Modern Web Guidance](https://github.com/GoogleChrome/modern-web-guidance)
+(equipos de Chrome, Edge, Firefox y MDN). Lo aplicado esta en TD-040: dialogos
+nativos con cierre seguro y «¿Descartar cambios?», errores accesibles en los
+formularios, fecha local, modo sin conexion arreglado, cache por version,
+arranque sin destello del acceso, barra inferior hasta 960 px y Forced Colors.
+Politica de navegadores: lo que es Baseline ampliamente disponible se usa sin
+mas; lo mas nuevo, solo con la alternativa que indica la guia.
+
 Animaciones:
 - al cambiar de pestaña hacia la derecha el contenido sube como si bajaras
   mas profundo; hacia la izquierda, baja como si volvieras a la superficie,

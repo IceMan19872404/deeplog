@@ -1,4 +1,4 @@
-import { formatNumber } from "./format.js?v=20261123-1";
+import { formatNumber } from "./format.js?v=20261123-2";
 
 function escapeHtml(value) {
   return String(value ?? "")

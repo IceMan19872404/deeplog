@@ -32,17 +32,17 @@ import {
   deleteProfilePhoto,
   updateDive,
   uploadDivePhotos
-} from "./api.js?v=20260930-1";
-import { openDivePrintPreview } from "./dive-pdf.js?v=20260902-2";
-import { initializeClientMonitoring } from "./client-monitoring.js?v=20260916-1";
+} from "./api.js?v=20261123-2";
+import { openDivePrintPreview } from "./dive-pdf.js?v=20261123-2";
+import { initializeClientMonitoring } from "./client-monitoring.js?v=20261123-2";
 import {
   apiValidationMessage,
   nativeValidationMessage,
   profilePhotoMessage
-} from "./validation-messages.js?v=20261019-2";
-import { localIsoDate, populateDiveForm } from "./dive-form.js?v=20261019-1";
-import { TABS, createTabs } from "./tabs.js?v=20261121-1";
-import { createTheme } from "./theme.js?v=20261122-1";
+} from "./validation-messages.js?v=20261123-2";
+import { localIsoDate, populateDiveForm } from "./dive-form.js?v=20261123-2";
+import { TABS, createTabs } from "./tabs.js?v=20261123-2";
+import { createTheme } from "./theme.js?v=20261123-2";
 import { profileSvg } from "./dive-profile.js?v=20261121-2";
 import { countUp, createMotionPreference } from "./motion.js?v=20261121-1";
 import {
@@ -52,8 +52,8 @@ import {
   guardDialogClose,
   installLightDismissFallback,
   requestDialogClose
-} from "./dialogs.js?v=20261123-1";
-import { formatNumber } from "./format.js?v=20261123-1";
+} from "./dialogs.js?v=20261123-2";
+import { formatNumber } from "./format.js?v=20261123-2";
 
 initializeClientMonitoring();
 createTheme();
@@ -570,7 +570,7 @@ async function drawDiveMap() {
   if (!mapDives) return;
   try {
     if (!diveMap) {
-      const { createDiveMap } = await import("./dive-map.js?v=20261030-1");
+      const { createDiveMap } = await import("./dive-map.js?v=20261123-2");
       diveMap ||= createDiveMap(elements.diveMap, { onSelect: openDiveDetail, describe: describeMapDive });
     }
   } catch (_error) {
@@ -2215,7 +2215,7 @@ const shareTokenFromUrl = urlParameters.get("share");
 const resetTokenFromUrl = urlParameters.get("resetToken");
 if (shareTokenFromUrl) {
   // Only share recipients need this module; it stays in the offline shell.
-  import("./public-share.js?v=20260902-2")
+  import("./public-share.js?v=20261123-2")
     .then(({ initializePublicShare }) => {
       const loading = initializePublicShare(shareTokenFromUrl); // swaps the views synchronously
       document.documentElement.removeAttribute("data-boot");

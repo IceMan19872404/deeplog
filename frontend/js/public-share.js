@@ -1,5 +1,5 @@
-import { getPublicDive, getPublicPhotoBlob, unlockPublicDive } from "./api.js?v=20260930-1";
-import { formatNumber } from "./format.js?v=20261123-1";
+import { getPublicDive, getPublicPhotoBlob, unlockPublicDive } from "./api.js?v=20261123-2";
+import { formatNumber } from "./format.js?v=20261123-2";
 
 const photoUrls = [];
 const byId = (id) => document.querySelector(`#${id}`);

@@ -1132,3 +1132,53 @@ Validacion:
 escritorio y movil) comparadas pixel a pixel antes y despues: solo difieren
 pixeles sueltos de antialiasing en zonas con desenfoque, igual que entre dos
 capturas del mismo codigo.
+
+## TD-040 - Revision del frontend con Modern Web Guidance
+
+Fecha: 2026-11-23
+
+Estado: Aceptada
+
+Contexto:
+Se adopta la skill Modern Web Guidance (Google Chrome, Microsoft Edge,
+Mozilla Firefox y MDN) para revisar el frontend frente a las practicas
+actuales de la plataforma web. Su escaneo automatico cubre ~20 % de las guias
+y encontro 3 casos; el resto se reviso tema a tema (dialogos, formularios,
+temas y tipografia, navegacion y movimiento, rendimiento/PWA/seguridad) con
+informes que citan la guia, el archivo y la linea.
+
+Decision:
+Se aplican los hallazgos con valor real, cada uno con su guia y su alternativa
+cuando la funcion no es Baseline ampliamente disponible. Decisiones del
+propietario: barra inferior hasta 960 px (tablets en vertical); preguntar
+«¿Descartar cambios?» al cerrar un formulario con cambios; boton «Mostrar
+contraseña»; el boton del tema que coincide con el sistema vuelve a
+Automatico. Lo principal:
+- Dialogos: `closedby` solo donde cerrar fuera es seguro (con alternativa
+  por puntero), nombre accesible en todos, sin desplazamiento de fondo,
+  cierre de todos al caducar la sesion, foco correcto tras borrar o editar.
+- Formularios: errores fuera del nombre accesible (`aria-describedby`,
+  `aria-invalid`), fecha maxima en hora local (Temporal o getters locales),
+  signo menos en coordenadas en iPhone, 16 px solo en pantallas tactiles,
+  `field-sizing` como mejora progresiva.
+- Tema: `theme-color` y `color-scheme` antes de pintar, sincronia entre
+  pestañas, Forced Colors, precarga de Sora, `text-wrap`.
+- Navegacion: sin desbordamiento horizontal de 320 a 1440 px, enlace de salto
+  real, `scroll-padding`, spinners lentos con movimiento reducido.
+- PWA y rendimiento: modo sin conexion arreglado (version de `api.js`), sin
+  tokens en Cache Storage, cache-first para archivos con `?v=` y cache larga en
+  nginx (aplica lo previsto en TD-011), vista inicial antes de pintar, mapa
+  bajo demanda, decimales con coma, manifiesto con `id` e iconos PNG.
+
+Consecuencias:
+- Como los archivos con `?v=` se sirven cache-first, **todo cambio de un
+  archivo exige subir su `?v=`** y el nombre de la cache del service worker.
+  `tests/pwa-shell.test.js` comprueba que todo import esta en la cache.
+- Pendiente: Trusted Types (plan en `docs/TRUSTED_TYPES_PLAN.md`), miniaturas
+  de fotos (requiere backend) y la escala de texto del sistema al 200 %.
+
+Validacion:
+Tests de frontend de 30 a 75. Scripts de Playwright por area (dialogos 17,
+formularios 21, PWA 45, tema y navegacion 17 comprobaciones) sobre la version
+integrada, barrido de anchos 320-1440 px y comparacion de capturas: solo
+cambian decimales, saltos de linea por `text-wrap` y el icono del ojo.
