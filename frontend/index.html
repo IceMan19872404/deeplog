@@ -205,7 +205,9 @@
               <input
                 name="email"
                 type="email"
-                autocomplete="email"
+                autocomplete="username"
+                spellcheck="false"
+                enterkeyhint="next"
                 placeholder="tu@email.com"
                 required
               >
@@ -218,6 +220,7 @@
                 autocomplete="current-password"
                 placeholder="Tu contraseña"
                 required
+                enterkeyhint="done"
               >
             </label>
             <button id="forgot-password-button" class="text-button" type="button">
@@ -249,6 +252,7 @@
                   name="firstName"
                   type="text"
                   autocomplete="given-name"
+                  enterkeyhint="next"
                   required
                   minlength="2"
                   maxlength="50"
@@ -260,6 +264,7 @@
                   name="lastName"
                   type="text"
                   autocomplete="family-name"
+                  enterkeyhint="next"
                   required
                   minlength="2"
                   maxlength="80"
@@ -272,6 +277,7 @@
                 name="secondLastName"
                 type="text"
                 maxlength="80"
+                enterkeyhint="next"
               >
             </label>
             <label>
@@ -279,7 +285,9 @@
               <input
                 name="email"
                 type="email"
-                autocomplete="email"
+                autocomplete="username"
+                spellcheck="false"
+                enterkeyhint="next"
                 required
               >
             </label>
@@ -294,6 +302,7 @@
                 maxlength="72"
                 pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,72}"
                 aria-describedby="register-password-hint"
+                enterkeyhint="done"
               >
               <small id="register-password-hint" aria-hidden="true">8 caracteres, una mayúscula, una minúscula y un número.</small>
             </label>
@@ -318,6 +327,7 @@
                 name="email"
                 type="email"
                 autocomplete="email"
+                spellcheck="false"
                 placeholder="tu@email.com"
                 required
               >
@@ -1055,7 +1065,7 @@
     </dialog>
 
     <dialog id="share-dialog" class="app-dialog share-dialog">
-      <form id="share-form" class="share-form" method="post">
+      <form id="share-form" class="share-form" method="post" novalidate>
         <div class="dialog-heading">
           <div><p class="eyebrow">Enlace privado</p><h2>Compartir inmersión</h2><p>Configura una cápsula de solo lectura.</p></div>
           <button id="close-share-dialog" class="dialog-close" type="button" aria-label="Cerrar">×</button>

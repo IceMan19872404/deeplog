@@ -878,6 +878,7 @@ async function loadShares() {
 function openShareDialog() {
   if (!state.detailDive) return;
   elements.shareForm.reset();
+  clearFormErrors(elements.shareForm);
   elements.shareForm.elements.expiresInDays.value = "7";
   [...elements.shareForm.querySelectorAll('.share-options input[type="checkbox"]')].forEach((input) => { input.checked = true; });
   elements.shareForm.elements.includeDiverName.checked = Boolean(state.profile?.shareNameByDefault);
