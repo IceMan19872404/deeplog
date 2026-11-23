@@ -205,12 +205,13 @@ export function getDiveStats() {
   return apiRequest("/api/v1/dives/stats");
 }
 
-export function getDiveMap() {
-  return apiRequest("/api/v1/dives/map");
+// `priority: "low"` when the data is for a tab that is not on screen.
+export function getDiveMap({ priority } = {}) {
+  return apiRequest("/api/v1/dives/map", { priority });
 }
 
-export function getDiveInsights() {
-  return apiRequest("/api/v1/dives/insights");
+export function getDiveInsights({ priority } = {}) {
+  return apiRequest("/api/v1/dives/insights", { priority });
 }
 
 export function getConfigurationMemory(filters) {

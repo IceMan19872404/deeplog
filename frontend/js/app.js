@@ -433,6 +433,12 @@ function readOfflineSnapshot() {
   try { return JSON.parse(localStorage.getItem(offlineKey)); } catch (_error) { return null; }
 }
 
+// Data for a tab that is not on screen is fetched with low priority so it
+// does not compete with the visible one (Fetch priority; ignored if unsupported).
+function backgroundPriority(tab) {
+  return tabs.current === tab ? "auto" : "low";
+}
+
 let diveMap = null;
 let mapDives = null; // dives waiting to be drawn when the Mapa tab is shown
 
@@ -473,7 +479,7 @@ async function drawDiveMap() {
 
 async function loadDiveMap() {
   try {
-    const response = await getDiveMap();
+    const response = await getDiveMap({ priority: backgroundPriority("mapa") });
     renderDiveMap(response.data.dives);
     writeOfflineSnapshot({ ...(readOfflineSnapshot() || {}), map: response.data.dives });
   } catch (error) {
@@ -1155,7 +1161,7 @@ function renderAdvancedInsights(insights) {
 async function loadAdvancedInsights() {
   elements.advancedInsightsLoading.hidden = false;
   try {
-    const response = await getDiveInsights();
+    const response = await getDiveInsights({ priority: backgroundPriority("estadisticas") });
     renderAdvancedInsights(response.data.insights);
   } catch (error) {
     if (handleUnauthorized(error)) return;

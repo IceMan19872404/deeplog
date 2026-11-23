@@ -14,6 +14,7 @@ function report(signal) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(signal),
     keepalive: true,
+    priority: "low", // telemetry must not compete with what the user is waiting for
     credentials: "same-origin"
   }).catch(() => {});
 }
