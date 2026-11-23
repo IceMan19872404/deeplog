@@ -40,7 +40,21 @@
     transform 180ms ease;
 }
 
-.dive-card:focus-visible {
+/* The title button opens the detail; its ::after stretches the hit area over
+   the whole card, and Editar/Eliminar (.dive-actions, z-index 1) stay on
+   top. Focus and hover are drawn on the card itself. */
+.dive-open {
+  all: unset;
+  cursor: pointer;
+}
+
+.dive-open::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.dive-card:has(.dive-open:focus-visible) {
   border-color: var(--c-line-19);
   box-shadow: 0 10px 28px var(--c-shadow-15);
   transform: translateY(-2px);
@@ -54,9 +68,17 @@
   }
 }
 
-.dive-card:focus-visible {
+.dive-card:has(.dive-open:focus-visible) {
   outline: 3px solid var(--c-line-20);
   outline-offset: 3px;
+}
+
+/* Without :has() the ring stays on the title button. */
+@supports not selector(:has(*)) {
+  .dive-open:focus-visible {
+    outline: 3px solid var(--c-line-20);
+    outline-offset: 3px;
+  }
 }
 
 .dive-date {
@@ -128,7 +150,7 @@
     transform 180ms ease;
 }
 
-.dive-card:focus-visible .card-open-hint {
+.dive-card:has(.dive-open:focus-visible) .card-open-hint {
   opacity: 1;
   transform: translateY(0);
 }

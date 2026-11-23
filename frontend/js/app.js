@@ -686,9 +686,6 @@ function renderDives(dives) {
           class="dive-card"
           style="--delay: ${index * 70}ms"
           data-dive-id="${escapeHtml(dive.id)}"
-          role="button"
-          tabindex="0"
-          aria-label="Ver toda la información de ${dive.diveNumber ? `la inmersión nº ${escapeHtml(dive.diveNumber)}, ` : ""}${escapeHtml(dive.name)}"
         >
           <div class="dive-date">
             ${dive.diveNumber ? `<span class="dive-number"><abbr title="Número de inmersión">Nº</abbr> ${escapeHtml(dive.diveNumber)}</span>` : ""}
@@ -697,7 +694,12 @@ function renderDives(dives) {
             <span class="depth-bar" style="--depth: ${Math.min(100, Math.round((Number(dive.maxDepthMeters) / 40) * 100))}%" aria-hidden="true"></span>
           </div>
           <div class="dive-main">
-            <h3>${escapeHtml(dive.name)}</h3>
+            <h3><button
+              class="dive-open"
+              type="button"
+              data-dive-id="${escapeHtml(dive.id)}"
+              aria-label="${escapeHtml(dive.name)}: ver toda la información${dive.diveNumber ? ` de la inmersión nº ${escapeHtml(dive.diveNumber)}` : ""}"
+            >${escapeHtml(dive.name)}</button></h3>
             <p>${escapeHtml(dive.diveCenter || "Centro no indicado")}</p>
             <div class="dive-equipment">
               ${
@@ -1597,15 +1599,6 @@ function handleDiveListClick(event) {
   }
 }
 
-function handleDiveListKeydown(event) {
-  if (event.target.closest("[data-action]")) return;
-  if (event.key !== "Enter" && event.key !== " ") return;
-  const card = event.target.closest(".dive-card");
-  if (!card) return;
-  event.preventDefault();
-  openDiveDetail(card.dataset.diveId);
-}
-
 function showDashboard(user) {
   state.user = user;
   elements.userName.textContent = `${user.firstName} ${user.lastName}`;
@@ -2023,7 +2016,6 @@ elements.useCurrentLocation.addEventListener("click", useCurrentLocation);
 elements.clearLocation.addEventListener("click", clearLocation);
 elements.existingPhotos.addEventListener("click", handlePhotoDelete);
 elements.divesList.addEventListener("click", handleDiveListClick);
-elements.divesList.addEventListener("keydown", handleDiveListKeydown);
 elements.closeDiveDetail.addEventListener("click", closeDiveDetail);
 elements.exportDivePdf.addEventListener("click", exportDivePdf);
 elements.reflectionForm.addEventListener("submit", handleReflectionSubmit);
