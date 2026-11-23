@@ -162,6 +162,7 @@
 body {
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   background: radial-gradient(circle at 10% 12%, var(--c-bg-1), transparent 30%),
     radial-gradient(circle at 88% 20%, var(--c-bg-2), transparent 31%),
@@ -294,4 +295,5 @@ button:disabled {
   position: relative;
   z-index: 1;
   min-height: 100vh;
+  min-height: 100dvh;
 }
