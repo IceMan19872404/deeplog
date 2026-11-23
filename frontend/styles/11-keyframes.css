@@ -7,9 +7,10 @@
   }
 }
 
+/* Grows from the baseline with transform (no layout per frame). */
 @keyframes chart-rise {
   from {
-    height: 0;
+    transform: scaleY(0);
     opacity: 0;
   }
 }

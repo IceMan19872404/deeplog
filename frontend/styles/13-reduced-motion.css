@@ -22,3 +22,21 @@
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
 }
+
+/* Exception: spinners keep turning, four times slower, so a busy button or a
+   loading list still shows that something is happening (TD-037 otherwise). */
+@media (prefers-reduced-motion: reduce) {
+  :root .primary-button.is-loading::after,
+  :root .danger-button.is-loading::after,
+  :root .loader {
+    animation-duration: 2.8s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+:root[data-motion="reduced"] .primary-button.is-loading::after,
+:root[data-motion="reduced"] .danger-button.is-loading::after,
+:root[data-motion="reduced"] .loader {
+  animation-duration: 2.8s !important;
+  animation-iteration-count: infinite !important;
+}

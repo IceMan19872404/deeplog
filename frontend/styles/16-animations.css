@@ -23,7 +23,6 @@
   from {
     opacity: 0;
     transform: translateY(26px);
-    filter: blur(3px);
   }
 }
 
@@ -31,7 +30,6 @@
   from {
     opacity: 0;
     transform: translateY(-26px);
-    filter: blur(3px);
   }
 }
 
