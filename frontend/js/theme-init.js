@@ -17,3 +17,15 @@
     // Same as above: the system setting still applies through CSS.
   }
 })();
+
+// Boot view (independent of the theme block above): choose the first view
+// before paint, so a signed-in reload or a share link does not flash the
+// login screen. deeplog_csrf is set and cleared with the refresh cookie, so
+// it only hints that a session probably exists. app.js removes data-boot as
+// soon as it shows the real view; a stale hint ends on the login screen.
+(function () {
+  var query = location.search;
+  var boot = /[?&]share=[^&]/.test(query) ? "share"
+    : !/[?&]resetToken=/.test(query) && /(?:^|;\s*)deeplog_csrf=[^;]/.test(document.cookie) ? "session" : "";
+  if (boot) document.documentElement.setAttribute("data-boot", boot);
+})();

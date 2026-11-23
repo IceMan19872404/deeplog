@@ -1609,6 +1609,7 @@ function showDashboard(user) {
   elements.homeDate.textContent = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
   elements.authView.hidden = true;
   elements.dashboardView.hidden = false;
+  document.documentElement.removeAttribute("data-boot");
   tabs.start();
   loadDashboardData();
 }
@@ -1646,6 +1647,7 @@ function showAuth() {
   state.profile = null;
   elements.dashboardView.hidden = true;
   elements.authView.hidden = false;
+  document.documentElement.removeAttribute("data-boot");
   document.title = "DeepLog";
 }
 
@@ -1914,6 +1916,12 @@ async function handleResetPassword(event) {
 }
 
 async function restoreSession() {
+  // Without the CSRF cookie there is no refresh cookie either (both are set
+  // and cleared together): go straight to the login instead of a sure 401.
+  if (!/(?:^|;\s*)deeplog_csrf=[^;]/.test(document.cookie)) {
+    endSessionLocally();
+    return;
+  }
   try {
     const response = await restoreUserSession();
     showDashboard(response.data.user);
@@ -2070,7 +2078,12 @@ const shareTokenFromUrl = urlParameters.get("share");
 const resetTokenFromUrl = urlParameters.get("resetToken");
 if (shareTokenFromUrl) {
   // Only share recipients need this module; it stays in the offline shell.
-  import("./public-share.js?v=20260902-2").then(({ initializePublicShare }) => initializePublicShare(shareTokenFromUrl));
+  import("./public-share.js?v=20260902-2")
+    .then(({ initializePublicShare }) => {
+      const loading = initializePublicShare(shareTokenFromUrl); // swaps the views synchronously
+      document.documentElement.removeAttribute("data-boot");
+      return loading;
+    });
 } else if (resetTokenFromUrl) {
   showAuth();
   switchAuthMode("reset");
