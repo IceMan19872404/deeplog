@@ -11,6 +11,12 @@
   var dark = preference === "dark" ||
     (preference !== "light" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
+  // Browser UI before the CSS arrives: toolbar colour and canvas scheme.
+  // Keep the colours in sync with THEME_COLORS in js/theme.js.
+  var themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) themeColor.content = dark ? "#071a33" : "#c9f6f1";
+  var scheme = document.querySelector('meta[name="color-scheme"]');
+  if (scheme) scheme.content = preference === "light" || preference === "dark" ? preference : "light dark";
   try {
     if (localStorage.getItem("deeplog.motion") === "reduced") document.documentElement.dataset.motion = "reduced";
   } catch (_error) {

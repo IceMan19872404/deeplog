@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import vm from "node:vm";
 import { readAllStyles } from "./styles.js";
-import { THEME_KEY, readPreference, resolveTheme } from "../js/theme.js";
+import { THEME_KEY, headerPreference, readPreference, resolveTheme } from "../js/theme.js";
 
 const memory = (value) => ({ getItem: (key) => (key === THEME_KEY ? value : null) });
 
@@ -33,4 +34,45 @@ test("no hard-coded colours remain outside the token blocks", async () => {
   const rules = css.replace(/:root(\[data-theme="dark"\])?\s*\{[^}]*\}/g, "");
   const literals = rules.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(\s*\d/g) || [];
   assert.deepEqual(literals, []);
+});
+
+test("the header buttons go back to Automático when they match the system", () => {
+  assert.equal(headerPreference("light", false), "auto");
+  assert.equal(headerPreference("dark", true), "auto");
+  assert.equal(headerPreference("dark", false), "dark");
+  assert.equal(headerPreference("light", true), "light");
+});
+
+// Runs js/theme-init.js against a minimal fake document.
+async function runThemeInit({ stored = null, systemDark = false } = {}) {
+  const source = await readFile(new URL("../js/theme-init.js", import.meta.url), "utf8");
+  const metas = { "theme-color": { content: "#c9f6f1" }, "color-scheme": { content: "light dark" } };
+  const documentElement = { dataset: {} };
+  const matchMedia = (query) => ({ matches: query.includes("dark") && systemDark });
+  const context = {
+    localStorage: { getItem: (key) => (key === THEME_KEY ? stored : null) },
+    matchMedia,
+    document: {
+      documentElement,
+      querySelector: (selector) => metas[/name="([^"]+)"/.exec(selector)[1]]
+    }
+  };
+  context.window = context;
+  vm.runInNewContext(source, context);
+  return { theme: documentElement.dataset.theme, themeColor: metas["theme-color"].content, scheme: metas["color-scheme"].content };
+}
+
+test("the pre-paint script sets both browser-UI metas for the resolved theme", async () => {
+  assert.deepEqual(await runThemeInit({ systemDark: true }), { theme: "dark", themeColor: "#071a33", scheme: "light dark" });
+  assert.deepEqual(await runThemeInit({ systemDark: false }), { theme: "light", themeColor: "#c9f6f1", scheme: "light dark" });
+  assert.deepEqual(await runThemeInit({ stored: "light", systemDark: true }), { theme: "light", themeColor: "#c9f6f1", scheme: "light" });
+  assert.deepEqual(await runThemeInit({ stored: "dark", systemDark: false }), { theme: "dark", themeColor: "#071a33", scheme: "dark" });
+});
+
+test("theme-init.js and theme.js use the same toolbar colours", async () => {
+  const init = await readFile(new URL("../js/theme-init.js", import.meta.url), "utf8");
+  const theme = await readFile(new URL("../js/theme.js", import.meta.url), "utf8");
+  const colours = /THEME_COLORS = \{ light: "(#[0-9a-f]{6})", dark: "(#[0-9a-f]{6})" \}/.exec(theme);
+  assert.ok(colours, "THEME_COLORS not found in theme.js");
+  assert.ok(init.includes(`"${colours[1]}"`) && init.includes(`"${colours[2]}"`));
 });
