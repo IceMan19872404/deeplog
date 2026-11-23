@@ -1,4 +1,4 @@
-import { getPublicDive, getPublicPhotoBlob, unlockPublicDive } from "./api.js?v=20260902-2";
+import { getPublicDive, getPublicPhotoBlob, unlockPublicDive } from "./api.js?v=20260930-1";
 
 const photoUrls = [];
 const byId = (id) => document.querySelector(`#${id}`);

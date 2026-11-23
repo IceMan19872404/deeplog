@@ -30,23 +30,72 @@ const SHELL = [
   "/manifest.webmanifest"
 ];
 
+// Runtime caching only ever stores versioned static files. Navigations are
+// never stored: their URL can carry a share or password-reset token
+// (?share=, ?resetToken=), and those must not outlive the visit (TD-020).
+const STATIC_PATH = /^\/(?:js|styles|fonts|assets)\//;
+
+function isCacheableUrl(url) {
+  if (url.origin !== self.location.origin || !STATIC_PATH.test(url.pathname)) return false;
+  const keys = [...url.searchParams.keys()];
+  return keys.every((key) => key === "v");
+}
+
+function isVersioned(url) {
+  return url.searchParams.has("v") || url.pathname.startsWith("/fonts/");
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
   self.skipWaiting();
 });
 
+// Delete old caches, and from the current one any entry an older worker may
+// have stored at runtime that is not a plain static file (token URLs, pages).
+async function purgeCaches() {
+  const keys = await caches.keys();
+  await Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)));
+  const cache = await caches.open(CACHE);
+  const requests = await cache.keys();
+  await Promise.all(requests.map((request) => {
+    const url = new URL(request.url);
+    const keep = SHELL.includes(url.pathname + url.search) || isCacheableUrl(url);
+    return keep ? null : cache.delete(request);
+  }));
+}
+
 self.addEventListener("activate", (event) => {
-  event.waitUntil(caches.keys().then((keys) => Promise.all(
-    keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))
-  )));
+  event.waitUntil(purgeCaches());
   self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET" || event.request.url.includes("/api/")) return;
-  event.respondWith(fetch(event.request).then((response) => {
-    const copy = response.clone();
-    caches.open(CACHE).then((cache) => cache.put(event.request, copy));
-    return response;
-  }).catch(() => caches.match(event.request).then((cached) => cached || caches.match("/index.html"))));
+  const { request } = event;
+  const url = new URL(request.url);
+  if (request.method !== "GET" || url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
+
+  // HTML: network first, the precached shell only when offline. Only
+  // navigations fall back to index.html; a missing script must fail as a
+  // script, not be parsed as HTML.
+  if (request.mode === "navigate") {
+    event.respondWith(fetch(request).catch(() => caches.match("/index.html")));
+    return;
+  }
+
+  // Versioned files (?v=) and fonts never change under the same URL:
+  // cache first, then network, storing only clean static URLs.
+  if (isVersioned(url)) {
+    event.respondWith(caches.match(request).then((cached) => cached || fetch(request).then((response) => {
+      const html = (response.headers.get("content-type") || "").includes("text/html");
+      if (response.ok && response.type === "basic" && !html && isCacheableUrl(url)) {
+        const copy = response.clone();
+        event.waitUntil(caches.open(CACHE).then((cache) => cache.put(request, copy)));
+      }
+      return response;
+    })).catch(() => Response.error()));
+    return;
+  }
+
+  // Unversioned files (manifest, icons): network first, precached copy offline.
+  event.respondWith(fetch(request).catch(() => caches.match(request).then((cached) => cached || Response.error())));
 });
