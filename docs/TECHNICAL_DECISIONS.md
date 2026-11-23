@@ -260,6 +260,17 @@ Nginx usa `Cache-Control: no-store` para archivos estaticos y los modulos se
 referencian con version. En produccion se sustituira por nombres con hash y
 cache larga.
 
+Actualizacion (2026-11-23): se aplica el plan anunciado usando la version
+`?v=` como equivalente del hash. `nginx.conf` sirve `js/`, `styles/`, `fonts/`
+y `assets/` con `max-age=31536000, immutable` solo cuando la URL lleva `?v=`
+(sin version: `no-cache`; un 404 no se cachea). El HTML pasa a `no-cache`,
+que permite la back/forward cache, salvo las URL con `?share=` o
+`?resetToken=`, que siguen en `no-store`. `service-worker.js` y el manifiesto
+siguen en `no-cache`. El service worker usa cache-first para archivos
+versionados y network-first para navegaciones, y nunca guarda una navegacion.
+Requisito: cambiar un archivo exige subir su `?v=` (y el `CACHE` del worker);
+`tests/pwa-shell.test.js` comprueba que cada import usa la version precacheada.
+
 Correccion descubierta:
 Deshabilitar controles antes de construir `FormData` los excluia del payload.
 El estado ocupado utiliza ahora `readOnly`, conservando los valores enviados.

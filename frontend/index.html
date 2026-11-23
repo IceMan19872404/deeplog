@@ -12,7 +12,7 @@
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#c9f6f1">
     <meta name="color-scheme" content="light dark">
-    <link rel="apple-touch-icon" href="/assets/deeplog-mark.svg">
+    <link rel="apple-touch-icon" href="/assets/deeplog-apple-touch-180.png">
     <script src="/js/theme-init.js?v=20261121-2"></script>
     <!-- Styles are split by section and load in this order (later files win). -->
     <link rel="stylesheet" href="/styles/01-tokens.css?v=20261122-3">
@@ -484,7 +484,7 @@
             <div class="home-grid">
               <article class="home-card home-last" aria-labelledby="home-last-title">
                 <div class="home-card-heading"><p id="home-last-title" class="eyebrow">Última inmersión</p><a href="#/inmersiones">Ver todas</a></div>
-                <div id="home-last-dive" class="home-last-dive">
+                <div id="home-last-dive" class="home-last-dive" data-loading>
                   <p class="muted">Aquí aparecerá tu última inmersión.</p>
                 </div>
               </article>
@@ -500,7 +500,7 @@
             <div class="section-heading">
               <div>
                 <p class="eyebrow">Logbook</p>
-                <h2 id="inmersiones-title" data-tab-heading>Mis inmersiones</h2>
+                <h1 id="inmersiones-title" data-tab-heading>Mis inmersiones</h1>
               </div>
               <div class="section-actions">
                 <button id="refresh-button" class="ghost-button" type="button">
@@ -514,7 +514,7 @@
             </div>
 
             <div id="dashboard-message" class="message" role="status" hidden></div>
-            <div id="dives-loading" class="loading-state" role="status" aria-live="polite">
+            <div id="dives-loading" class="loading-state">
               <span class="loader" aria-hidden="true"></span>
               Cargando inmersiones...
             </div>
@@ -529,13 +529,13 @@
                 Registrar mi primera inmersión
               </button>
             </div>
-            <div id="dives-list" class="dives-list" aria-live="polite"></div>
+            <div id="dives-list" class="dives-list"></div>
 
             <nav id="pagination" class="pagination" aria-label="Paginación" hidden>
               <button id="previous-page" class="ghost-button" type="button">
                 Anterior
               </button>
-              <span id="page-label"></span>
+              <span id="page-label" role="status"></span>
               <button id="next-page" class="ghost-button" type="button">
                 Siguiente
               </button>
@@ -546,7 +546,7 @@
           <section id="panel-mapa" class="tab-panel" data-tab-panel="mapa" aria-labelledby="map-title" hidden>
           <section class="map-panel" aria-labelledby="map-title">
             <div class="section-heading insights-heading">
-              <div><p class="eyebrow">Tus lugares</p><h2 id="map-title" data-tab-heading>Mapa de inmersiones</h2></div>
+              <div><p class="eyebrow">Tus lugares</p><h1 id="map-title" data-tab-heading>Mapa de inmersiones</h1></div>
               <p id="map-status" class="insight-disclaimer">Las ubicaciones son privadas y solo tú puedes verlas.</p>
             </div>
             <div id="dive-map" class="dive-map" role="group" aria-label="Sin ubicaciones registradas"></div>
@@ -559,17 +559,17 @@
             <div class="section-heading insights-heading">
               <div>
                 <p class="eyebrow">Tu trayectoria</p>
-                <h2 id="insights-title" data-tab-heading>El mar, en cifras</h2>
+                <h1 id="insights-title" data-tab-heading>El mar, en cifras</h1>
               </div>
               <p id="favorite-center" class="favorite-center">
                 Registra inmersiones para descubrir tus tendencias.
               </p>
             </div>
 
-            <div id="stats-loading" class="stats-loading" role="status" aria-live="polite">
+            <div id="stats-loading" class="stats-loading">
               Actualizando estadísticas...
             </div>
-            <div class="stats-grid" aria-live="polite">
+            <div class="stats-grid">
               <article class="stat-card stat-time">
                 <span>Tiempo bajo el agua</span>
                 <strong id="total-time">0 min</strong>
@@ -613,7 +613,7 @@
               </div>
               <p class="insight-disclaimer">Describe tus registros. No recomienda configuraciones ni prácticas de buceo.</p>
             </div>
-            <div id="advanced-insights-loading" class="stats-loading" role="status" aria-live="polite">Analizando tu historial...</div>
+            <div id="advanced-insights-loading" class="stats-loading">Analizando tu historial...</div>
             <div id="advanced-insights-empty" class="insight-empty" hidden>
               Registra más inmersiones y configuraciones para descubrir patrones personales.
             </div>
@@ -653,7 +653,7 @@
               <div>
                 <p class="eyebrow">Perfil privado</p>
                 <p class="profile-name"><strong id="user-name"></strong></p>
-                <h2 id="profile-summary-title" data-tab-heading>Tu experiencia como buceador/a</h2>
+                <h1 id="profile-summary-title" data-tab-heading>Tu experiencia como buceador/a</h1>
                 <p id="profile-summary-copy">Completa tu perfil para reunir trayectoria y preferencias.</p>
               </div>
             </div>

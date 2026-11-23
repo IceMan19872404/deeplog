@@ -104,3 +104,16 @@
 [data-tab-heading]:focus {
   outline: none;
 }
+
+/* --- Boot view ------------------------------------------------------- */
+/* theme-init.js sets data-boot before the first paint; app.js removes it once
+   the real view is shown. Until then paint the shell of the expected view
+   instead of the login screen. */
+:root[data-boot] #auth-view {
+  display: none !important;
+}
+
+:root[data-boot="session"] #dashboard-view[hidden],
+:root[data-boot="share"] #public-share-view[hidden] {
+  display: block !important;
+}

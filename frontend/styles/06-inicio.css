@@ -86,6 +86,23 @@
   gap: 12px;
 }
 
+/* Reserve about the rendered size of the card until the data arrives, so it
+   does not push "Recientes" down (CLS). app.js removes data-loading. */
+.home-last-dive[data-loading] {
+  min-height: 20.5rem;
+}
+
+@media (max-width: 760px) {
+  .home-last-dive[data-loading] {
+    min-height: 23rem;
+  }
+
+  /* The summary grows to two lines on phones once the stats arrive. */
+  #home-summary {
+    min-height: 2lh;
+  }
+}
+
 .home-last-open {
   display: grid;
   gap: 8px;
