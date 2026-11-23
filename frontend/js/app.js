@@ -34,14 +34,12 @@ import {
   uploadDivePhotos
 } from "./api.js?v=20260930-1";
 import { openDivePrintPreview } from "./dive-pdf.js?v=20260902-2";
-import { initializePublicShare } from "./public-share.js?v=20260902-2";
 import { initializeClientMonitoring } from "./client-monitoring.js?v=20260916-1";
 import {
   apiValidationMessage,
   nativeValidationMessage
 } from "./validation-messages.js?v=20261019-2";
 import { populateDiveForm } from "./dive-form.js?v=20261019-1";
-import { createDiveMap } from "./dive-map.js?v=20261030-1";
 import { TABS, createTabs } from "./tabs.js?v=20261121-1";
 import { createTheme } from "./theme.js?v=20261122-1";
 import { profileSvg } from "./dive-profile.js?v=20261121-2";
@@ -215,6 +213,7 @@ const tabs = createTabs({
       content.dataset.direction = from < 0 ? "none" : TABS.indexOf(tab) > from ? "deeper" : "shallower";
     }
     document.title = id === "inicio" ? "Mi bitácora | DeepLog" : `${tab.label} | DeepLog`;
+    if (id === "mapa") drawDiveMap();
   }
 });
 
@@ -434,6 +433,7 @@ function readOfflineSnapshot() {
 }
 
 let diveMap = null;
+let mapDives = null; // dives waiting to be drawn when the Mapa tab is shown
 
 function describeMapDive(dive) {
   return `${dive.name} · ${formatDate(dive.date)} · ${dive.precision === "approximate" ? "ubicación aproximada" : "ubicación exacta privada"}`;
@@ -441,14 +441,33 @@ function describeMapDive(dive) {
 
 function renderDiveMap(dives = []) {
   if (!dives.length) {
+    mapDives = null;
     diveMap?.update([]);
     elements.diveMap.innerHTML = '<p class="map-empty">Añade coordenadas a una inmersión para situarla en tu mapa privado.</p>';
     elements.diveMap.setAttribute("aria-label", "Sin ubicaciones registradas");
     return;
   }
   elements.diveMap.setAttribute("aria-label", `Mapa con ${dives.length} ubicaciones de inmersión registradas`);
-  diveMap ||= createDiveMap(elements.diveMap, { onSelect: openDiveDetail, describe: describeMapDive });
-  diveMap.update(dives);
+  mapDives = dives;
+  if (tabs.current === "mapa") drawDiveMap();
+}
+
+// dive-map.js brings ~140 KB of coastline data, so it is imported only when
+// the Mapa tab is shown with dives to place (it stays in the offline shell).
+async function drawDiveMap() {
+  if (!mapDives) return;
+  try {
+    if (!diveMap) {
+      const { createDiveMap } = await import("./dive-map.js?v=20261030-1");
+      diveMap ||= createDiveMap(elements.diveMap, { onSelect: openDiveDetail, describe: describeMapDive });
+    }
+  } catch (_error) {
+    elements.mapStatus.textContent = "No se pudo cargar el mapa. Inténtalo de nuevo más tarde.";
+    return;
+  }
+  if (!mapDives) return;
+  diveMap.update(mapDives);
+  mapDives = null;
 }
 
 async function loadDiveMap() {
@@ -2050,7 +2069,8 @@ const urlParameters = new URLSearchParams(location.search);
 const shareTokenFromUrl = urlParameters.get("share");
 const resetTokenFromUrl = urlParameters.get("resetToken");
 if (shareTokenFromUrl) {
-  initializePublicShare(shareTokenFromUrl);
+  // Only share recipients need this module; it stays in the offline shell.
+  import("./public-share.js?v=20260902-2").then(({ initializePublicShare }) => initializePublicShare(shareTokenFromUrl));
 } else if (resetTokenFromUrl) {
   showAuth();
   switchAuthMode("reset");
