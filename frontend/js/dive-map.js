@@ -166,8 +166,7 @@ export function createDiveMap(container, { onSelect, describe }) {
     if (cluster.py > height / 2) list.classList.add("is-above");
     list.style.top = `${(cluster.py / height) * 100}%`;
     cluster.points
-      .slice()
-      .sort((a, b) => String(b.dive.date).localeCompare(String(a.dive.date)))
+      .toSorted((a, b) => String(b.dive.date).localeCompare(String(a.dive.date)))
       .forEach((point) => {
         const item = document.createElement("button");
         item.type = "button";

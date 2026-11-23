@@ -1331,7 +1331,7 @@ function renderHome(dives) {
       <p class="muted">Todavía no hay inmersiones registradas.</p>
       <button class="primary-button" data-open-dive-form type="button">Registrar la primera</button>`;
     elements.homeLastDive.querySelector("[data-open-dive-form]").addEventListener("click", openCreateDiveForm);
-    elements.homeRecent.innerHTML = "";
+    elements.homeRecent.replaceChildren();
     return;
   }
   elements.homeLastDive.innerHTML = `
