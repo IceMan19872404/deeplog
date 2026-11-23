@@ -159,7 +159,9 @@ export function createDiveMap(container, { onSelect, describe }) {
   function stackList(cluster, width, height) {
     const list = document.createElement("div");
     list.className = "map-stack-list";
-    list.setAttribute("role", "dialog");
+    // A plain group of buttons that stays in place inside the map: not a
+    // dialog (no modal behaviour, no focus containment).
+    list.setAttribute("role", "group");
     list.setAttribute("aria-label", "Inmersiones en este lugar");
     const left = Math.min(Math.max(cluster.px, 120), width - 120);
     list.style.left = `${(left / width) * 100}%`;
@@ -180,6 +182,15 @@ export function createDiveMap(container, { onSelect, describe }) {
     });
     return list;
   }
+
+  // Pressing anywhere on the map outside the list closes it. Presses on a
+  // button are left alone: each map button re-renders the map itself, and
+  // closing here first would remove the button before its click.
+  container.addEventListener("pointerdown", (event) => {
+    if (!openList || event.target.closest(".map-stack-list, button")) return;
+    openList = null;
+    render();
+  });
 
   const schedule = () => { if (!frame) frame = requestAnimationFrame(render); };
   if ("ResizeObserver" in window) new ResizeObserver(() => { if (points.length) schedule(); }).observe(container);
