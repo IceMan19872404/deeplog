@@ -40,7 +40,7 @@ import {
   apiValidationMessage,
   nativeValidationMessage
 } from "./validation-messages.js?v=20261019-2";
-import { populateDiveForm } from "./dive-form.js?v=20261019-1";
+import { localIsoDate, populateDiveForm } from "./dive-form.js?v=20261019-1";
 import { createDiveMap } from "./dive-map.js?v=20261030-1";
 import { TABS, createTabs } from "./tabs.js?v=20261121-1";
 import { createTheme } from "./theme.js?v=20261122-1";
@@ -1368,7 +1368,7 @@ async function loadDives() {
 function resetDiveForm() {
   state.editingDiveId = null;
   elements.diveForm.reset();
-  elements.diveForm.elements.date.max = new Date().toISOString().slice(0, 10);
+  elements.diveForm.elements.date.max = localIsoDate();
   elements.diveFormTitle.textContent = "Registrar inmersión";
   elements.diveFormEyebrow.textContent = "Nueva experiencia";
   elements.saveDiveButton.textContent = "Guardar inmersión";
