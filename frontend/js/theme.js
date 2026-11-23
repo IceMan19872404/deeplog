@@ -22,6 +22,14 @@ export function readPreference(storage = globalThis.localStorage) {
   }
 }
 
+// The header shows only Superficie and Abismo. Choosing the one the system
+// already uses means "follow the system again", so it is not pinned: a stored
+// "light" would keep the app light after the OS turns dark at night.
+// Perfil > Apariencia keeps the three explicit options.
+export function headerPreference(choice, systemPrefersDark) {
+  return choice === resolveTheme("auto", systemPrefersDark) ? "auto" : choice;
+}
+
 function writePreference(preference, storage = globalThis.localStorage) {
   try {
     if (preference === "auto") storage?.removeItem(THEME_KEY);
@@ -34,12 +42,14 @@ function writePreference(preference, storage = globalThis.localStorage) {
 export function createTheme({ root = document } = {}) {
   const media = window.matchMedia("(prefers-color-scheme: dark)");
   const meta = root.querySelector('meta[name="theme-color"]');
+  const schemeMeta = root.querySelector('meta[name="color-scheme"]');
   let preference = readPreference();
 
   function sync() {
     const theme = resolveTheme(preference, media.matches);
     root.documentElement.dataset.theme = theme;
     if (meta) meta.content = THEME_COLORS[theme];
+    if (schemeMeta) schemeMeta.content = preference === "auto" ? "light dark" : theme;
     root.querySelectorAll("[data-theme-choice]").forEach((control) => {
       const choice = control.dataset.themeChoice;
       if (control.type === "radio") control.checked = choice === preference;
@@ -61,7 +71,7 @@ export function createTheme({ root = document } = {}) {
 
   root.addEventListener("click", (event) => {
     const control = event.target.closest("button[data-theme-choice]");
-    if (control) set(control.dataset.themeChoice, control);
+    if (control) set(headerPreference(control.dataset.themeChoice, media.matches), control);
   });
   root.addEventListener("change", (event) => {
     const control = event.target;
@@ -71,6 +81,12 @@ export function createTheme({ root = document } = {}) {
   });
   media.addEventListener("change", () => {
     if (preference === "auto") sync();
+  });
+  // Another tab changed the theme (or cleared storage): follow it.
+  window.addEventListener("storage", (event) => {
+    if (event.key !== THEME_KEY && event.key !== null) return;
+    preference = readPreference();
+    sync();
   });
 
   sync();

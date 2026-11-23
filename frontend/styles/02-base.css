@@ -122,6 +122,10 @@
   .theme-choices {
     grid-template-columns: 1fr;
   }
+}
+
+/* Compact theme switch wherever the bottom tab bar is used. */
+@media (max-width: 960px) {
   .theme-option[aria-pressed="true"] {
     padding: 0 9px;
   }
@@ -158,6 +162,7 @@
 body {
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   background: radial-gradient(circle at 10% 12%, var(--c-bg-1), transparent 30%),
     radial-gradient(circle at 88% 20%, var(--c-bg-2), transparent 31%),
@@ -174,6 +179,21 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+/* Balanced headings and paragraphs without a lone last word. Browsers
+   without text-wrap support simply wrap as before. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 button {
@@ -275,4 +295,5 @@ button:disabled {
   position: relative;
   z-index: 1;
   min-height: 100vh;
+  min-height: 100dvh;
 }

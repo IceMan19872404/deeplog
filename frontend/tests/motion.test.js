@@ -40,6 +40,14 @@ test("reduced motion also stops transitions and covers the in-app setting", asyn
   assert.match(reduced.slice(0, 400), /transition-duration/);
 });
 
+test("spinners keep turning slowly under both reduced-motion switches", async () => {
+  const css = await readAllStyles();
+  const system = /@media \(prefers-reduced-motion: reduce\) \{\s*:root \.primary-button\.is-loading::after,[^}]*\.loader \{[^}]*animation-iteration-count: infinite !important;/;
+  const inApp = /:root\[data-motion="reduced"\] \.loader \{[^}]*animation-duration: [\d.]+s !important;[^}]*infinite !important;/;
+  assert.match(css, system);
+  assert.match(css, inApp);
+});
+
 test("the profile line is normalised so it can draw itself at any size", () => {
   assert.match(profileSvg(18, 45), /class="dive-profile-line"[^>]*pathLength="1"/);
 });

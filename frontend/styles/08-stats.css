@@ -188,5 +188,6 @@
   border-radius: 999px 999px 5px 5px;
   background: linear-gradient(180deg, var(--c-bg-44), var(--c-bg-45));
   box-shadow: 0 8px 20px var(--c-shadow-13);
+  transform-origin: bottom;
   animation: chart-rise 560ms ease-out both;
 }

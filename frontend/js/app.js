@@ -235,6 +235,15 @@ const tabs = createTabs({
   }
 });
 
+// The skip link's href (#main-content) would replace the #/<tab> route and
+// leave focus before the header and tab bar. On the dashboard it jumps to the
+// current panel's heading instead; elsewhere the browser handles it.
+document.querySelector(".skip-link")?.addEventListener("click", (event) => {
+  if (elements.dashboardView.hidden || !tabs.current) return;
+  event.preventDefault();
+  tabs.focusCurrent();
+});
+
 function setMessage(element, message, type = "error") {
   element.textContent = message;
   element.className = `message message-${type}`;

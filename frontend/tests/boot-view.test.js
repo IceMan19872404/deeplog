@@ -10,7 +10,7 @@ function bootFor({ search = "", cookie = "" } = {}) {
   const attributes = {};
   const documentElement = { dataset: {}, setAttribute: (name, value) => { attributes[name] = value; } };
   vm.runInNewContext(script, {
-    document: { documentElement, cookie },
+    document: { documentElement, cookie, querySelector: () => null },
     location: { search },
     localStorage: { getItem: () => null },
     window: {}

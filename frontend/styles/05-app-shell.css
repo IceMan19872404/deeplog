@@ -2,8 +2,15 @@
 
 .dashboard {
   min-height: 100vh;
+  min-height: 100dvh;
   background: radial-gradient(circle at 86% 5%, var(--c-bg-19), transparent 27%),
     var(--paper);
+}
+
+/* Focus, find-in-page and scrollIntoView stop below the sticky header
+   (77 px); the phone values are in 06-inicio.css with the bottom bar. */
+html {
+  scroll-padding-top: 88px;
 }
 
 /* --- Tabs ------------------------------------------------------------ */
@@ -15,7 +22,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 14px max(24px, calc((100vw - 1240px) / 2));
+  padding: 14px max(24px, calc((100% - 1240px) / 2));
   border-bottom: 1px solid var(--line);
   background: var(--c-bg-21);
   backdrop-filter: blur(22px) saturate(150%);
@@ -116,4 +123,19 @@
 :root[data-boot="session"] #dashboard-view[hidden],
 :root[data-boot="share"] #public-share-view[hidden] {
   display: block !important;
+}
+
+/* Forced Colors (Windows contrast themes) drop backgrounds and box-shadows,
+   so the current tab and the pressed theme button also get an outline, and
+   the tab label an underline that stays when the focus ring takes over. */
+@media (forced-colors: active) {
+  .tab-link[aria-current="page"]:not(:focus-visible),
+  .theme-option[aria-pressed="true"]:not(:focus-visible) {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+  .tab-link[aria-current="page"] .tab-label {
+    text-decoration: underline 2px;
+    text-underline-offset: 4px;
+  }
 }

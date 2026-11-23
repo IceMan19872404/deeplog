@@ -182,9 +182,6 @@
   padding-bottom: 7px;
   border-bottom: 1px solid var(--line);
 }
-.frequency-columns li strong {
-  color: var(--teal);
-}
 .frequency-empty {
   color: var(--muted);
   font-size: 0.86rem;
@@ -302,7 +299,6 @@
 .share-options input {
   width: 18px;
   height: 18px;
-  accent-color: var(--teal);
 }
 .share-photo-list {
   display: grid;

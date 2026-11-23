@@ -182,6 +182,12 @@
   font-weight: 700;
 }
 
+/* Lets the column shrink so the buddies line ends in an ellipsis instead of
+   pushing the card wider than the screen. */
+.dive-main {
+  min-width: 0;
+}
+
 .dive-buddies {
   margin-top: 8px !important;
   overflow: hidden;
