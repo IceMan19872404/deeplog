@@ -129,8 +129,30 @@ async function findAllByUserId(userId, filters) {
   };
 }
 
+// Depth bands follow common recreational certification limits (Open Water 18 m,
+// Advanced 30 m, Deep 40 m); duration bands are plain time slots.
+const DEPTH_RANGES = [
+  { label: "0–12 m", min: 0, max: 12 },
+  { label: "12–18 m", min: 12, max: 18 },
+  { label: "18–30 m", min: 18, max: 30 },
+  { label: "30–40 m", min: 30, max: 40 },
+  { label: "Más de 40 m", min: 40, max: null }
+];
+const DURATION_RANGES = [
+  { label: "Menos de 30 min", min: 0, max: 30 },
+  { label: "30–45 min", min: 30, max: 45 },
+  { label: "45–60 min", min: 45, max: 60 },
+  { label: "Más de 60 min", min: 60, max: null }
+];
+
+function rangeCounts(column, ranges) {
+  return ranges
+    .map((range, index) => `COUNT(*) FILTER (WHERE ${column} >= ${range.min}${range.max === null ? "" : ` AND ${column} < ${range.max}`})::INTEGER AS r${index}`)
+    .join(",\n              ");
+}
+
 async function getStatsByUserId(userId) {
-  const [summaryResult, centerResult, activityResult] = await Promise.all([
+  const [summaryResult, centerResult, activityResult, recordsResult, rangesResult, yearResult] = await Promise.all([
     database.query(
       `SELECT COUNT(*)::INTEGER AS total_dives,
               COALESCE(SUM(duration_minutes), 0)::INTEGER AS total_minutes,
@@ -162,7 +184,52 @@ async function getStatsByUserId(userId) {
          )::date AS month
        )
        SELECT TO_CHAR(months.month, 'YYYY-MM') AS month,
-              COUNT(dives.id)::INTEGER AS total
+              COUNT(dives.id)::INTEGER AS total,
+              COALESCE(SUM(dives.duration_minutes), 0)::INTEGER AS minutes
+         FROM months
+         LEFT JOIN dives
+           ON dives.user_id = $1
+          AND dives.dive_date >= months.month
+          AND dives.dive_date < months.month + INTERVAL '1 month'
+        GROUP BY months.month
+        ORDER BY months.month`,
+      [userId]
+    ),
+    // The record dives (deepest and longest); ties go to the most recent.
+    database.query(
+      `(SELECT 'deepest' AS record, id, name, dive_date, dive_center, max_depth_meters, duration_minutes
+          FROM dives WHERE user_id = $1
+         ORDER BY max_depth_meters DESC, dive_date DESC, id DESC LIMIT 1)
+       UNION ALL
+       (SELECT 'longest' AS record, id, name, dive_date, dive_center, max_depth_meters, duration_minutes
+          FROM dives WHERE user_id = $1
+         ORDER BY duration_minutes DESC, dive_date DESC, id DESC LIMIT 1)`,
+      [userId]
+    ),
+    database.query(
+      `SELECT ${rangeCounts("max_depth_meters", DEPTH_RANGES)},
+              ${rangeCounts("duration_minutes", DURATION_RANGES).replace(/AS r(\d)/g, "AS d$1")},
+              ROUND(AVG(duration_minutes))::INTEGER AS average_duration_minutes
+         FROM dives
+        WHERE user_id = $1`,
+      [userId]
+    ),
+    // This year month by month (January to the current month) and the same
+    // stretch of last year, for comparison.
+    database.query(
+      `WITH months AS (
+         SELECT generate_series(
+           date_trunc('year', CURRENT_DATE),
+           date_trunc('month', CURRENT_DATE),
+           INTERVAL '1 month'
+         )::date AS month
+       )
+       SELECT TO_CHAR(months.month, 'YYYY-MM') AS month,
+              COUNT(dives.id)::INTEGER AS total,
+              (SELECT COUNT(*)::INTEGER FROM dives
+                WHERE user_id = $1
+                  AND dive_date >= date_trunc('year', CURRENT_DATE) - INTERVAL '1 year'
+                  AND dive_date <= CURRENT_DATE - INTERVAL '1 year') AS previous_year_total
          FROM months
          LEFT JOIN dives
            ON dives.user_id = $1
@@ -174,10 +241,21 @@ async function getStatsByUserId(userId) {
     )
   ]);
 
+  const ranges = rangesResult.rows[0];
+  const record = (name) => recordsResult.rows.find((row) => row.record === name) || null;
   return {
     ...summaryResult.rows[0],
     favorite_center: centerResult.rows[0] || null,
-    monthly_activity: activityResult.rows
+    monthly_activity: activityResult.rows,
+    deepest_dive: record("deepest"),
+    longest_dive: record("longest"),
+    average_duration_minutes: ranges.average_duration_minutes,
+    depth_ranges: DEPTH_RANGES.map((range, index) => ({ label: range.label, total: ranges[`r${index}`] })),
+    duration_ranges: DURATION_RANGES.map((range, index) => ({ label: range.label, total: ranges[`d${index}`] })),
+    year_activity: {
+      months: yearResult.rows.map(({ month, total }) => ({ month, total })),
+      previous_year_total: yearResult.rows[0]?.previous_year_total ?? 0
+    }
   };
 }
 

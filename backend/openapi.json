@@ -2719,6 +2719,69 @@
                       "type": "object",
                       "additionalProperties": true
                     }
+                  },
+                  "averageDurationMinutes": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "deepestDive": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": true
+                  },
+                  "longestDive": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": true
+                  },
+                  "depthRanges": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "durationRanges": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "yearActivity": {
+                    "type": "object",
+                    "properties": {
+                      "months": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "previousYearTotal": {
+                        "type": "integer"
+                      }
+                    }
                   }
                 }
               }

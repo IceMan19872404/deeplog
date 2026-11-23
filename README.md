@@ -425,6 +425,13 @@ arranque sin destello del acceso, barra inferior hasta 960 px y Forced Colors.
 Politica de navegadores: lo que es Baseline ampliamente disponible se usa sin
 mas; lo mas nuevo, solo con la alternativa que indica la guia.
 
+Estadisticas: las cuatro cifras (tiempo, maxima profundidad, inmersion mas
+larga y este año) son pestañas. Al pulsar una, el panel de abajo muestra su
+detalle: tiempo por mes y media por inmersion; record con enlace a su ficha y
+reparto por profundidad (0-12, 12-18, 18-30, 30-40 m, limites habituales de
+certificacion) o por duracion; y este año mes a mes comparado con el mismo
+periodo del año anterior. Con teclado, flechas e Inicio/Fin cambian de cifra.
+
 Animaciones:
 - al cambiar de pestaña hacia la derecha el contenido sube como si bajaras
   mas profundo; hacia la izquierda, baja como si volvieras a la superficie,

@@ -52,6 +52,20 @@ async function getById(req, res, next) {
   }
 }
 
+// A record dive for the Estadísticas detail panels (just enough to show it and
+// open its record).
+function statsRecord(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    date: toDiveResponse.toDateOnly(row.dive_date),
+    diveCenter: row.dive_center,
+    maxDepthMeters: Number(row.max_depth_meters),
+    durationMinutes: row.duration_minutes
+  };
+}
+
 async function stats(req, res, next) {
   try {
     const result = await diveService.getDiveStats(req.auth.userId);
@@ -69,7 +83,16 @@ async function stats(req, res, next) {
           longestDurationMinutes: result.longest_duration_minutes,
           divesThisYear: result.dives_this_year,
           favoriteCenter: result.favorite_center,
-          monthlyActivity: result.monthly_activity
+          monthlyActivity: result.monthly_activity,
+          averageDurationMinutes: result.average_duration_minutes,
+          deepestDive: statsRecord(result.deepest_dive),
+          longestDive: statsRecord(result.longest_dive),
+          depthRanges: result.depth_ranges,
+          durationRanges: result.duration_ranges,
+          yearActivity: {
+            months: result.year_activity.months,
+            previousYearTotal: result.year_activity.previous_year_total
+          }
         }
       }
     });

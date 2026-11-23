@@ -54,6 +54,7 @@ import {
   requestDialogClose
 } from "./dialogs.js?v=20261123-2";
 import { formatNumber } from "./format.js?v=20261123-2";
+import { createStatTabs, renderStatsDetail } from "./stats-detail.js?v=20261123-5";
 
 initializeClientMonitoring();
 createTheme();
@@ -124,7 +125,7 @@ const elements = {
   divesThisYear: document.querySelector("#dives-this-year"),
   favoriteCenter: document.querySelector("#favorite-center"),
   statsLoading: document.querySelector("#stats-loading"),
-  activityChart: document.querySelector("#activity-chart"),
+  insightsPanel: document.querySelector(".insights-panel"),
   diveMap: document.querySelector("#dive-map"),
   mapStatus: document.querySelector("#map-status"),
   advancedInsightsLoading: document.querySelector("#advanced-insights-loading"),
@@ -1147,39 +1148,6 @@ function formatTotalTime(minutes) {
   return remainingMinutes ? `${hours} h ${remainingMinutes} min` : `${hours} h`;
 }
 
-function monthLabel(month) {
-  return new Intl.DateTimeFormat("es-ES", { month: "short" })
-    .format(new Date(`${month}-01T00:00:00`))
-    .replace(".", "");
-}
-
-function renderActivityChart(activity) {
-  const maximum = Math.max(...activity.map((entry) => entry.total), 1);
-  elements.activityChart.innerHTML = activity
-    .map((entry) => {
-      const height = entry.total === 0 ? 5 : Math.max(18, (entry.total / maximum) * 100);
-      return `
-        <div class="activity-month">
-          <span class="activity-value">${escapeHtml(entry.total)}</span>
-          <span
-            class="activity-bar"
-            style="--bar-height: ${height}%"
-            title="${escapeHtml(entry.total)} inmersiones"
-          ></span>
-          <span class="activity-label">${escapeHtml(monthLabel(entry.month))}</span>
-        </div>
-      `;
-    })
-    .join("");
-  const total = activity.reduce((sum, entry) => sum + entry.total, 0);
-  elements.activityChart.setAttribute(
-    "aria-label",
-    total === 0
-      ? "Sin actividad registrada en los últimos seis meses"
-      : `${total} inmersiones registradas en los últimos seis meses`
-  );
-}
-
 function renderStats(stats) {
   countUp(elements.divesTotal, stats.totalDives);
   elements.totalTime.textContent = formatTotalTime(stats.totalMinutes);
@@ -1199,7 +1167,7 @@ function renderStats(stats) {
   elements.favoriteCenter.textContent = stats.favoriteCenter
     ? `Tu centro más visitado: ${stats.favoriteCenter.name}`
     : "Registra un centro para descubrir tu lugar más visitado.";
-  renderActivityChart(stats.monthlyActivity);
+  renderStatsDetail(elements.insightsPanel, stats);
 }
 
 function frequencyMarkup(items, emptyLabel) {
@@ -2126,6 +2094,7 @@ document.addEventListener("focusout", showErrorOnLeave);
 elements.logoutButton.addEventListener("click", logout);
 elements.openProfile.addEventListener("click", openProfileDialog);
 elements.homeLastDive.addEventListener("click", handleHomeClick);
+createStatTabs(elements.insightsPanel, { onOpenDive: openDiveDetail });
 elements.homeRecent.addEventListener("click", handleHomeClick);
 elements.closeProfile.addEventListener("click", closeProfileDialog);
 elements.cancelProfile.addEventListener("click", closeProfileDialog);

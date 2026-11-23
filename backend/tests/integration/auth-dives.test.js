@@ -558,6 +558,18 @@ test("dashboard stats aggregate only the authenticated user's dives", async () =
   assert.equal(response.body.data.stats.favoriteCenter.name, "Updated Center");
   assert.equal(response.body.data.stats.favoriteCenter.total, 1);
   assert.equal(response.body.data.stats.monthlyActivity.length, 6);
+  assert.ok(response.body.data.stats.monthlyActivity.every((month) => Number.isInteger(month.minutes)));
+
+  // Detail for the Estadísticas cards: records, averages, bands and this year.
+  const stats = response.body.data.stats;
+  assert.equal(stats.deepestDive.maxDepthMeters, 22.5);
+  assert.equal(stats.deepestDive.date, "2025-06-16");
+  assert.equal(stats.longestDive.durationMinutes, 55);
+  assert.equal(stats.averageDurationMinutes, 45);
+  assert.deepEqual(stats.depthRanges.map((range) => range.total), [1, 0, 1, 0, 0]);
+  assert.deepEqual(stats.durationRanges.map((range) => range.total), [0, 1, 1, 0]);
+  assert.equal(stats.yearActivity.months.length, new Date().getMonth() + 1);
+  assert.ok(Number.isInteger(stats.yearActivity.previousYearTotal));
 
   const emptyResponse = await request(app)
     .get("/api/v1/dives/stats")
@@ -567,6 +579,10 @@ test("dashboard stats aggregate only the authenticated user's dives", async () =
   assert.equal(emptyResponse.body.data.stats.totalDives, 0);
   assert.equal(emptyResponse.body.data.stats.totalMinutes, 0);
   assert.equal(emptyResponse.body.data.stats.maxDepthMeters, null);
+  assert.equal(emptyResponse.body.data.stats.deepestDive, null);
+  assert.equal(emptyResponse.body.data.stats.longestDive, null);
+  assert.equal(emptyResponse.body.data.stats.averageDurationMinutes, null);
+  assert.ok(emptyResponse.body.data.stats.depthRanges.every((range) => range.total === 0));
   assert.equal(emptyResponse.body.data.stats.longestDurationMinutes, null);
   assert.equal(emptyResponse.body.data.stats.favoriteCenter, null);
 });
