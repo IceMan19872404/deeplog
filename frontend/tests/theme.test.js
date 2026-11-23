@@ -76,3 +76,13 @@ test("theme-init.js and theme.js use the same toolbar colours", async () => {
   assert.ok(colours, "THEME_COLORS not found in theme.js");
   assert.ok(init.includes(`"${colours[1]}"`) && init.includes(`"${colours[2]}"`));
 });
+
+test("Sora is preloaded with the same URL as its @font-face", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readAllStyles();
+  const face = /font-family: "Sora";\s*src: url\("([^"]+)"\)/.exec(css);
+  assert.ok(face, "Sora @font-face not found");
+  const preload = /<link rel="preload" href="([^"]+)" as="font" type="font\/woff2" crossorigin>/.exec(html);
+  assert.ok(preload, "font preload with crossorigin not found");
+  assert.equal(preload[1], face[1]);
+});
