@@ -6,6 +6,12 @@
     var(--paper);
 }
 
+/* Focus, find-in-page and scrollIntoView stop below the sticky header
+   (77 px); the phone values are in 06-inicio.css with the bottom bar. */
+html {
+  scroll-padding-top: 88px;
+}
+
 /* --- Tabs ------------------------------------------------------------ */
 .app-header {
   position: sticky;

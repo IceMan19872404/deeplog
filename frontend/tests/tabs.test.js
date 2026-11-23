@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { DEFAULT_TAB, TABS, hashForTab, isTabHash, tabFromHash } from "../js/tabs.js";
+import { DEFAULT_TAB, TABS, createTabs, hashForTab, isTabHash, tabFromHash } from "../js/tabs.js";
 
 test("each section has its own address and unknown ones fall back to Inicio", () => {
   assert.equal(tabFromHash("#/mapa"), "mapa");
@@ -25,4 +25,28 @@ test("every tab has a link and a panel in the page, in depth order", async () =>
   assert.deepEqual(links, ids);
   assert.deepEqual(panels, ids);
   assert.deepEqual(TABS.map((tab) => tab.depth), ["0 m", "10 m", "20 m", "30 m", "40 m"]);
+});
+
+test("focusCurrent moves focus to the current panel heading and keeps the route", () => {
+  const focused = [];
+  const heading = (id) => ({ setAttribute() {}, focus: () => focused.push(id) });
+  const panels = TABS.map(({ id }) => ({ dataset: { tabPanel: id }, hidden: false, querySelector: () => heading(id) }));
+  const links = TABS.map(({ id }) => ({ dataset: { tabLink: id }, setAttribute() {}, removeAttribute() {} }));
+  const root = { querySelectorAll: (selector) => (selector.includes("link") ? links : panels) };
+  const changes = [];
+  globalThis.window = { addEventListener() {}, scrollTo() {} };
+  globalThis.location = { hash: "#/perfil" };
+  try {
+    const tabs = createTabs({ root, onChange: (id) => changes.push(id) });
+    tabs.focusCurrent();
+    assert.deepEqual(focused, []);
+    tabs.start();
+    tabs.focusCurrent();
+    assert.deepEqual(focused, ["perfil"]);
+    assert.deepEqual(changes, ["perfil"]);
+    assert.equal(location.hash, "#/perfil");
+  } finally {
+    delete globalThis.window;
+    delete globalThis.location;
+  }
 });

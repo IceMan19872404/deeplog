@@ -226,6 +226,11 @@
   .dashboard-content {
     padding-bottom: 120px;
   }
+  /* Keep focused controls clear of the header (69 px) and the bar. */
+  html {
+    scroll-padding-top: 80px;
+    scroll-padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 @media (max-width: 760px) {
