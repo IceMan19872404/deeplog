@@ -20,7 +20,7 @@ const SHELL = [
   "/styles/17-dive-number.css?v=20261122-3",
   "/styles/18-theme-superficie.css?v=20261122-3",
   "/js/app.js?v=20261122-2", "/js/api.js?v=20260930-1",
-  "/js/dive-form.js?v=20261019-1",
+  "/js/dive-form.js?v=20261019-1", "/js/dialogs.js?v=20261123-1",
   "/js/dive-map.js?v=20261030-1", "/js/tabs.js?v=20261121-1", "/js/theme.js?v=20261122-1", "/js/theme-init.js?v=20261121-2", "/js/dive-profile.js?v=20261121-2", "/js/motion.js?v=20261121-1",
   "/fonts/sora-latin-variable.woff2", "/fonts/ibm-plex-mono-latin-400.woff2",
   "/fonts/ibm-plex-mono-latin-500.woff2", "/fonts/ibm-plex-mono-latin-600.woff2", "/js/world-map-data.js?v=20261030-1",

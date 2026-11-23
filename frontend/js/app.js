@@ -47,6 +47,14 @@ import { TABS, createTabs } from "./tabs.js?v=20261121-1";
 import { createTheme } from "./theme.js?v=20261122-1";
 import { profileSvg } from "./dive-profile.js?v=20261121-2";
 import { countUp, createMotionPreference } from "./motion.js?v=20261121-1";
+import {
+  closeAllDialogs,
+  createConfirmDialog,
+  createUnsavedChanges,
+  guardDialogClose,
+  installLightDismissFallback,
+  requestDialogClose
+} from "./dialogs.js?v=20261123-1";
 
 initializeClientMonitoring();
 createTheme();
@@ -202,8 +210,16 @@ const elements = {
   shareList: document.querySelector("#share-list"),
   useCurrentLocation: document.querySelector("#use-current-location"),
   clearLocation: document.querySelector("#clear-location"),
-  locationMessage: document.querySelector("#location-message")
+  locationMessage: document.querySelector("#location-message"),
+  discardDialog: document.querySelector("#discard-dialog"),
+  deleteReflectionDialog: document.querySelector("#delete-reflection-dialog")
 };
+
+const confirmDiscard = createConfirmDialog(elements.discardDialog);
+const confirmDeleteReflection = createConfirmDialog(elements.deleteReflectionDialog);
+const diveFormChanges = createUnsavedChanges(elements.diveForm);
+const profileFormChanges = createUnsavedChanges(elements.profileForm);
+const isFormBusy = (form) => form.getAttribute("aria-busy") === "true";
 
 // Each tab sits one "depth" lower than the previous one, so moving right dives
 // deeper and moving left rises to the surface; CSS animates the panel to match.
@@ -825,10 +841,6 @@ function renderDives(dives) {
 function handleUnauthorized(error) {
   if (error.status !== 401) return false;
 
-  elements.diveDialog.close();
-  elements.detailDialog.close();
-  elements.shareDialog.close();
-  elements.deleteDialog.close();
   endSessionLocally();
   setMessage(
     elements.authMessage,
@@ -839,6 +851,9 @@ function handleUnauthorized(error) {
 
 function closeDiveDetail() {
   elements.detailDialog.close();
+}
+
+function clearDiveDetail() {
   clearPhotoUrls("detail");
   state.detailDive = null;
   state.detailPrintPhotos = [];
@@ -1059,13 +1074,15 @@ async function handleReflectionSubmit(event) {
 }
 
 async function handleReflectionDelete() {
-  if (!state.detailDive || !window.confirm("¿Borrar esta reflexión personal?")) return;
+  if (!state.detailDive || !(await confirmDeleteReflection()) || !state.detailDive) return;
   elements.deleteReflection.disabled = true;
   try {
     await deleteDiveReflection(state.detailDive.id);
     state.detailDive.reflection = null;
     elements.reflectionForm.reset();
     elements.deleteReflection.hidden = true;
+    // The button that had focus is now hidden: continue at the first field.
+    elements.reflectionForm.elements.wentWell.focus();
     setMessage(elements.reflectionMessage, "Reflexión borrada.", "success");
     await loadAdvancedInsights();
   } catch (error) {
@@ -1307,11 +1324,12 @@ function openProfileDialog() {
   elements.profileForm.elements.photo.value = "";
   setMessage(elements.profileMessage, "");
   clearFormErrors(elements.profileForm);
+  profileFormChanges.markClean();
   elements.profileDialog.showModal();
 }
 
 function closeProfileDialog() {
-  elements.profileDialog.close();
+  requestDialogClose(elements.profileDialog);
 }
 
 async function handleProfileSubmit(event) {
@@ -1335,12 +1353,14 @@ async function handleProfileSubmit(event) {
       } catch (photoError) {
         renderProfile(profile);
         await loadProfilePhoto(profile);
+        profileFormChanges.markClean();
         setMessage(elements.profileMessage, "Los datos se guardaron, pero la fotografía no era válida o superaba 3 MB.");
         return;
       }
     }
     renderProfile(profile);
     await loadProfilePhoto(profile);
+    profileFormChanges.markClean();
     setMessage(elements.profileMessage, "Perfil actualizado.", "success");
     setTimeout(() => { if (elements.profileDialog.open) closeProfileDialog(); }, 500);
   } catch (error) {
@@ -1464,6 +1484,7 @@ function resetDiveForm() {
   elements.locationMessage.textContent = "";
   setMessage(elements.diveFormMessage, "");
   syncDisappearingExamples();
+  diveFormChanges.markClean();
 }
 
 function openCreateDiveForm() {
@@ -1473,9 +1494,7 @@ function openCreateDiveForm() {
 }
 
 function closeDiveForm() {
-  if (elements.diveForm.classList.contains("is-busy")) return;
-  elements.diveDialog.close();
-  resetDiveForm();
+  requestDialogClose(elements.diveDialog);
 }
 
 async function openEditDiveForm(diveId) {
@@ -1494,6 +1513,7 @@ async function openEditDiveForm(diveId) {
 
     populateDiveForm(elements.diveForm, dive);
     await renderExistingPhotos(dive.photos, dive.id);
+    diveFormChanges.markClean();
     elements.diveForm.elements.name.focus();
   } catch (error) {
     if (handleUnauthorized(error)) return;
@@ -1539,6 +1559,7 @@ async function handleDiveSubmit(event) {
         elements.selectedPhotos.hidden = true;
         const refreshed = await getDive(response.data.dive.id);
         await renderExistingPhotos(refreshed.data.dive.photos, response.data.dive.id);
+        diveFormChanges.markClean();
         setMessage(
           elements.diveFormMessage,
           photoError.code === "PHOTO_LIMIT_EXCEEDED"
@@ -1549,9 +1570,10 @@ async function handleDiveSubmit(event) {
       }
     }
 
+    const savedId = state.editingDiveId;
     elements.diveDialog.close();
-    resetDiveForm();
     await loadDashboardData();
+    if (isEditing) restoreListFocus(`[data-action="edit"][data-dive-id="${CSS.escape(String(savedId))}"]`);
     setMessage(
       elements.dashboardMessage,
       isEditing
@@ -1602,8 +1624,22 @@ function openDeleteDialog(diveId, diveName) {
 }
 
 function closeDeleteDialog() {
-  state.deletingDive = null;
   elements.deleteDialog.close();
+}
+
+// After a save or delete the list is re-rendered and the card that opened the
+// dialog is gone, so focus would fall to <body>. Move it to the matching card
+// control, else the card now in the same position, else the list heading.
+function restoreListFocus(selector, index = 0) {
+  if (document.activeElement && document.activeElement !== document.body) return;
+  const cards = elements.divesList.querySelectorAll(".dive-card");
+  const card = cards[Math.min(index, cards.length - 1)];
+  const target = (selector && elements.divesList.querySelector(selector))
+    || (card && (card.tabIndex >= 0 ? card : card.querySelector("button")))
+    || document.querySelector("#inmersiones-title");
+  if (!target) return;
+  if (target.tabIndex < 0 && !target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+  target.focus();
 }
 
 async function handleDeleteDive() {
@@ -1614,6 +1650,9 @@ async function handleDeleteDive() {
   elements.cancelDeleteButton.disabled = true;
   setMessage(elements.deleteMessage, "");
 
+  const cardIndex = [...elements.divesList.querySelectorAll(".dive-card")]
+    .findIndex((card) => card.dataset.diveId === String(state.deletingDive.id));
+
   try {
     await deleteDive(state.deletingDive.id);
     closeDeleteDialog();
@@ -1623,6 +1662,7 @@ async function handleDeleteDive() {
     }
 
     await loadDashboardData();
+    restoreListFocus(null, Math.max(cardIndex, 0));
     setMessage(
       elements.dashboardMessage,
       "Inmersión eliminada de tu bitácora.",
@@ -1712,6 +1752,7 @@ function showAuth() {
 }
 
 function endSessionLocally() {
+  closeAllDialogs();
   clearToken();
   localStorage.removeItem(offlineKey);
   showAuth();
@@ -1764,9 +1805,7 @@ function openDeleteAccountDialog() {
 }
 
 function closeDeleteAccountDialog() {
-  if (!elements.deleteAccountForm.classList.contains("is-busy")) {
-    elements.deleteAccountDialog.close();
-  }
+  requestDialogClose(elements.deleteAccountDialog);
 }
 
 async function handleDeleteAccount(event) {
@@ -2057,8 +2096,10 @@ elements.profileForm.elements.photo.addEventListener("change", (event) => {
   if (message) setFieldError(elements.profileForm, "photo", message);
   else clearFieldError(event.target);
 });
-elements.profileDialog.addEventListener("click", (event) => {
-  if (event.target === elements.profileDialog) closeProfileDialog();
+guardDialogClose(elements.profileDialog, {
+  isBusy: () => isFormBusy(elements.profileForm),
+  isDirty: profileFormChanges.isDirty,
+  confirmDiscard
 });
 elements.logoutAllButton.addEventListener("click", handleLogoutAll);
 elements.exportButtons.forEach((button) =>
@@ -2067,8 +2108,8 @@ elements.exportButtons.forEach((button) =>
 elements.openDeleteAccount.addEventListener("click", openDeleteAccountDialog);
 elements.cancelDeleteAccount.addEventListener("click", closeDeleteAccountDialog);
 elements.deleteAccountForm.addEventListener("submit", handleDeleteAccount);
-elements.deleteAccountDialog.addEventListener("click", (event) => {
-  if (event.target === elements.deleteAccountDialog) closeDeleteAccountDialog();
+guardDialogClose(elements.deleteAccountDialog, {
+  isBusy: () => isFormBusy(elements.deleteAccountForm)
 });
 elements.refreshButton.addEventListener("click", loadDashboardData);
 elements.openDiveFormButtons.forEach((button) =>
@@ -2103,34 +2144,20 @@ elements.copyShareLink.addEventListener("click", copyShareLink);
 elements.shareList.addEventListener("click", handleShareListClick);
 elements.cancelDeleteButton.addEventListener("click", closeDeleteDialog);
 elements.confirmDeleteButton.addEventListener("click", handleDeleteDive);
-elements.diveDialog.addEventListener("click", (event) => {
-  if (event.target === elements.diveDialog) closeDiveForm();
+guardDialogClose(elements.diveDialog, {
+  isBusy: () => isFormBusy(elements.diveForm),
+  isDirty: diveFormChanges.isDirty,
+  confirmDiscard
 });
-elements.diveDialog.addEventListener("cancel", (event) => {
-  if (elements.diveForm.classList.contains("is-busy")) {
-    event.preventDefault();
-  } else {
-    resetDiveForm();
-  }
+guardDialogClose(elements.deleteDialog, {
+  isBusy: () => elements.confirmDeleteButton.disabled
 });
-elements.deleteDialog.addEventListener("click", (event) => {
-  if (event.target === elements.deleteDialog) closeDeleteDialog();
-});
-elements.deleteDialog.addEventListener("cancel", () => {
-  state.deletingDive = null;
-});
-elements.detailDialog.addEventListener("click", (event) => {
-  if (event.target === elements.detailDialog) closeDiveDetail();
-});
-elements.detailDialog.addEventListener("cancel", () => {
-  clearPhotoUrls("detail");
-  state.detailDive = null;
-  state.detailPrintPhotos = [];
-  elements.detailPhotos.replaceChildren();
-});
-elements.shareDialog.addEventListener("click", (event) => {
-  if (event.target === elements.shareDialog) closeShareDialog();
-});
+// One `close` listener per dialog holds its cleanup, so the buttons, Esc,
+// light dismiss and closeAllDialogs() all leave the same state behind.
+elements.diveDialog.addEventListener("close", resetDiveForm);
+elements.deleteDialog.addEventListener("close", () => { state.deletingDive = null; });
+elements.detailDialog.addEventListener("close", clearDiveDetail);
+installLightDismissFallback(document.querySelectorAll('dialog[closedby="any"]'));
 elements.previousPage.addEventListener("click", () => {
   if (state.page > 1) {
     state.page -= 1;
