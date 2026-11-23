@@ -25,7 +25,7 @@ const SHELL = [
   "/fonts/sora-latin-variable.woff2", "/fonts/ibm-plex-mono-latin-400.woff2",
   "/fonts/ibm-plex-mono-latin-500.woff2", "/fonts/ibm-plex-mono-latin-600.woff2", "/js/world-map-data.js?v=20261030-1",
   "/js/validation-messages.js?v=20261019-2",
-  "/js/client-monitoring.js?v=20260916-1", "/js/dive-pdf.js?v=20260902-2",
+  "/js/client-monitoring.js?v=20260916-1", "/js/format.js?v=20261123-1", "/js/dive-pdf.js?v=20260902-2",
   "/js/public-share.js?v=20260902-2", "/assets/deeplog-mark.svg",
   "/manifest.webmanifest"
 ];

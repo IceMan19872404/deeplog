@@ -44,6 +44,7 @@ import { TABS, createTabs } from "./tabs.js?v=20261121-1";
 import { createTheme } from "./theme.js?v=20261122-1";
 import { profileSvg } from "./dive-profile.js?v=20261121-2";
 import { countUp, createMotionPreference } from "./motion.js?v=20261121-1";
+import { formatNumber } from "./format.js?v=20261123-1";
 
 initializeClientMonitoring();
 createTheme();
@@ -608,13 +609,13 @@ const comfortLabels = {
 
 function suitDescription(dive) {
   if (!dive.suitType && dive.suitThicknessMm === null) return "No indicado";
-  return [suitLabels[dive.suitType], dive.suitThicknessMm === null ? null : `${dive.suitThicknessMm} mm`]
+  return [suitLabels[dive.suitType], dive.suitThicknessMm === null ? null : `${formatNumber(dive.suitThicknessMm)} mm`]
     .filter(Boolean).join(" · ");
 }
 
 function cylinderDescription(dive) {
   if (!dive.cylinderMaterial && dive.cylinderVolumeLiters === null) return "No indicada";
-  return [cylinderLabels[dive.cylinderMaterial], dive.cylinderVolumeLiters === null ? null : `${dive.cylinderVolumeLiters} L`]
+  return [cylinderLabels[dive.cylinderMaterial], dive.cylinderVolumeLiters === null ? null : `${formatNumber(dive.cylinderVolumeLiters)} L`]
     .filter(Boolean).join(" · ");
 }
 
@@ -645,7 +646,7 @@ async function searchConfigurationMemory() {
     elements.configurationMemoryResults.innerHTML = dives.map((dive) => `
       <article class="memory-card">
         <div><strong>${escapeHtml(dive.name)}</strong><span>${escapeHtml(formatDate(dive.date))}${dive.diveCenter ? ` · ${escapeHtml(dive.diveCenter)}` : ""}</span></div>
-        <div class="memory-ballast"><strong>${escapeHtml(dive.ballastKg)} kg</strong><span>lastre registrado</span></div>
+        <div class="memory-ballast"><strong>${escapeHtml(formatNumber(dive.ballastKg))} kg</strong><span>lastre registrado</span></div>
       </article>`).join("");
   } catch (error) {
     if (!handleUnauthorized(error)) elements.configurationMemoryMessage.textContent = "No se pudo consultar tu historial.";
@@ -690,7 +691,7 @@ function renderDives(dives) {
           <div class="dive-date">
             ${dive.diveNumber ? `<span class="dive-number"><abbr title="Número de inmersión">Nº</abbr> ${escapeHtml(dive.diveNumber)}</span>` : ""}
             <span>${escapeHtml(formatDate(dive.date))}</span>
-            <strong>${escapeHtml(dive.maxDepthMeters)} m</strong>
+            <strong>${escapeHtml(formatNumber(dive.maxDepthMeters))} m</strong>
             <span class="depth-bar" style="--depth: ${Math.min(100, Math.round((Number(dive.maxDepthMeters) / 40) * 100))}%" aria-hidden="true"></span>
           </div>
           <div class="dive-main">
@@ -705,7 +706,7 @@ function renderDives(dives) {
               ${
                 dive.ballastKg === null
                   ? ""
-                  : `<span>${escapeHtml(dive.ballastKg)} kg de lastre</span>`
+                  : `<span>${escapeHtml(formatNumber(dive.ballastKg))} kg de lastre</span>`
               }
               ${
                 dive.equipmentOwnership
@@ -731,7 +732,7 @@ function renderDives(dives) {
             }
           </div>
           <div class="dive-duration">
-            <strong>${escapeHtml(dive.durationMinutes)}</strong>
+            <strong>${escapeHtml(formatNumber(dive.durationMinutes))}</strong>
             <span>min</span>
           </div>
           <p class="dive-comments">
@@ -934,14 +935,14 @@ async function openDiveDetail(diveId) {
     elements.detailSubtitle.textContent = [
       dive.diveNumber ? `Inmersión nº ${dive.diveNumber}` : "",
       formatDate(dive.date),
-      `${dive.maxDepthMeters} m`
+      `${formatNumber(dive.maxDepthMeters)} m`
     ].filter(Boolean).join(" · ");
     elements.detailDate.textContent = formatDate(dive.date);
-    elements.detailDuration.textContent = `${dive.durationMinutes} minutos`;
-    elements.detailDepth.textContent = `${dive.maxDepthMeters} metros`;
+    elements.detailDuration.textContent = `${formatNumber(dive.durationMinutes)} minutos`;
+    elements.detailDepth.textContent = `${formatNumber(dive.maxDepthMeters)} metros`;
     elements.detailCenter.textContent = dive.diveCenter || "No indicado";
     elements.detailBallast.textContent =
-      dive.ballastKg === null ? "No indicado" : `${dive.ballastKg} kg`;
+      dive.ballastKg === null ? "No indicado" : `${formatNumber(dive.ballastKg)} kg`;
     elements.detailEquipment.textContent = dive.equipmentOwnership
       ? dive.equipmentOwnership === "owned"
         ? "Material propio"
@@ -1071,10 +1072,10 @@ function renderStats(stats) {
   elements.totalTime.textContent = formatTotalTime(stats.totalMinutes);
   elements.maxDepth.textContent = stats.maxDepthMeters === null
     ? "—"
-    : `${stats.maxDepthMeters} m`;
+    : `${formatNumber(stats.maxDepthMeters)} m`;
   elements.longestDuration.textContent = stats.longestDurationMinutes === null
     ? "—"
-    : `${stats.longestDurationMinutes} min`;
+    : `${formatNumber(stats.longestDurationMinutes)} min`;
   elements.divesThisYear.textContent = stats.divesThisYear;
   elements.homeTotalTime.textContent = elements.totalTime.textContent;
   elements.homeMaxDepth.textContent = elements.maxDepth.textContent;
@@ -1094,8 +1095,8 @@ function frequencyMarkup(items, emptyLabel) {
 }
 
 function configurationName(item) {
-  const suit = [suitLabels[item.suitType], item.suitThicknessMm === null ? null : `${item.suitThicknessMm} mm`].filter(Boolean).join(" ");
-  const cylinder = [cylinderLabels[item.cylinderMaterial], item.cylinderVolumeLiters === null ? null : `${item.cylinderVolumeLiters} L`].filter(Boolean).join(" ");
+  const suit = [suitLabels[item.suitType], item.suitThicknessMm === null ? null : `${formatNumber(item.suitThicknessMm)} mm`].filter(Boolean).join(" ");
+  const cylinder = [cylinderLabels[item.cylinderMaterial], item.cylinderVolumeLiters === null ? null : `${formatNumber(item.cylinderVolumeLiters)} L`].filter(Boolean).join(" ");
   return [suit, cylinder, waterLabels[item.waterType]].filter(Boolean).join(" · ") || "Configuración parcial";
 }
 
@@ -1108,7 +1109,7 @@ function renderEvolution(items) {
   const maxDepth = Math.max(...items.map((item) => item.maxDepthMeters), 1);
   const maxDuration = Math.max(...items.map((item) => item.durationMinutes), 1);
   elements.evolutionChart.innerHTML = items.map((item) => `
-    <div class="evolution-point" title="${escapeHtml(formatDate(item.date))}: ${escapeHtml(item.maxDepthMeters)} m, ${escapeHtml(item.durationMinutes)} min">
+    <div class="evolution-point" title="${escapeHtml(formatDate(item.date))}: ${escapeHtml(formatNumber(item.maxDepthMeters))} m, ${escapeHtml(formatNumber(item.durationMinutes))} min">
       <div class="evolution-bars">
         <span class="evolution-depth" style="--value:${Math.max(6, item.maxDepthMeters / maxDepth * 100)}%"></span>
         <span class="evolution-duration" style="--value:${Math.max(6, item.durationMinutes / maxDuration * 100)}%"></span>
@@ -1132,11 +1133,11 @@ function renderAdvancedInsights(insights) {
   elements.frequentCenters.innerHTML = frequencyMarkup(insights.frequentCenters, "Aún no hay centros registrados.");
   elements.ownershipComparison.innerHTML = insights.equipmentOwnership.length
     ? insights.equipmentOwnership.map((item) => `
-      <div class="ownership-row"><div><strong>${item.type === "owned" ? "Material propio" : "Material de alquiler"}</strong><span>${escapeHtml(item.sampleSize)} ${item.sampleSize === 1 ? "inmersión" : "inmersiones"}</span></div><p><b>${escapeHtml(item.averageDurationMinutes)} min</b><span>duración media</span></p><p><b>${escapeHtml(item.averageDepthMeters)} m</b><span>profundidad media</span></p></div>`).join("")
+      <div class="ownership-row"><div><strong>${item.type === "owned" ? "Material propio" : "Material de alquiler"}</strong><span>${escapeHtml(item.sampleSize)} ${item.sampleSize === 1 ? "inmersión" : "inmersiones"}</span></div><p><b>${escapeHtml(formatNumber(item.averageDurationMinutes))} min</b><span>duración media</span></p><p><b>${escapeHtml(formatNumber(item.averageDepthMeters))} m</b><span>profundidad media</span></p></div>`).join("")
     : '<p class="frequency-empty">Indica si el material es propio o alquilado para comparar.</p>';
   elements.ballastPatterns.innerHTML = insights.ballastConfigurations.length
     ? insights.ballastConfigurations.map((item) => `
-      <article class="ballast-pattern"><div><strong>${escapeHtml(configurationName(item))}</strong><span>${escapeHtml(item.sampleSize)} ${item.sampleSize === 1 ? "registro" : "registros"}</span></div><p><b>${escapeHtml(item.averageBallastKg)} kg</b><span>media observada</span></p><p><b>${escapeHtml(item.minimumBallastKg)}-${escapeHtml(item.maximumBallastKg)} kg</b><span>rango registrado</span></p></article>`).join("")
+      <article class="ballast-pattern"><div><strong>${escapeHtml(configurationName(item))}</strong><span>${escapeHtml(item.sampleSize)} ${item.sampleSize === 1 ? "registro" : "registros"}</span></div><p><b>${escapeHtml(formatNumber(item.averageBallastKg))} kg</b><span>media observada</span></p><p><b>${escapeHtml(formatNumber(item.minimumBallastKg))}-${escapeHtml(formatNumber(item.maximumBallastKg))} kg</b><span>rango registrado</span></p></article>`).join("")
     : '<p class="frequency-empty">Completa lastre y configuración para crear grupos comparables.</p>';
   elements.reflectionEvolution.innerHTML = insights.reflectionEvolution.length
     ? insights.reflectionEvolution.map((item) => `
@@ -1338,8 +1339,8 @@ function renderHome(dives) {
       <span class="home-last-name">${escapeHtml(latest.name)}</span>
       <span class="home-last-meta">${escapeHtml(formatDate(latest.date))} · ${escapeHtml(daysAgoLabel(latest.date))}${latest.diveCenter ? ` · ${escapeHtml(latest.diveCenter)}` : ""}</span>
       <span class="home-last-facts">
-        <span><b>${escapeHtml(latest.maxDepthMeters)}</b> m</span>
-        <span><b>${escapeHtml(latest.durationMinutes)}</b> min</span>
+        <span><b>${escapeHtml(formatNumber(latest.maxDepthMeters))}</b> m</span>
+        <span><b>${escapeHtml(formatNumber(latest.durationMinutes))}</b> min</span>
         ${latest.buddies.length ? `<span>Con ${escapeHtml(latest.buddies.join(", "))}</span>` : ""}
       </span>
       <span class="home-last-profile">${profileSvg(latest.maxDepthMeters, latest.durationMinutes)}</span>
@@ -1348,7 +1349,7 @@ function renderHome(dives) {
     </button>`;
   elements.homeRecent.innerHTML = rest.slice(0, 4).map((dive) => `
     <li><button type="button" data-dive-id="${escapeHtml(dive.id)}">
-      <span class="home-recent-depth">${escapeHtml(dive.maxDepthMeters)} m</span>
+      <span class="home-recent-depth">${escapeHtml(formatNumber(dive.maxDepthMeters))} m</span>
       <span class="home-recent-text"><strong>${escapeHtml(dive.name)}</strong><small>${escapeHtml(formatDate(dive.date))}</small></span>
     </button></li>`).join("") || '<li class="muted">Las siguientes inmersiones aparecerán aquí.</li>';
 }
