@@ -195,3 +195,11 @@
     width: 100%;
   }
 }
+
+/* iOS Safari zooms into any field under 16px when it gets focus. Touch
+   devices get 16px field text; desktop keeps the agreed design. */
+@media (pointer: coarse) {
+  :where(input, select, textarea):not([type="checkbox"], [type="radio"], [type="file"]) {
+    font-size: max(1rem, 1em);
+  }
+}

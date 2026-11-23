@@ -38,9 +38,10 @@ import { initializePublicShare } from "./public-share.js?v=20260902-2";
 import { initializeClientMonitoring } from "./client-monitoring.js?v=20260916-1";
 import {
   apiValidationMessage,
-  nativeValidationMessage
+  nativeValidationMessage,
+  profilePhotoMessage
 } from "./validation-messages.js?v=20261019-2";
-import { populateDiveForm } from "./dive-form.js?v=20261019-1";
+import { localIsoDate, populateDiveForm } from "./dive-form.js?v=20261019-1";
 import { createDiveMap } from "./dive-map.js?v=20261030-1";
 import { TABS, createTabs } from "./tabs.js?v=20261121-1";
 import { createTheme } from "./theme.js?v=20261122-1";
@@ -246,7 +247,20 @@ function syncDisappearingExamples() {
   });
 }
 
+// The eye button unmasks the field it controls. The field goes back to
+// type="password" on submit, reset and auth tab changes, so password managers
+// always see a password field and the next visit starts masked.
+function setPasswordVisible(button, visible) {
+  document.getElementById(button.getAttribute("aria-controls")).type = visible ? "text" : "password";
+  button.setAttribute("aria-pressed", String(visible));
+}
+
+function maskPasswords(container) {
+  container.querySelectorAll(".password-toggle").forEach((button) => setPasswordVisible(button, false));
+}
+
 function switchAuthMode(mode) {
+  maskPasswords(elements.authView);
   const loginActive = mode === "login";
   const registerActive = mode === "register";
 
@@ -265,10 +279,35 @@ function switchAuthMode(mode) {
   clearFormErrors(elements.authView);
 }
 
+// One polite live region reads an error that appears when the user leaves a
+// field, a moment later so it does not talk over the next field. Errors shown
+// on submit are read with the field that receives focus instead.
+const announcement = { region: null, field: null, timer: 0 };
+
+function fieldErrorId(input) {
+  return `${input.form?.id || "form"}-${input.name}-error`;
+}
+
+// Errors and hints live inside the <label>, so they are aria-hidden there to
+// keep them out of the field's name, and read as its description instead.
+function linkDescription(input, id, linked) {
+  const ids = (input.getAttribute("aria-describedby") || "")
+    .split(/\s+/)
+    .filter((value) => value && value !== id);
+  if (linked) ids.push(id);
+  if (ids.length) input.setAttribute("aria-describedby", ids.join(" "));
+  else input.removeAttribute("aria-describedby");
+}
+
 function clearFieldError(input) {
-  input.removeAttribute("aria-invalid");
-  const error = input.closest("label")?.querySelector(".field-error");
-  if (error) error.remove();
+  input.setAttribute("aria-invalid", "false");
+  const id = fieldErrorId(input);
+  linkDescription(input, id, false);
+  document.getElementById(id)?.remove();
+  if (announcement.field === input) {
+    clearTimeout(announcement.timer);
+    announcement.region.textContent = "";
+  }
 }
 
 function clearFormErrors(container) {
@@ -283,8 +322,41 @@ function setFieldError(form, field, message) {
   input.setAttribute("aria-invalid", "true");
   const error = document.createElement("span");
   error.className = "field-error";
+  error.id = fieldErrorId(input);
+  error.setAttribute("aria-hidden", "true");
   error.textContent = message;
-  input.insertAdjacentElement("afterend", error);
+  const fileButton = input.closest(".file-button");
+  (fileButton || input.closest(".password-input") || input).insertAdjacentElement("afterend", error);
+  linkDescription(input, error.id, true);
+}
+
+// Announce on a delay, through the region above.
+function announceFieldError(input, message) {
+  if (!announcement.region) {
+    announcement.region = document.createElement("div");
+    announcement.region.className = "visually-hidden";
+    announcement.region.setAttribute("aria-live", "polite");
+    document.body.append(announcement.region);
+  }
+  const label = input.labels?.[0]?.firstChild?.textContent.trim();
+  clearTimeout(announcement.timer);
+  announcement.region.textContent = "";
+  announcement.field = input;
+  announcement.timer = setTimeout(() => {
+    announcement.region.textContent = label ? `${label}: ${message}` : message;
+  }, 500);
+}
+
+// :user-invalid already paints the field red once the user leaves it; show
+// the same message and state that a submit would, so colour is never alone.
+function showErrorOnLeave(event) {
+  const input = event.target;
+  if (!input.form?.noValidate || !input.matches("input, select, textarea")) return;
+  if (input.type === "hidden" || input.getAttribute("aria-invalid") === "true") return;
+  if (!input.matches(":user-invalid")) return;
+  const message = nativeValidationMessage(input);
+  setFieldError(input.form, input.name, message);
+  announceFieldError(input, message);
 }
 
 function validateForm(form) {
@@ -337,6 +409,14 @@ function validateForm(form) {
     } else if (files.some((file) => file.size > 8 * 1024 * 1024)) {
       setFieldError(form, "photos", "Cada fotografía debe ocupar 8 MB o menos.");
       firstInvalid ||= form.elements.photos;
+    }
+  }
+
+  if (form === elements.profileForm) {
+    const photoMessage = profilePhotoMessage(form.elements.photo.files[0]);
+    if (photoMessage) {
+      setFieldError(form, "photo", photoMessage);
+      firstInvalid ||= form.elements.photo;
     }
   }
 
@@ -820,6 +900,7 @@ async function loadShares() {
 function openShareDialog() {
   if (!state.detailDive) return;
   elements.shareForm.reset();
+  clearFormErrors(elements.shareForm);
   elements.shareForm.elements.expiresInDays.value = "7";
   [...elements.shareForm.querySelectorAll('.share-options input[type="checkbox"]')].forEach((input) => { input.checked = true; });
   elements.shareForm.elements.includeDiverName.checked = Boolean(state.profile?.shareNameByDefault);
@@ -1368,7 +1449,7 @@ async function loadDives() {
 function resetDiveForm() {
   state.editingDiveId = null;
   elements.diveForm.reset();
-  elements.diveForm.elements.date.max = new Date().toISOString().slice(0, 10);
+  elements.diveForm.elements.date.max = localIsoDate();
   elements.diveFormTitle.textContent = "Registrar inmersión";
   elements.diveFormEyebrow.textContent = "Nueva experiencia";
   elements.saveDiveButton.textContent = "Guardar inmersión";
@@ -1948,9 +2029,21 @@ elements.forgotPasswordButton.addEventListener("click", () => {
 elements.backLoginButtons.forEach((button) =>
   button.addEventListener("click", () => switchAuthMode("login"))
 );
-document.addEventListener("input", (event) => {
-  if (event.target.matches("input, textarea")) clearFieldError(event.target);
+document.querySelectorAll("input, select, textarea").forEach((field) => {
+  field.setAttribute("aria-invalid", "false");
 });
+document.querySelectorAll(".password-toggle").forEach((button) => {
+  button.addEventListener("click", () => {
+    setPasswordVisible(button, button.getAttribute("aria-pressed") !== "true");
+  });
+});
+// Capture on document runs before each form's own submit handler.
+document.addEventListener("submit", (event) => maskPasswords(event.target), true);
+document.addEventListener("reset", (event) => maskPasswords(event.target), true);
+document.addEventListener("input", (event) => {
+  if (event.target.matches("input, textarea, select")) clearFieldError(event.target);
+});
+document.addEventListener("focusout", showErrorOnLeave);
 elements.logoutButton.addEventListener("click", logout);
 elements.openProfile.addEventListener("click", openProfileDialog);
 elements.homeLastDive.addEventListener("click", handleHomeClick);
@@ -1959,6 +2052,11 @@ elements.closeProfile.addEventListener("click", closeProfileDialog);
 elements.cancelProfile.addEventListener("click", closeProfileDialog);
 elements.profileForm.addEventListener("submit", handleProfileSubmit);
 elements.removeProfilePhoto.addEventListener("click", handleProfilePhotoDelete);
+elements.profileForm.elements.photo.addEventListener("change", (event) => {
+  const message = profilePhotoMessage(event.target.files[0]);
+  if (message) setFieldError(elements.profileForm, "photo", message);
+  else clearFieldError(event.target);
+});
 elements.profileDialog.addEventListener("click", (event) => {
   if (event.target === elements.profileDialog) closeProfileDialog();
 });

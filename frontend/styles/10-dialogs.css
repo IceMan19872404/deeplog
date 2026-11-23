@@ -272,6 +272,12 @@
   pointer-events: none;
 }
 
+/* The real input is invisible, so the pill shows the keyboard focus ring. */
+.photo-picker:has(input:focus-visible) {
+  outline: 3px solid var(--c-line-1);
+  outline-offset: 3px;
+}
+
 .photo-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
