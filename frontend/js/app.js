@@ -265,10 +265,35 @@ function switchAuthMode(mode) {
   clearFormErrors(elements.authView);
 }
 
+// One polite live region reads an error that appears when the user leaves a
+// field, a moment later so it does not talk over the next field. Errors shown
+// on submit are read with the field that receives focus instead.
+const announcement = { region: null, field: null, timer: 0 };
+
+function fieldErrorId(input) {
+  return `${input.form?.id || "form"}-${input.name}-error`;
+}
+
+// Errors and hints live inside the <label>, so they are aria-hidden there to
+// keep them out of the field's name, and read as its description instead.
+function linkDescription(input, id, linked) {
+  const ids = (input.getAttribute("aria-describedby") || "")
+    .split(/\s+/)
+    .filter((value) => value && value !== id);
+  if (linked) ids.push(id);
+  if (ids.length) input.setAttribute("aria-describedby", ids.join(" "));
+  else input.removeAttribute("aria-describedby");
+}
+
 function clearFieldError(input) {
-  input.removeAttribute("aria-invalid");
-  const error = input.closest("label")?.querySelector(".field-error");
-  if (error) error.remove();
+  input.setAttribute("aria-invalid", "false");
+  const id = fieldErrorId(input);
+  linkDescription(input, id, false);
+  document.getElementById(id)?.remove();
+  if (announcement.field === input) {
+    clearTimeout(announcement.timer);
+    announcement.region.textContent = "";
+  }
 }
 
 function clearFormErrors(container) {
@@ -283,8 +308,41 @@ function setFieldError(form, field, message) {
   input.setAttribute("aria-invalid", "true");
   const error = document.createElement("span");
   error.className = "field-error";
+  error.id = fieldErrorId(input);
+  error.setAttribute("aria-hidden", "true");
   error.textContent = message;
-  input.insertAdjacentElement("afterend", error);
+  const fileButton = input.closest(".file-button");
+  (fileButton || input).insertAdjacentElement("afterend", error);
+  linkDescription(input, error.id, true);
+}
+
+// Announce on a delay, through the region above.
+function announceFieldError(input, message) {
+  if (!announcement.region) {
+    announcement.region = document.createElement("div");
+    announcement.region.className = "visually-hidden";
+    announcement.region.setAttribute("aria-live", "polite");
+    document.body.append(announcement.region);
+  }
+  const label = input.labels?.[0]?.firstChild?.textContent.trim();
+  clearTimeout(announcement.timer);
+  announcement.region.textContent = "";
+  announcement.field = input;
+  announcement.timer = setTimeout(() => {
+    announcement.region.textContent = label ? `${label}: ${message}` : message;
+  }, 500);
+}
+
+// :user-invalid already paints the field red once the user leaves it; show
+// the same message and state that a submit would, so colour is never alone.
+function showErrorOnLeave(event) {
+  const input = event.target;
+  if (!input.form?.noValidate || !input.matches("input, select, textarea")) return;
+  if (input.type === "hidden" || input.getAttribute("aria-invalid") === "true") return;
+  if (!input.matches(":user-invalid")) return;
+  const message = nativeValidationMessage(input);
+  setFieldError(input.form, input.name, message);
+  announceFieldError(input, message);
 }
 
 function validateForm(form) {
@@ -1948,9 +2006,13 @@ elements.forgotPasswordButton.addEventListener("click", () => {
 elements.backLoginButtons.forEach((button) =>
   button.addEventListener("click", () => switchAuthMode("login"))
 );
-document.addEventListener("input", (event) => {
-  if (event.target.matches("input, textarea")) clearFieldError(event.target);
+document.querySelectorAll("input, select, textarea").forEach((field) => {
+  field.setAttribute("aria-invalid", "false");
 });
+document.addEventListener("input", (event) => {
+  if (event.target.matches("input, textarea, select")) clearFieldError(event.target);
+});
+document.addEventListener("focusout", showErrorOnLeave);
 elements.logoutButton.addEventListener("click", logout);
 elements.openProfile.addEventListener("click", openProfileDialog);
 elements.homeLastDive.addEventListener("click", handleHomeClick);

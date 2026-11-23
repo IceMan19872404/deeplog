@@ -293,8 +293,9 @@
                 minlength="8"
                 maxlength="72"
                 pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,72}"
+                aria-describedby="register-password-hint"
               >
-              <small>8 caracteres, una mayúscula, una minúscula y un número.</small>
+              <small id="register-password-hint" aria-hidden="true">8 caracteres, una mayúscula, una minúscula y un número.</small>
             </label>
             <button class="primary-button" type="submit">
               <span>Crear mi bitácora</span>
@@ -346,8 +347,9 @@
                 minlength="8"
                 maxlength="72"
                 pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,72}"
+                aria-describedby="reset-password-hint"
               >
-              <small>8 caracteres, una mayúscula, una minúscula y un número.</small>
+              <small id="reset-password-hint" aria-hidden="true">8 caracteres, una mayúscula, una minúscula y un número.</small>
             </label>
             <label>
               Repite la nueva contraseña
@@ -704,12 +706,12 @@
         <div class="profile-photo-editor">
           <span id="profile-form-avatar" class="avatar avatar-editor" aria-hidden="true"></span>
           <div>
-            <label class="file-button">Elegir fotografía<input name="photo" type="file" accept="image/jpeg,image/png,image/webp"></label>
-            <p>JPEG, PNG o WebP. Máximo 3 MB.</p>
+            <label class="file-button">Elegir fotografía<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="profile-photo-hint"></label>
+            <p id="profile-photo-hint">JPEG, PNG o WebP. Máximo 3 MB.</p>
             <button id="remove-profile-photo" class="danger-link" type="button" hidden>Eliminar fotografía</button>
           </div>
         </div>
-        <label>Sobre ti <span class="optional">(opcional)</span><textarea name="bio" maxlength="500" rows="4" placeholder="Qué te atrae del mar o qué tipo de inmersiones disfrutas."></textarea><small>Hasta 500 caracteres.</small></label>
+        <label>Sobre ti <span class="optional">(opcional)</span><textarea name="bio" maxlength="500" rows="4" placeholder="Qué te atrae del mar o qué tipo de inmersiones disfrutas." aria-describedby="profile-bio-hint"></textarea><small id="profile-bio-hint" aria-hidden="true">Hasta 500 caracteres.</small></label>
         <div class="field-grid">
           <label>Nivel o certificación
             <select name="certificationLevel">
@@ -762,8 +764,8 @@
           </label>
           <label>
             Fecha
-            <input name="date" type="date" required>
-            <small class="field-example" data-disappearing-example>Ej.: 18/10/2026</small>
+            <input name="date" type="date" required aria-describedby="dive-date-example">
+            <small id="dive-date-example" class="field-example" data-disappearing-example aria-hidden="true">Ej.: 18/10/2026</small>
           </label>
         </div>
 
@@ -940,8 +942,9 @@
             maxlength="5000"
             rows="4"
             placeholder="Ej.: Visibilidad de 20 m, agua en calma, banco de barracudas y buena flotabilidad."
+            aria-describedby="dive-comments-hint"
           ></textarea>
-          <small>Hasta 5.000 caracteres.</small>
+          <small id="dive-comments-hint" aria-hidden="true">Hasta 5.000 caracteres.</small>
         </label>
 
         <div class="dialog-actions">
