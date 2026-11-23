@@ -176,6 +176,21 @@ select {
   font: inherit;
 }
 
+/* Balanced headings and paragraphs without a lone last word. Browsers
+   without text-wrap support simply wrap as before. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
 button {
   cursor: pointer;
 }
