@@ -454,7 +454,7 @@
 
             <div class="home-grid">
               <article class="home-card home-last" aria-labelledby="home-last-title">
-                <div class="home-card-heading"><p class="eyebrow">Última inmersión</p><a href="#/inmersiones">Ver todas</a></div>
+                <div class="home-card-heading"><p id="home-last-title" class="eyebrow">Última inmersión</p><a href="#/inmersiones">Ver todas</a></div>
                 <div id="home-last-dive" class="home-last-dive">
                   <p class="muted">Aquí aparecerá tu última inmersión.</p>
                 </div>
@@ -728,7 +728,7 @@
       </form>
     </dialog>
 
-    <dialog id="dive-dialog" class="app-dialog">
+    <dialog id="dive-dialog" class="app-dialog" aria-labelledby="dive-form-title">
       <form id="dive-form" class="dive-form" method="post" novalidate>
         <div class="dialog-heading">
           <div>
@@ -955,7 +955,7 @@
       </form>
     </dialog>
 
-    <dialog id="dive-detail-dialog" class="app-dialog detail-dialog">
+    <dialog id="dive-detail-dialog" class="app-dialog detail-dialog" aria-labelledby="detail-name">
       <article class="dive-detail">
         <div class="dialog-heading">
           <div>
@@ -1051,10 +1051,10 @@
       </article>
     </dialog>
 
-    <dialog id="share-dialog" class="app-dialog share-dialog">
+    <dialog id="share-dialog" class="app-dialog share-dialog" aria-labelledby="share-dialog-title">
       <form id="share-form" class="share-form" method="post">
         <div class="dialog-heading">
-          <div><p class="eyebrow">Enlace privado</p><h2>Compartir inmersión</h2><p>Configura una cápsula de solo lectura.</p></div>
+          <div><p class="eyebrow">Enlace privado</p><h2 id="share-dialog-title">Compartir inmersión</h2><p>Configura una cápsula de solo lectura.</p></div>
           <button id="close-share-dialog" class="dialog-close" type="button" aria-label="Cerrar">×</button>
         </div>
         <fieldset class="share-options">
@@ -1092,12 +1092,12 @@
       </form>
     </dialog>
 
-    <dialog id="delete-dialog" class="app-dialog confirm-dialog">
+    <dialog id="delete-dialog" class="app-dialog confirm-dialog" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-description">
       <div class="confirm-content">
         <span class="confirm-symbol" aria-hidden="true">−</span>
         <p class="eyebrow">Confirmar borrado</p>
-        <h2>¿Eliminar esta inmersión?</h2>
-        <p>
+        <h2 id="delete-dialog-title">¿Eliminar esta inmersión?</h2>
+        <p id="delete-dialog-description">
           <strong id="delete-dive-name"></strong> desaparecerá de tu bitácora.
           Esta acción no se puede deshacer.
         </p>
@@ -1113,11 +1113,11 @@
       </div>
     </dialog>
 
-    <dialog id="delete-account-dialog" class="app-dialog confirm-dialog account-delete-dialog">
+    <dialog id="delete-account-dialog" class="app-dialog confirm-dialog account-delete-dialog" aria-labelledby="delete-account-title">
       <form id="delete-account-form" class="confirm-content" method="post" novalidate>
         <span class="confirm-symbol" aria-hidden="true">−</span>
         <p class="eyebrow">Control de la cuenta</p>
-        <h2>Eliminar DeepLog definitivamente</h2>
+        <h2 id="delete-account-title">Eliminar DeepLog definitivamente</h2>
         <p>Esta acción elimina tus inmersiones, fotografías y enlaces. Descarga antes una copia si quieres conservarlos.</p>
         <label>Contraseña actual
           <input name="password" type="password" minlength="8" maxlength="72" autocomplete="current-password" required>
