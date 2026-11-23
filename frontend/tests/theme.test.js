@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import vm from "node:vm";
 import { readAllStyles } from "./styles.js";
 import { THEME_KEY, headerPreference, readPreference, resolveTheme } from "../js/theme.js";
@@ -85,4 +85,18 @@ test("Sora is preloaded with the same URL as its @font-face", async () => {
   const preload = /<link rel="preload" href="([^"]+)" as="font" type="font\/woff2" crossorigin>/.exec(html);
   assert.ok(preload, "font preload with crossorigin not found");
   assert.equal(preload[1], face[1]);
+});
+
+test("every var(--name) without a fallback refers to a declared property", async () => {
+  const css = await readAllStyles();
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const dir = new URL("../js/", import.meta.url);
+  const scripts = await Promise.all((await readdir(dir)).map((name) => readFile(new URL(name, dir), "utf8")));
+  const declared = new Set([...css.matchAll(/(--[\w-]+)\s*:/g)].map((match) => match[1]));
+  // Properties set from JS or inline styles (e.g. --bar-height, --reveal-x).
+  for (const source of [html, ...scripts]) {
+    for (const match of source.matchAll(/(--[\w-]+)/g)) declared.add(match[1]);
+  }
+  const missing = [...css.matchAll(/var\(\s*(--[\w-]+)\s*\)/g)].map((match) => match[1]).filter((name) => !declared.has(name));
+  assert.deepEqual([...new Set(missing)], []);
 });
