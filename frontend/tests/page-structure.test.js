@@ -16,3 +16,8 @@ test("lists and loading states are not live regions", () => {
 test("pagination announces only the page label", () => {
   assert.match(tagOf('id="page-label"'), /role="status"/);
 });
+
+test("every tab panel starts with its own <h1>", () => {
+  const headings = [...html.matchAll(/<(h\d)\b[^>]*data-tab-heading[^>]*>/g)].map((match) => match[1]);
+  assert.deepEqual(headings, ["h1", "h1", "h1", "h1", "h1"]);
+});

@@ -117,7 +117,7 @@
 }
 
 .form-heading h2,
-.section-heading h2 {
+.section-heading :is(h1, h2) {
   margin: 0;
   font-size: 2rem;
   letter-spacing: -0.045em;
