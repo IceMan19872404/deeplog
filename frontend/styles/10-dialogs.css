@@ -3,6 +3,7 @@
 .app-dialog {
   width: min(760px, calc(100% - 28px));
   max-height: min(880px, calc(100vh - 32px));
+  max-height: min(880px, calc(100dvh - 32px));
   padding: 0;
   border: 1px solid var(--c-line-22);
   border-radius: 30px;
@@ -14,6 +15,14 @@
 .app-dialog::backdrop {
   background: var(--c-bg-50);
   backdrop-filter: blur(10px);
+  /* A scroll container that keeps wheel/touch over the backdrop off the page. */
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+/* Scrolling inside an open modal never chains to the page behind it. */
+.app-dialog:modal {
+  overscroll-behavior: contain;
 }
 
 .dive-form {
