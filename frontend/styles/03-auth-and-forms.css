@@ -277,3 +277,28 @@
   background: var(--c-bg-14);
   color: var(--c-text-3);
 }
+
+/* Textareas grow with their text. min-block-size keeps the height the rows
+   attribute gives today (rows × line + padding and border); browsers without
+   field-sizing keep that fixed height and scroll, as before. */
+@supports (field-sizing: content) {
+  :is(.dive-form, .profile-form, .reflection-form) textarea {
+    --textarea-rows: 2;
+    --textarea-chrome: 30px;
+    field-sizing: content;
+    min-block-size: calc(var(--textarea-rows) * 1lh + var(--textarea-chrome));
+    max-block-size: calc(12lh + var(--textarea-chrome));
+  }
+
+  :is(.dive-form, .profile-form, .reflection-form) textarea[rows="3"] {
+    --textarea-rows: 3;
+  }
+
+  :is(.dive-form, .profile-form, .reflection-form) textarea[rows="4"] {
+    --textarea-rows: 4;
+  }
+
+  .profile-form textarea {
+    --textarea-chrome: 28px;
+  }
+}
