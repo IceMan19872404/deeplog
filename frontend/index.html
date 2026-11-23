@@ -485,7 +485,7 @@
             </div>
 
             <div id="dashboard-message" class="message" role="status" hidden></div>
-            <div id="dives-loading" class="loading-state" role="status" aria-live="polite">
+            <div id="dives-loading" class="loading-state">
               <span class="loader" aria-hidden="true"></span>
               Cargando inmersiones...
             </div>
@@ -500,13 +500,13 @@
                 Registrar mi primera inmersión
               </button>
             </div>
-            <div id="dives-list" class="dives-list" aria-live="polite"></div>
+            <div id="dives-list" class="dives-list"></div>
 
             <nav id="pagination" class="pagination" aria-label="Paginación" hidden>
               <button id="previous-page" class="ghost-button" type="button">
                 Anterior
               </button>
-              <span id="page-label"></span>
+              <span id="page-label" role="status"></span>
               <button id="next-page" class="ghost-button" type="button">
                 Siguiente
               </button>
@@ -537,10 +537,10 @@
               </p>
             </div>
 
-            <div id="stats-loading" class="stats-loading" role="status" aria-live="polite">
+            <div id="stats-loading" class="stats-loading">
               Actualizando estadísticas...
             </div>
-            <div class="stats-grid" aria-live="polite">
+            <div class="stats-grid">
               <article class="stat-card stat-time">
                 <span>Tiempo bajo el agua</span>
                 <strong id="total-time">0 min</strong>
@@ -584,7 +584,7 @@
               </div>
               <p class="insight-disclaimer">Describe tus registros. No recomienda configuraciones ni prácticas de buceo.</p>
             </div>
-            <div id="advanced-insights-loading" class="stats-loading" role="status" aria-live="polite">Analizando tu historial...</div>
+            <div id="advanced-insights-loading" class="stats-loading">Analizando tu historial...</div>
             <div id="advanced-insights-empty" class="insight-empty" hidden>
               Registra más inmersiones y configuraciones para descubrir patrones personales.
             </div>

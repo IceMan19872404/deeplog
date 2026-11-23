@@ -1358,6 +1358,7 @@ function handleHomeClick(event) {
 
 async function loadDives() {
   elements.divesLoading.hidden = false;
+  elements.divesList.setAttribute("aria-busy", "true");
   elements.divesList.hidden = true;
   elements.divesEmpty.hidden = true;
   setMessage(elements.dashboardMessage, "");
@@ -1382,6 +1383,7 @@ async function loadDives() {
   } finally {
     elements.divesLoading.hidden = true;
     elements.divesList.hidden = false;
+    elements.divesList.removeAttribute("aria-busy");
     elements.homeLastDive.removeAttribute("data-loading");
   }
 }
