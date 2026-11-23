@@ -160,6 +160,60 @@
   box-shadow: 0 0 0 4px var(--c-shadow-5);
 }
 
+/* «Mostrar contraseña»: the eye button sits inside the field's right edge. */
+.password-input {
+  position: relative;
+  display: block;
+}
+
+.auth-form .password-input input {
+  padding-inline-end: 52px;
+}
+
+.password-toggle {
+  position: absolute;
+  inset-block: 4px;
+  inset-inline-end: 4px;
+  display: grid;
+  width: 42px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--muted);
+  transition: color 160ms ease;
+}
+
+.password-toggle:focus-visible {
+  outline-offset: 0;
+}
+
+.password-toggle[aria-pressed="true"] {
+  color: var(--aqua-dark);
+}
+
+@media (hover: hover) {
+  .password-toggle:hover {
+    color: var(--aqua-dark);
+  }
+}
+
+.password-icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.password-toggle[aria-pressed="true"] .password-icon-show,
+.password-toggle[aria-pressed="false"] .password-icon-hide {
+  display: none;
+}
+
 .auth-form input[aria-invalid="true"],
 .dive-form input[aria-invalid="true"],
 .dive-form textarea[aria-invalid="true"],

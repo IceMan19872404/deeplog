@@ -247,7 +247,20 @@ function syncDisappearingExamples() {
   });
 }
 
+// The eye button unmasks the field it controls. The field goes back to
+// type="password" on submit, reset and auth tab changes, so password managers
+// always see a password field and the next visit starts masked.
+function setPasswordVisible(button, visible) {
+  document.getElementById(button.getAttribute("aria-controls")).type = visible ? "text" : "password";
+  button.setAttribute("aria-pressed", String(visible));
+}
+
+function maskPasswords(container) {
+  container.querySelectorAll(".password-toggle").forEach((button) => setPasswordVisible(button, false));
+}
+
 function switchAuthMode(mode) {
+  maskPasswords(elements.authView);
   const loginActive = mode === "login";
   const registerActive = mode === "register";
 
@@ -313,7 +326,7 @@ function setFieldError(form, field, message) {
   error.setAttribute("aria-hidden", "true");
   error.textContent = message;
   const fileButton = input.closest(".file-button");
-  (fileButton || input).insertAdjacentElement("afterend", error);
+  (fileButton || input.closest(".password-input") || input).insertAdjacentElement("afterend", error);
   linkDescription(input, error.id, true);
 }
 
@@ -2019,6 +2032,14 @@ elements.backLoginButtons.forEach((button) =>
 document.querySelectorAll("input, select, textarea").forEach((field) => {
   field.setAttribute("aria-invalid", "false");
 });
+document.querySelectorAll(".password-toggle").forEach((button) => {
+  button.addEventListener("click", () => {
+    setPasswordVisible(button, button.getAttribute("aria-pressed") !== "true");
+  });
+});
+// Capture on document runs before each form's own submit handler.
+document.addEventListener("submit", (event) => maskPasswords(event.target), true);
+document.addEventListener("reset", (event) => maskPasswords(event.target), true);
 document.addEventListener("input", (event) => {
   if (event.target.matches("input, textarea, select")) clearFieldError(event.target);
 });
