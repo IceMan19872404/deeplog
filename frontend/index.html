@@ -24,18 +24,18 @@
     <link rel="stylesheet" href="/styles/05-app-shell.css?v=20261123-2">
     <link rel="stylesheet" href="/styles/06-inicio.css?v=20261123-2">
     <link rel="stylesheet" href="/styles/07-profile.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/08-stats.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/08-stats.css?v=20261123-5">
     <link rel="stylesheet" href="/styles/09-logbook.css?v=20261123-2">
     <link rel="stylesheet" href="/styles/10-dialogs.css?v=20261123-2">
     <link rel="stylesheet" href="/styles/11-keyframes.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/12-responsive.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/12-responsive.css?v=20261123-4">
     <link rel="stylesheet" href="/styles/13-reduced-motion.css?v=20261123-2">
     <link rel="stylesheet" href="/styles/14-sharing-and-insights.css?v=20261123-2">
     <link rel="stylesheet" href="/styles/15-theme-abismo.css?v=20261123-2">
     <link rel="stylesheet" href="/styles/16-animations.css?v=20261123-2">
     <link rel="stylesheet" href="/styles/17-dive-number.css?v=20261123-2">
     <link rel="stylesheet" href="/styles/18-theme-superficie.css?v=20261123-2">
-    <script type="module" src="/js/app.js?v=20261123-2"></script>
+    <script type="module" src="/js/app.js?v=20261123-4"></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
@@ -571,40 +571,78 @@
             <div id="stats-loading" class="stats-loading">
               Actualizando estadísticas...
             </div>
-            <div class="stats-grid">
-              <article class="stat-card stat-time">
+            <!-- The cards are tabs: the panel below shows the detail of the selected figure. -->
+            <div
+              class="stats-grid"
+              role="tablist"
+              aria-label="Detalle de tus cifras"
+              focusgroup="tablist nomemory"
+            >
+              <button type="button" role="tab" id="stat-tab-time" class="stat-card" data-stat="time" data-panel="stat-panel-time" aria-selected="true" focusgroupstart>
                 <span>Tiempo bajo el agua</span>
                 <strong id="total-time">0 min</strong>
                 <small>acumulado</small>
-              </article>
-              <article class="stat-card">
+              </button>
+              <button type="button" role="tab" id="stat-tab-depth" class="stat-card" data-stat="depth" data-panel="stat-panel-depth" aria-selected="false">
                 <span>Máxima profundidad</span>
                 <strong id="max-depth">—</strong>
                 <small>récord personal</small>
-              </article>
-              <article class="stat-card">
+              </button>
+              <button type="button" role="tab" id="stat-tab-duration" class="stat-card" data-stat="duration" data-panel="stat-panel-duration" aria-selected="false">
                 <span>Inmersión más larga</span>
                 <strong id="longest-duration">—</strong>
                 <small>récord personal</small>
-              </article>
-              <article class="stat-card stat-year">
+              </button>
+              <button type="button" role="tab" id="stat-tab-year" class="stat-card" data-stat="year" data-panel="stat-panel-year" aria-selected="false">
                 <span>Este año</span>
                 <strong id="dives-this-year">0</strong>
                 <small>inmersiones</small>
-              </article>
+              </button>
             </div>
 
-            <div class="activity-card">
-              <div>
-                <p class="eyebrow">Últimos seis meses</p>
-                <h3>Ritmo de inmersiones</h3>
+            <!-- Padding and background live on this wrapper, not on the panels
+                 (hidden="until-found" panels would still paint them). -->
+            <div class="activity-card stat-detail">
+              <div role="tabpanel" id="stat-panel-time" class="stat-panel" data-stat-panel="time" aria-labelledby="stat-panel-time-title" tabindex="0">
+                <div class="stat-panel-text">
+                  <p class="eyebrow">Últimos seis meses</p>
+                  <h3 id="stat-panel-time-title">Tiempo bajo el agua por mes</h3>
+                  <ul class="stat-facts" data-stat-facts></ul>
+                </div>
+                <div id="activity-chart" class="activity-chart" role="img" aria-label="Sin actividad registrada en los últimos seis meses"></div>
               </div>
-              <div
-                id="activity-chart"
-                class="activity-chart"
-                role="img"
-                aria-label="Sin actividad registrada en los últimos seis meses"
-              ></div>
+              <div role="tabpanel" id="stat-panel-depth" class="stat-panel" data-stat-panel="depth" aria-labelledby="stat-panel-depth-title" hidden="until-found">
+                <div class="stat-panel-text">
+                  <p class="eyebrow">Récord personal</p>
+                  <h3 id="stat-panel-depth-title">Máxima profundidad</h3>
+                  <div data-stat-record></div>
+                  <p class="stat-average" data-stat-average></p>
+                </div>
+                <div class="stat-bands-wrap">
+                  <p class="stat-bands-title">Inmersiones por profundidad</p>
+                  <ul class="stat-bands"></ul>
+                </div>
+              </div>
+              <div role="tabpanel" id="stat-panel-duration" class="stat-panel" data-stat-panel="duration" aria-labelledby="stat-panel-duration-title" hidden="until-found">
+                <div class="stat-panel-text">
+                  <p class="eyebrow">Récord personal</p>
+                  <h3 id="stat-panel-duration-title">Inmersión más larga</h3>
+                  <div data-stat-record></div>
+                  <p class="stat-average" data-stat-average></p>
+                </div>
+                <div class="stat-bands-wrap">
+                  <p class="stat-bands-title">Inmersiones por duración</p>
+                  <ul class="stat-bands"></ul>
+                </div>
+              </div>
+              <div role="tabpanel" id="stat-panel-year" class="stat-panel" data-stat-panel="year" aria-labelledby="stat-panel-year-title" hidden="until-found">
+                <div class="stat-panel-text">
+                  <p class="eyebrow">Este año · <span data-stat-year></span></p>
+                  <h3 id="stat-panel-year-title">Ritmo de inmersiones</h3>
+                  <p class="stat-average" data-stat-comparison></p>
+                </div>
+                <div class="activity-chart stat-year-chart" role="img" aria-label="Sin inmersiones este año"></div>
+              </div>
             </div>
           </section>
           <section class="advanced-insights-panel" aria-labelledby="advanced-insights-title">

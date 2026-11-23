@@ -1182,3 +1182,44 @@ Tests de frontend de 30 a 75. Scripts de Playwright por area (dialogos 17,
 formularios 21, PWA 45, tema y navegacion 17 comprobaciones) sobre la version
 integrada, barrido de anchos 320-1440 px y comparacion de capturas: solo
 cambian decimales, saltos de linea por `text-wrap` y el icono del ojo.
+
+## TD-041 - Cifras de Estadisticas como pestañas con detalle
+
+Fecha: 2026-11-23
+
+Estado: Aceptada
+
+Contexto:
+Las cuatro tarjetas de «El mar, en cifras» parecian seleccionables (se elevan
+al pasar el raton) pero no hacian nada; el panel de abajo siempre mostraba el
+ritmo de los ultimos seis meses.
+
+Decision:
+Patron de pestañas de la guia `tabs` de Modern Web Guidance: botones
+`role="tab"` en un `tablist` con `focusgroup="tablist nomemory"` (en
+navegadores sin `focusgroup` un pequeño respaldo hace el tabindex itinerante
+con flechas e Inicio/Fin, porque el polyfill tendria que copiarse al proyecto
+por la CSP). La seleccion sigue al foco porque los cuatro paneles ya estan
+pintados. El estado inicial va en el HTML; los paneles ocultos usan
+`hidden="until-found"` (la busqueda del navegador los encuentra y
+`beforematch` selecciona su pestaña) y comparten una celda de la rejilla, con
+el relleno y el fondo en el contenedor. La tarjeta seleccionada se marca con
+`aria-selected` y una barra inferior dibujada con borde, no solo con color.
+`GET /dives/stats` añade campos (sin cambiar los existentes): minutos por mes,
+inmersion mas profunda y mas larga, duracion media, reparto por profundidad y
+duracion, y este año mes a mes con el total del mismo periodo del año
+anterior. El codigo de los paneles vive en `js/stats-detail.js`.
+
+Consecuencias:
+- Las cifras se escalan con su tarjeta (unidades de contenedor `cqi`, con
+  `vw` como respaldo) y las graficas estrechas usan etiquetas compactas
+  («S», «1h45») con consultas de contenedor.
+- Las tarjetas «Tiempo» y «Este año» pierden su color fijo: el degradado
+  ahora indica la cifra seleccionada.
+
+Validacion:
+Tests de API (records, medias, tramos, año) y de frontend (formatos, barras,
+escape, estado inicial en el HTML). Playwright: clic en cada cifra, teclado
+nativo y con el respaldo sin `focusgroup`, «Abrir ficha», `beforematch`, sin
+desbordamiento en movil y sin avisos de la CSP. Capturas frente a `main`:
+solo cambia Estadisticas.

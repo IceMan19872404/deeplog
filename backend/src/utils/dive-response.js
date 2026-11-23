@@ -54,3 +54,4 @@ function toDiveResponse(dive) {
 }
 
 module.exports = toDiveResponse;
+module.exports.toDateOnly = toDateOnly;
