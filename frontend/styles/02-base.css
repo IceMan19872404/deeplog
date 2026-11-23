@@ -122,6 +122,10 @@
   .theme-choices {
     grid-template-columns: 1fr;
   }
+}
+
+/* Compact theme switch wherever the bottom tab bar is used. */
+@media (max-width: 960px) {
   .theme-option[aria-pressed="true"] {
     padding: 0 9px;
   }
