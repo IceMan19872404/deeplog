@@ -35,9 +35,7 @@
   --c-line-6: #d86f61;
   --c-shadow-6: rgba(216, 111, 97, 0.13);
   --c-text-2: #9b3526;
-  --c-bg-11: #0cbccc;
   --c-bg-12: #107acc;
-  --c-shadow-7: rgba(16, 122, 204, 0.24);
   --c-line-7: rgba(255, 255, 255, 0.35);
   --c-line-8: #ffffff;
   --c-line-9: #ffc1b7;
@@ -169,9 +167,7 @@
   --c-line-6: rgba(92, 242, 227, 0.34);
   --c-shadow-6: rgba(0, 0, 0, 0.51);
   --c-text-2: #ef7c6c;
-  --c-bg-11: #10def1;
   --c-bg-12: #1890ed;
-  --c-shadow-7: rgba(0, 0, 0, 0.6);
   --c-line-7: rgba(92, 242, 227, 0.145);
   --c-line-8: rgba(92, 242, 227, 0.34);
   --c-line-9: rgba(92, 242, 227, 0.34);
@@ -360,6 +356,10 @@
     var(--bubble-clear) 70%
   );
   --bubble-shadow: 0 0 0 1px var(--bubble-edge), 0 4px 14px var(--bubble-edge);
+  --primary-background: linear-gradient(135deg, #0cbccc 0%, #107acc 100%);
+  --primary-ink: var(--c-text-1);
+  --primary-shadow: 0 12px 28px rgba(16, 122, 204, 0.24);
+  --primary-loading-ink: transparent;
   --accent-glow: none;
   --last-dive-border: 0;
   --last-dive-background: linear-gradient(145deg, #0f6f97, #142157);
@@ -414,6 +414,10 @@
   --bubble-border: 0;
   --bubble-fill: var(--particle);
   --bubble-shadow: 0 0 12px var(--particle-glow);
+  --primary-background: var(--accent-strong);
+  --primary-ink: var(--on-accent-strong);
+  --primary-shadow: var(--glow);
+  --primary-loading-ink: var(--on-accent-strong);
   --accent-glow: var(--glow);
   --last-dive-border: 1px solid var(--line);
   --last-dive-background: linear-gradient(

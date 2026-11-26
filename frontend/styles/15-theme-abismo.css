@@ -105,12 +105,6 @@ h3,
   transform: skewX(-14deg);
 }
 
-:root[data-theme="dark"] .primary-button {
-  background: var(--accent-strong);
-  color: var(--on-accent-strong);
-  box-shadow: var(--glow);
-}
-
 /* Approximate profile of the latest dive (Inicio) */
 .home-last-profile {
   display: block;
