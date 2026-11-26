@@ -388,7 +388,7 @@
   border-radius: inherit;
   background: linear-gradient(90deg, var(--c-bg-45), var(--c-bg-44));
   transform-origin: left;
-  animation: band-grow 620ms var(--ease-water, ease-out) both;
+  animation: band-grow 620ms var(--ease-water) both;
 }
 
 .stat-band b {
@@ -403,5 +403,5 @@
 
 /* Switching panels: the new detail rises like the tab panels do. */
 .stat-panel:not([hidden]) {
-  animation: enter 360ms var(--ease-water, ease-out) both;
+  animation: enter 360ms var(--ease-water) both;
 }

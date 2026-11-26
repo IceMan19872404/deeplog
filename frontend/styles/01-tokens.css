@@ -11,8 +11,7 @@
   --abyss: #142157;
   --line: rgba(16, 42, 67, 0.1);
   --shadow: 0 30px 80px rgba(21, 73, 114, 0.14);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-    "SF Pro Text", "Helvetica Neue", sans-serif;
+  font-family: var(--font-ui);
   color: var(--ink);
   background: var(--paper);
 }
@@ -91,8 +90,6 @@
   --c-bg-39: rgba(255, 255, 255, 0.8);
   --c-bg-40: rgba(168, 238, 234, 0.76);
   --c-bg-41: #f7ffff;
-  --c-bg-42: rgba(159, 210, 255, 0.72);
-  --c-bg-43: #f8fbff;
   --c-text-4: #8ee4df;
   --c-text-5: rgba(255, 255, 255, 0.7);
   --c-bg-44: #8ee4df;
@@ -168,7 +165,6 @@
 }
 
 :root[data-theme="dark"] {
-  --c-text-1: #ffffff;
   --c-line-1: rgba(61, 215, 255, 0.6);
   --c-bg-1: rgba(20, 79, 83, 0.712);
   --c-bg-2: rgba(20, 53, 84, 0.593);
@@ -239,10 +235,6 @@
   --c-bg-39: rgba(11, 25, 40, 0.78);
   --c-bg-40: rgba(19, 79, 76, 0.746);
   --c-bg-41: rgba(12, 26, 41, 0.95);
-  --c-bg-42: rgba(18, 49, 76, 0.712);
-  --c-bg-43: rgba(12, 26, 41, 0.95);
-  --c-text-4: #8ee4df;
-  --c-text-5: rgba(255, 255, 255, 0.7);
   --c-bg-44: rgba(22, 92, 88, 0.95);
   --c-bg-45: #56a5e6;
   --c-shadow-13: rgba(0, 0, 0, 0.6);
@@ -298,7 +290,6 @@
   --c-bg-75: #429edf;
   --c-bg-76: #1b56b2;
   --c-bg-77: rgba(14, 62, 62, 0.95);
-  --c-text-7: rgba(255, 255, 255, 0.8);
   --c-line-31: rgba(92, 242, 227, 0.265);
   --c-bg-78: rgba(11, 43, 48, 0.797);
   --c-line-32: rgba(150, 205, 235, 0.168);
@@ -325,6 +316,43 @@
   --header-solid: rgba(245, 251, 255, 0.96);
   --tabbar-solid: rgba(255, 255, 255, 0.96);
   color-scheme: light;
+
+  /* Fonts (self-hosted, see 15-theme-abismo.css) and motion. */
+  --font-ui: "Sora", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+    sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --ease-water: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Marine ambience: light rays, particles, dive profile and depth bars. */
+  --ray: rgba(255, 255, 255, 0.5);
+  --particle: rgba(255, 255, 255, 0.85);
+  --particle-glow: rgba(16, 122, 204, 0.18);
+  --glow: 0 12px 28px rgba(16, 122, 204, 0.22);
+  --profile-line: #9ff8ff;
+  --profile-area: rgba(159, 248, 255, 0.18);
+  --profile-stop: rgba(199, 190, 255, 0.35);
+  --profile-dot: #0b2d50;
+  --depth-start: #68d8d6;
+  --depth-end: #107acc;
+  --depth-deep: #6b5bea;
+  --depth-track: rgba(16, 42, 67, 0.08);
+
+  /* Superficie water (TD-038): background, caustics, bubbles and the darker
+     ink for text that sits straight on the water. */
+  --shallow-glare: #f4fffd;
+  --shallow-haze: rgba(124, 230, 255, 0.6);
+  --shallow-top: #c9f6f1;
+  --shallow-mid: #7fe0e3;
+  --shallow-low: #3fbfe0;
+  --shallow-deep: #2a8fd0;
+  --caustic: rgba(255, 255, 255, 0.5);
+  --bubble-rim: rgba(255, 255, 255, 0.95);
+  --bubble-core: rgba(255, 255, 255, 0.95);
+  --bubble-film: rgba(255, 255, 255, 0.28);
+  --bubble-clear: rgba(255, 255, 255, 0.08);
+  --bubble-edge: rgba(14, 120, 150, 0.18);
+  --on-water: #06324a;
+  --on-water-accent: #04445e;
 }
 
 :root[data-theme="dark"] {
@@ -344,4 +372,21 @@
   --header-solid: rgba(6, 20, 40, 0.97);
   --tabbar-solid: rgba(8, 24, 46, 0.97);
   color-scheme: dark;
+
+  /* Marine ambience: the deep sea and glowing particles. */
+  --ray: rgba(159, 248, 255, 0.075);
+  --particle: rgba(92, 242, 227, 0.9);
+  --particle-glow: rgba(92, 242, 227, 0.55);
+  --glow: 0 0 26px rgba(92, 242, 227, 0.42);
+  --profile-line: #5cf2e3;
+  --profile-area: rgba(92, 242, 227, 0.16);
+  --profile-stop: rgba(139, 124, 255, 0.35);
+  --profile-dot: #031024;
+  --depth-start: #5cf2e3;
+  --depth-end: #2bb5c9;
+  --depth-deep: #8b7cff;
+  --depth-track: rgba(232, 243, 255, 0.07);
+  --abyss-top: #0b2d50;
+  --abyss-mid: #071a33;
+  --abyss-bottom: #02060f;
 }

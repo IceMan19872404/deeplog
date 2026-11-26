@@ -5,23 +5,6 @@
    moving caustics (the net of light on a shallow bottom) and white bubbles
    that stay visible against the water. See TD-038.
    ------------------------------------------------------------------------ */
-:root {
-  --shallow-glare: #f4fffd;
-  --shallow-haze: rgba(124, 230, 255, 0.6);
-  --shallow-top: #c9f6f1;
-  --shallow-mid: #7fe0e3;
-  --shallow-low: #3fbfe0;
-  --shallow-deep: #2a8fd0;
-  --caustic: rgba(255, 255, 255, 0.5);
-  --bubble-rim: rgba(255, 255, 255, 0.95);
-  --bubble-core: rgba(255, 255, 255, 0.95);
-  --bubble-film: rgba(255, 255, 255, 0.28);
-  --bubble-clear: rgba(255, 255, 255, 0.08);
-  --bubble-edge: rgba(14, 120, 150, 0.18);
-  --on-water: #06324a;
-  --on-water-accent: #04445e;
-}
-
 :root[data-theme="light"] body {
   background: radial-gradient(
       ellipse 70% 35% at 30% -5%,

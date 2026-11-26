@@ -31,43 +31,6 @@
   font-display: swap;
 }
 
-:root {
-  --font-ui: "Sora", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
-    sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --ray: rgba(255, 255, 255, 0.5);
-  --particle: rgba(255, 255, 255, 0.85);
-  --particle-glow: rgba(16, 122, 204, 0.18);
-  --glow: 0 12px 28px rgba(16, 122, 204, 0.22);
-  --profile-line: #9ff8ff;
-  --profile-area: rgba(159, 248, 255, 0.18);
-  --profile-stop: rgba(199, 190, 255, 0.35);
-  --profile-dot: #0b2d50;
-  --depth-start: #68d8d6;
-  --depth-end: #107acc;
-  --depth-deep: #6b5bea;
-  --depth-track: rgba(16, 42, 67, 0.08);
-  font-family: var(--font-ui);
-}
-
-:root[data-theme="dark"] {
-  --ray: rgba(159, 248, 255, 0.075);
-  --particle: rgba(92, 242, 227, 0.9);
-  --particle-glow: rgba(92, 242, 227, 0.55);
-  --glow: 0 0 26px rgba(92, 242, 227, 0.42);
-  --profile-line: #5cf2e3;
-  --profile-area: rgba(92, 242, 227, 0.16);
-  --profile-stop: rgba(139, 124, 255, 0.35);
-  --profile-dot: #031024;
-  --depth-start: #5cf2e3;
-  --depth-end: #2bb5c9;
-  --depth-deep: #8b7cff;
-  --depth-track: rgba(232, 243, 255, 0.07);
-  --abyss-top: #0b2d50;
-  --abyss-mid: #071a33;
-  --abyss-bottom: #02060f;
-}
-
 body,
 button,
 input,

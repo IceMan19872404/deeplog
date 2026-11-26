@@ -2,11 +2,9 @@
 
 /* ------------------------------------------------------------------------
    Animaciones (TD-037). All of them are decorative and switch off with the
-   reduced-motion rules above. Easing: a gentle "water" curve.
+   reduced-motion rules in 13-reduced-motion.css. Easing: a gentle "water"
+   curve (--ease-water in 01-tokens.css).
    ------------------------------------------------------------------------ */
-:root {
-  --ease-water: cubic-bezier(0.22, 1, 0.36, 1);
-}
 
 /* Tabs: moving right dives deeper (the panel rises from below), moving left
    returns towards the surface (it sinks in from above). Panels go from
