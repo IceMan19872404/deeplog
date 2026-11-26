@@ -90,3 +90,30 @@ test("profile preferences are explicit and experience remains plausible", () => 
   assert.equal(profileSchema.safeParse({ shareNameByDefault: false, divingSince: 2099 }).success, false);
   assert.equal(profileSchema.safeParse({ shareNameByDefault: false, ranking: 1 }).success, false);
 });
+
+test("share schemas fill visibility defaults and reject malformed path values", () => {
+  const {
+    createShareSchema,
+    shareIdSchema,
+    publicPhotoSchema
+  } = require("../../src/validations/dive-share.validation");
+  const { divePhotoIdSchema } = require("../../src/validations/dive.validation");
+
+  const expected = {
+    includeDiverName: false,
+    includeCenter: true,
+    includeEquipment: true,
+    includeBuddies: true,
+    includeComments: true,
+    photoIds: []
+  };
+  assert.deepEqual(createShareSchema.parse({}).visibility, expected);
+  assert.deepEqual(createShareSchema.parse({ visibility: {} }).visibility, expected);
+  assert.equal(createShareSchema.parse({}).expiresInDays, 7);
+
+  assert.equal(shareIdSchema.safeParse({ diveId: "07", shareId: "8c1f1f5e-3b7a-4c2e-9d55-1d2b3c4d5e6f" }).success, false);
+  assert.equal(publicPhotoSchema.safeParse({ token: "A".repeat(64), position: "1" }).success, false);
+  assert.deepEqual(publicPhotoSchema.parse({ token: "a".repeat(64), position: "2" }).position, 2);
+  const photoId = divePhotoIdSchema.safeParse({ diveId: "1", photoId: "0" });
+  assert.equal(photoId.error.issues[0].message, "Photo ID must be a positive integer");
+});
