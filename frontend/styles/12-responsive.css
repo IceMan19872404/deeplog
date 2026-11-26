@@ -88,6 +88,10 @@
     grid-template-columns: 1fr;
   }
 
+  .section-heading {
+    align-items: flex-end;
+  }
+
   .insights-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -119,14 +123,6 @@
 
   .metric-card strong {
     font-size: 2.7rem;
-  }
-
-  .section-heading {
-    align-items: flex-end;
-  }
-
-  .section-heading.insights-heading {
-    align-items: flex-start;
   }
 
   .dive-card {
