@@ -34,11 +34,20 @@ import {
 } from "./api.js?v=20261123-2";
 import { openDivePrintPreview } from "./dive-pdf.js?v=20261123-2";
 import { initializeClientMonitoring } from "./client-monitoring.js?v=20261123-2";
+import { profilePhotoMessage } from "./validation-messages.js?v=20261123-2";
 import {
-  apiValidationMessage,
-  nativeValidationMessage,
-  profilePhotoMessage
-} from "./validation-messages.js?v=20261123-2";
+  clearFieldError,
+  clearFormErrors,
+  formDataToObject,
+  installFormBehaviour,
+  isFormBusy,
+  maskPasswords,
+  setFieldError,
+  setFormBusy,
+  setMessage,
+  showApiFieldErrors,
+  validateForm
+} from "./forms.js?v=20261126-1";
 import { localIsoDate, populateDiveForm } from "./dive-form.js?v=20261123-2";
 import { TABS, createTabs } from "./tabs.js?v=20261123-2";
 import { createTheme } from "./theme.js?v=20261123-2";
@@ -254,7 +263,6 @@ const confirmDiscard = createConfirmDialog(elements.discardDialog);
 const confirmDeleteReflection = createConfirmDialog(elements.deleteReflectionDialog);
 const diveFormChanges = createUnsavedChanges(elements.diveForm);
 const profileFormChanges = createUnsavedChanges(elements.profileForm);
-const isFormBusy = (form) => form.getAttribute("aria-busy") === "true";
 
 // Each tab sits one "depth" lower than the previous one, so moving right dives
 // deeper and moving left rises to the surface; CSS animates the panel to match.
@@ -280,24 +288,6 @@ document.querySelector(".skip-link")?.addEventListener("click", (event) => {
   tabs.focusCurrent();
 });
 
-function setMessage(element, message, type = "error") {
-  element.textContent = message;
-  element.className = `message message-${type}`;
-  element.hidden = !message;
-}
-
-function setFormBusy(form, busy) {
-  const button = form.querySelector("button[type='submit']");
-  button.disabled = busy;
-  button.classList.toggle("is-loading", busy);
-  form.setAttribute("aria-busy", String(busy));
-  [...form.elements].forEach((element) => {
-    if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
-      element.readOnly = busy;
-    }
-  });
-}
-
 function syncDisappearingExamples() {
   elements.diveForm.querySelectorAll("[data-disappearing-example]").forEach((example) => {
     const field = example.previousElementSibling?.matches("input, select, textarea")
@@ -306,18 +296,6 @@ function syncDisappearingExamples() {
     if (!field) return;
     example.hidden = field.type === "file" ? field.files.length > 0 : Boolean(field.value);
   });
-}
-
-// The eye button unmasks the field it controls. The field goes back to
-// type="password" on submit, reset and auth tab changes, so password managers
-// always see a password field and the next visit starts masked.
-function setPasswordVisible(button, visible) {
-  document.getElementById(button.getAttribute("aria-controls")).type = visible ? "text" : "password";
-  button.setAttribute("aria-pressed", String(visible));
-}
-
-function maskPasswords(container) {
-  container.querySelectorAll(".password-toggle").forEach((button) => setPasswordVisible(button, false));
 }
 
 function switchAuthMode(mode) {
@@ -340,158 +318,32 @@ function switchAuthMode(mode) {
   clearFormErrors(elements.authView);
 }
 
-// One polite live region reads an error that appears when the user leaves a
-// field, a moment later so it does not talk over the next field. Errors shown
-// on submit are read with the field that receives focus instead.
-const announcement = { region: null, field: null, timer: 0 };
-
-function fieldErrorId(input) {
-  return `${input.form?.id || "form"}-${input.name}-error`;
+// Rules the browser cannot check, per form, as [field, message] pairs.
+function passwordConfirmationErrors(form) {
+  const password = form.elements.password;
+  const confirmation = form.elements.passwordConfirmation;
+  return password.value && confirmation.value && password.value !== confirmation.value
+    ? [["passwordConfirmation", "Las contraseñas no coinciden."]]
+    : [];
 }
 
-// Errors and hints live inside the <label>, so they are aria-hidden there to
-// keep them out of the field's name, and read as its description instead.
-function linkDescription(input, id, linked) {
-  const ids = (input.getAttribute("aria-describedby") || "")
-    .split(/\s+/)
-    .filter((value) => value && value !== id);
-  if (linked) ids.push(id);
-  if (ids.length) input.setAttribute("aria-describedby", ids.join(" "));
-  else input.removeAttribute("aria-describedby");
+function diveFormErrors(form) {
+  const errors = [];
+  const buddies = buddiesError(form.elements.buddiesText.value);
+  if (buddies) errors.push(["buddiesText", buddies]);
+  const photos = photosError([...form.elements.photos.files], state.currentPhotos.length);
+  if (photos) errors.push(["photos", photos]);
+  return errors;
 }
 
-function clearFieldError(input) {
-  input.setAttribute("aria-invalid", "false");
-  const id = fieldErrorId(input);
-  linkDescription(input, id, false);
-  document.getElementById(id)?.remove();
-  if (announcement.field === input) {
-    clearTimeout(announcement.timer);
-    announcement.region.textContent = "";
-  }
+function profileFormErrors(form) {
+  const photoMessage = profilePhotoMessage(form.elements.photo.files[0]);
+  return photoMessage ? [["photo", photoMessage]] : [];
 }
 
-function clearFormErrors(container) {
-  container.querySelectorAll("input, textarea, select").forEach(clearFieldError);
-}
-
-function setFieldError(form, field, message) {
-  const input = form.elements[field];
-  if (!input || input.type === "hidden") return;
-
-  clearFieldError(input);
-  input.setAttribute("aria-invalid", "true");
-  const error = document.createElement("span");
-  error.className = "field-error";
-  error.id = fieldErrorId(input);
-  error.setAttribute("aria-hidden", "true");
-  error.textContent = message;
-  const fileButton = input.closest(".file-button");
-  (fileButton || input.closest(".password-input") || input).insertAdjacentElement("afterend", error);
-  linkDescription(input, error.id, true);
-}
-
-// Announce on a delay, through the region above.
-function announceFieldError(input, message) {
-  if (!announcement.region) {
-    announcement.region = document.createElement("div");
-    announcement.region.className = "visually-hidden";
-    announcement.region.setAttribute("aria-live", "polite");
-    document.body.append(announcement.region);
-  }
-  const label = input.labels?.[0]?.firstChild?.textContent.trim();
-  clearTimeout(announcement.timer);
-  announcement.region.textContent = "";
-  announcement.field = input;
-  announcement.timer = setTimeout(() => {
-    announcement.region.textContent = label ? `${label}: ${message}` : message;
-  }, 500);
-}
-
-// :user-invalid already paints the field red once the user leaves it; show
-// the same message and state that a submit would, so colour is never alone.
-function showErrorOnLeave(event) {
-  const input = event.target;
-  if (!input.form?.noValidate || !input.matches("input, select, textarea")) return;
-  if (input.type === "hidden" || input.getAttribute("aria-invalid") === "true") return;
-  if (!input.matches(":user-invalid")) return;
-  const message = nativeValidationMessage(input);
-  setFieldError(input.form, input.name, message);
-  announceFieldError(input, message);
-}
-
-function validateForm(form) {
-  clearFormErrors(form);
-  let firstInvalid = null;
-
-  [...form.elements].forEach((input) => {
-    if (!(input instanceof HTMLInputElement ||
-      input instanceof HTMLTextAreaElement ||
-      input instanceof HTMLSelectElement)) {
-      return;
-    }
-    if (input.type === "hidden" || input.checkValidity()) return;
-    setFieldError(form, input.name, nativeValidationMessage(input));
-    firstInvalid ||= input;
-  });
-
-  if (form === elements.resetPasswordForm) {
-    const password = form.elements.password;
-    const confirmation = form.elements.passwordConfirmation;
-    if (password.value && confirmation.value && password.value !== confirmation.value) {
-      setFieldError(form, "passwordConfirmation", "Las contraseñas no coinciden.");
-      firstInvalid ||= confirmation;
-    }
-  }
-
-  if (form === elements.diveForm) {
-    const buddies = buddiesError(form.elements.buddiesText.value);
-    if (buddies) {
-      setFieldError(form, "buddiesText", buddies);
-      firstInvalid ||= form.elements.buddiesText;
-    }
-    const photos = photosError([...form.elements.photos.files], state.currentPhotos.length);
-    if (photos) {
-      setFieldError(form, "photos", photos);
-      firstInvalid ||= form.elements.photos;
-    }
-  }
-
-  if (form === elements.profileForm) {
-    const photoMessage = profilePhotoMessage(form.elements.photo.files[0]);
-    if (photoMessage) {
-      setFieldError(form, "photo", photoMessage);
-      firstInvalid ||= form.elements.photo;
-    }
-  }
-
-  if (form === elements.reflectionForm) {
-    const values = [...new FormData(form).values()];
-    if (!values.some((value) => String(value).trim())) {
-      setFieldError(form, "wentWell", "Escribe al menos una reflexión.");
-      firstInvalid ||= form.elements.wentWell;
-    }
-  }
-
-  firstInvalid?.focus();
-  return !firstInvalid;
-}
-
-function showApiFieldErrors(form, details = []) {
-  let firstInvalid = null;
-  details.forEach(({ field, message }) => {
-    if (!form.elements[field] || form.elements[field].type === "hidden") return;
-    setFieldError(form, field, apiValidationMessage(field, message));
-    firstInvalid ||= form.elements[field];
-  });
-  firstInvalid?.focus();
-  return Boolean(firstInvalid);
-}
-
-function formDataToObject(form) {
-  return Object.fromEntries(
-    [...new FormData(form).entries()].filter(([, value]) => value !== "")
-  );
+function reflectionFormErrors(form) {
+  const values = [...new FormData(form).values()];
+  return values.some((value) => String(value).trim()) ? [] : [["wentWell", "Escribe al menos una reflexión."]];
 }
 
 // Data for a tab that is not on screen is fetched with low priority so it
@@ -930,7 +782,7 @@ async function openDiveDetail(diveId) {
 
 async function handleReflectionSubmit(event) {
   event.preventDefault();
-  if (!state.detailDive || !validateForm(elements.reflectionForm)) return;
+  if (!state.detailDive || !validateForm(elements.reflectionForm, reflectionFormErrors)) return;
   setFormBusy(elements.reflectionForm, true);
   setMessage(elements.reflectionMessage, "");
   try {
@@ -1157,7 +1009,7 @@ function closeProfileDialog() {
 
 async function handleProfileSubmit(event) {
   event.preventDefault();
-  if (!validateForm(elements.profileForm)) return;
+  if (!validateForm(elements.profileForm, profileFormErrors)) return;
   const form = elements.profileForm.elements;
   const photo = form.photo.files[0];
   setFormBusy(elements.profileForm, true);
@@ -1349,7 +1201,7 @@ async function handleDiveSubmit(event) {
   event.preventDefault();
   setMessage(elements.diveFormMessage, "");
 
-  if (!validateForm(elements.diveForm)) return;
+  if (!validateForm(elements.diveForm, diveFormErrors)) return;
 
   setFormBusy(elements.diveForm, true);
   elements.diveForm.classList.add("is-busy");
@@ -1780,7 +1632,7 @@ async function handleForgotPassword(event) {
 async function handleResetPassword(event) {
   event.preventDefault();
   setMessage(elements.authMessage, "");
-  if (!validateForm(elements.resetPasswordForm)) return;
+  if (!validateForm(elements.resetPasswordForm, passwordConfirmationErrors)) return;
 
   setFormBusy(elements.resetPasswordForm, true);
   try {
@@ -1881,21 +1733,7 @@ elements.forgotPasswordButton.addEventListener("click", () => {
 elements.backLoginButtons.forEach((button) =>
   button.addEventListener("click", () => switchAuthMode("login"))
 );
-document.querySelectorAll("input, select, textarea").forEach((field) => {
-  field.setAttribute("aria-invalid", "false");
-});
-document.querySelectorAll(".password-toggle").forEach((button) => {
-  button.addEventListener("click", () => {
-    setPasswordVisible(button, button.getAttribute("aria-pressed") !== "true");
-  });
-});
-// Capture on document runs before each form's own submit handler.
-document.addEventListener("submit", (event) => maskPasswords(event.target), true);
-document.addEventListener("reset", (event) => maskPasswords(event.target), true);
-document.addEventListener("input", (event) => {
-  if (event.target.matches("input, textarea, select")) clearFieldError(event.target);
-});
-document.addEventListener("focusout", showErrorOnLeave);
+installFormBehaviour();
 elements.logoutButton.addEventListener("click", logout);
 elements.openProfile.addEventListener("click", openProfileDialog);
 elements.homeLastDive.addEventListener("click", handleHomeClick);
