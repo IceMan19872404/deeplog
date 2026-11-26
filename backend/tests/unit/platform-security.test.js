@@ -142,8 +142,9 @@ test("client error telemetry is limited to 20 reports per 15 minutes", async () 
   const limited = await request(app).post("/api/v1/telemetry/client-errors").send(signal);
   assert.equal(limited.status, 429);
   assert.ok(limited.headers["retry-after"]);
-  assert.match(limited.headers["content-type"], /^text\/html/);
-  assert.equal(limited.text, "Too many requests, please try again later.");
+  // OpenAPI documents this 429 as the JSON error envelope, like every limiter.
+  assert.match(limited.headers["content-type"], /^application\/json/);
+  assert.deepEqual(limited.body, { error: { code: "RATE_LIMIT_EXCEEDED", message: "Too many attempts. Please try again later" } });
 });
 
 test("session cookies keep their names, scope and flags", () => {
