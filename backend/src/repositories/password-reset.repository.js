@@ -1,10 +1,7 @@
-const { pool } = require("../config/database");
+const { withTransaction } = require("../config/database");
 
 async function replaceForUser(userId, tokenHash, expiresAt) {
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
+  await withTransaction(async (client) => {
     await client.query(
       `DELETE FROM password_reset_tokens
         WHERE user_id = $1 AND used_at IS NULL`,
@@ -15,20 +12,13 @@ async function replaceForUser(userId, tokenHash, expiresAt) {
        VALUES ($1, $2, $3)`,
       [userId, tokenHash, expiresAt]
     );
-    await client.query("COMMIT");
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
+  });
 }
 
+// Uses a valid token once: sets the new password, discards the user's other
+// reset tokens and revokes every session, all in one transaction.
 async function consume(tokenHash, passwordHash) {
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
+  return withTransaction(async (client) => {
     const tokenResult = await client.query(
       `SELECT id, user_id
          FROM password_reset_tokens
@@ -39,11 +29,7 @@ async function consume(tokenHash, passwordHash) {
       [tokenHash]
     );
     const token = tokenResult.rows[0];
-
-    if (!token) {
-      await client.query("ROLLBACK");
-      return false;
-    }
+    if (!token) return false;
 
     await client.query(
       `UPDATE users
@@ -68,14 +54,8 @@ async function consume(tokenHash, passwordHash) {
         WHERE user_id = $1`,
       [token.user_id]
     );
-    await client.query("COMMIT");
     return true;
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
+  });
 }
 
 module.exports = {
