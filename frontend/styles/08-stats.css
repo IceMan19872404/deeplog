@@ -28,9 +28,13 @@
   letter-spacing: -0.07em;
 }
 
+.dashboard-hero .eyebrow {
+  color: var(--on-water-accent);
+}
+
 .dashboard-hero > div > p:not(.eyebrow) {
   max-width: 570px;
-  color: var(--muted);
+  color: var(--on-water);
   line-height: 1.7;
 }
 

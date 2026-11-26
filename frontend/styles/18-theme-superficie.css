@@ -1,36 +1,13 @@
-/* Superficie (TD-038): shallow sunlit water, caustics and visible bubbles. */
+/* Superficie (TD-038): moving caustics over the shallow water. */
 
 /* ------------------------------------------------------------------------
    Superficie (light theme): shallow, sunlit water. Vivid aqua fading to blue,
    moving caustics (the net of light on a shallow bottom) and white bubbles
-   that stay visible against the water. See TD-038.
+   that stay visible against the water. See TD-038. The water, the bubbles
+   and the darker ink for text on the water are tokens in 01-tokens.css
+   (--page-background, --bubble-*, --on-water); only the caustics, which
+   Abismo does not have, are drawn here.
    ------------------------------------------------------------------------ */
-:root[data-theme="light"] body {
-  background: radial-gradient(
-      ellipse 70% 35% at 30% -5%,
-      var(--shallow-glare),
-      transparent 70%
-    ),
-    radial-gradient(
-      ellipse 60% 40% at 90% 30%,
-      var(--shallow-haze),
-      transparent 70%
-    ),
-    linear-gradient(
-      170deg,
-      var(--shallow-top) 0%,
-      var(--shallow-mid) 35%,
-      var(--shallow-low) 75%,
-      var(--shallow-deep) 110%
-    );
-  background-attachment: fixed;
-}
-
-:root[data-theme="light"] .dashboard,
-:root[data-theme="light"] .auth-layout {
-  background: transparent;
-}
-
 :root[data-theme="light"] .ocean-backdrop::after {
   position: absolute;
   inset: -20%;
@@ -46,31 +23,4 @@
     radial-gradient(ellipse 12% 6% at 90% 88%, var(--caustic), transparent 70%);
   filter: blur(14px);
   animation: drift 16s ease-in-out infinite alternate;
-}
-
-:root[data-theme="light"] .bubble-stream span {
-  border: 1.5px solid var(--bubble-rim);
-  background: radial-gradient(
-    circle at 32% 30%,
-    var(--bubble-core) 0 18%,
-    var(--bubble-film) 38%,
-    var(--bubble-clear) 70%
-  );
-  box-shadow:
-    0 0 0 1px var(--bubble-edge),
-    0 4px 14px var(--bubble-edge);
-}
-
-/* Text that sits straight on the water (not on a card) needs darker ink to
-   keep at least 4.5:1 contrast over the brighter, more saturated blue. */
-:root[data-theme="light"] .brand-panel .eyebrow,
-:root[data-theme="light"] .dashboard-hero .eyebrow {
-  color: var(--on-water-accent);
-}
-
-:root[data-theme="light"] .brand-copy,
-:root[data-theme="light"] .depth-scale,
-:root[data-theme="light"] .depth-scale span,
-:root[data-theme="light"] #home-summary {
-  color: var(--on-water);
 }

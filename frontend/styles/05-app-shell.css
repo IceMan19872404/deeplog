@@ -3,8 +3,6 @@
 .dashboard {
   min-height: 100vh;
   min-height: 100dvh;
-  background: radial-gradient(circle at 86% 5%, var(--c-bg-19), transparent 27%),
-    var(--paper);
 }
 
 /* Focus, find-in-page and scrollIntoView stop below the sticky header
@@ -59,6 +57,7 @@ html {
 .tab-link[aria-current="page"] {
   background: var(--accent-strong);
   color: var(--on-accent-strong);
+  box-shadow: var(--accent-glow);
 }
 
 .tab-icon {

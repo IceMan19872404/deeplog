@@ -108,9 +108,9 @@
   gap: 8px;
   width: 100%;
   padding: 22px;
-  border: 0;
+  border: var(--last-dive-border);
   border-radius: 20px;
-  background: linear-gradient(145deg, var(--c-bg-24), var(--c-bg-25));
+  background: var(--last-dive-background);
   color: var(--c-text-1);
   text-align: left;
 }

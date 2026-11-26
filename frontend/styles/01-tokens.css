@@ -22,15 +22,7 @@
   --c-text-1: #ffffff;
   --c-line-1: #006b87;
   --c-bg-1: rgba(155, 235, 240, 0.72);
-  --c-bg-2: rgba(137, 197, 255, 0.58);
-  --c-bg-3: #edfaff;
-  --c-bg-4: #dceeff;
-  --c-bg-5: #cadcff;
   --c-line-2: rgba(16, 122, 204, 0.1);
-  --c-line-3: rgba(16, 122, 204, 0.34);
-  --c-bg-6: rgba(255, 255, 255, 0.16);
-  --c-shadow-1: rgba(255, 255, 255, 0.72);
-  --c-shadow-2: rgba(16, 122, 204, 0.08);
   --c-shadow-3: rgba(16, 122, 204, 0.16);
   --c-line-4: rgba(16, 42, 67, 0.14);
   --c-line-5: rgba(255, 255, 255, 0.86);
@@ -62,12 +54,9 @@
   --c-bg-18: rgba(239, 247, 255, 0.8);
   --c-line-13: rgba(15, 137, 160, 0.28);
   --c-shadow-9: rgba(15, 137, 160, 0.25);
-  --c-bg-19: rgba(104, 216, 214, 0.22);
   --c-bg-21: rgba(245, 251, 255, 0.82);
   --c-bg-22: rgba(255, 255, 255, 0.6);
   --c-bg-23: rgba(16, 42, 67, 0.05);
-  --c-bg-24: #0f6f97;
-  --c-bg-25: #142157;
   --c-bg-26: rgba(255, 255, 255, 0.14);
   --c-bg-27: #68d8d6;
   --c-shadow-10: rgba(16, 42, 67, 0.18);
@@ -167,15 +156,7 @@
 :root[data-theme="dark"] {
   --c-line-1: rgba(61, 215, 255, 0.6);
   --c-bg-1: rgba(20, 79, 83, 0.712);
-  --c-bg-2: rgba(20, 53, 84, 0.593);
-  --c-bg-3: rgba(11, 38, 48, 0.95);
-  --c-bg-4: rgba(13, 34, 54, 0.95);
-  --c-bg-5: rgba(14, 30, 61, 0.95);
   --c-line-2: rgba(75, 169, 241, 0.16);
-  --c-line-3: rgba(75, 169, 241, 0.544);
-  --c-bg-6: rgba(11, 25, 40, 0.236);
-  --c-shadow-1: rgba(0, 0, 0, 0.6);
-  --c-shadow-2: rgba(0, 0, 0, 0.36);
   --c-shadow-3: rgba(0, 0, 0, 0.6);
   --c-line-4: rgba(150, 205, 235, 0.196);
   --c-line-5: rgba(92, 242, 227, 0.298);
@@ -207,12 +188,9 @@
   --c-bg-18: rgba(11, 29, 47, 0.78);
   --c-line-13: rgba(78, 213, 238, 0.448);
   --c-shadow-9: rgba(0, 0, 0, 0.6);
-  --c-bg-19: rgba(101, 215, 213, 0.22);
   --c-bg-21: rgba(12, 26, 42, 0.797);
   --c-bg-22: rgba(11, 25, 40, 0.61);
   --c-bg-23: rgba(232, 243, 255, 0.065);
-  --c-bg-24: #138abc;
-  --c-bg-25: #11226a;
   --c-bg-26: rgba(11, 25, 40, 0.219);
   --c-bg-27: #65d7d5;
   --c-shadow-10: rgba(0, 0, 0, 0.6);
@@ -353,6 +331,40 @@
   --bubble-edge: rgba(14, 120, 150, 0.18);
   --on-water: #06324a;
   --on-water-accent: #04445e;
+
+  /* Per-theme component values (Abismo overrides them below). */
+  --page-background: radial-gradient(
+      ellipse 70% 35% at 30% -5%,
+      var(--shallow-glare),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 90% 30%,
+      var(--shallow-haze),
+      transparent 70%
+    ),
+    linear-gradient(
+      170deg,
+      var(--shallow-top) 0%,
+      var(--shallow-mid) 35%,
+      var(--shallow-low) 75%,
+      var(--shallow-deep) 110%
+    );
+  --current-opacity: 1;
+  --bubble-scale: 1;
+  --bubble-border: 1.5px solid var(--bubble-rim);
+  --bubble-fill: radial-gradient(
+    circle at 32% 30%,
+    var(--bubble-core) 0 18%,
+    var(--bubble-film) 38%,
+    var(--bubble-clear) 70%
+  );
+  --bubble-shadow: 0 0 0 1px var(--bubble-edge), 0 4px 14px var(--bubble-edge);
+  --accent-glow: none;
+  --last-dive-border: 0;
+  --last-dive-background: linear-gradient(145deg, #0f6f97, #142157);
+  --cluster-ink: var(--c-text-1);
+  --cluster-shadow: 0 6px 16px var(--c-shadow-21);
 }
 
 :root[data-theme="dark"] {
@@ -389,4 +401,28 @@
   --abyss-top: #0b2d50;
   --abyss-mid: #071a33;
   --abyss-bottom: #02060f;
+
+  /* The page is the deep sea; bubbles become glowing particles. */
+  --page-background: radial-gradient(
+      ellipse 80% 50% at 60% -10%,
+      var(--abyss-top),
+      transparent 70%
+    ),
+    linear-gradient(180deg, var(--abyss-mid) 0%, var(--abyss-bottom) 100%);
+  --current-opacity: 0.35;
+  --bubble-scale: 0.28;
+  --bubble-border: 0;
+  --bubble-fill: var(--particle);
+  --bubble-shadow: 0 0 12px var(--particle-glow);
+  --accent-glow: var(--glow);
+  --last-dive-border: 1px solid var(--line);
+  --last-dive-background: linear-gradient(
+    160deg,
+    var(--abyss-top),
+    var(--abyss-bottom)
+  );
+  --cluster-ink: var(--on-accent-strong);
+  --cluster-shadow: var(--glow);
+  --on-water: var(--muted);
+  --on-water-accent: var(--aqua-dark);
 }

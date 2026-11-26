@@ -489,8 +489,8 @@
   border: 3px solid var(--c-line-8);
   border-radius: 999px;
   background: var(--aqua-dark);
-  box-shadow: 0 6px 16px var(--c-shadow-21);
-  color: var(--c-text-1);
+  box-shadow: var(--cluster-shadow);
+  color: var(--cluster-ink);
   font-family: inherit;
   font-size: 0.85rem;
   font-weight: 700;
