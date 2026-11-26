@@ -1,4 +1,5 @@
 const database = require("../config/database");
+const { groupByDive } = require("./group-by-dive");
 
 // Replaces the dive's buddy list, keeping the given order. Two statements:
 // call it inside a transaction (see transaction.js) together with the dive
@@ -26,15 +27,7 @@ async function findByDiveIds(diveIds) {
       ORDER BY dive_id, position`,
     [diveIds]
   );
-  const grouped = new Map();
-
-  result.rows.forEach((row) => {
-    const key = String(row.dive_id);
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key).push(row.name);
-  });
-
-  return grouped;
+  return groupByDive(result.rows, (row) => row.name);
 }
 
 module.exports = {

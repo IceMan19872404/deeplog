@@ -6,6 +6,8 @@ const { withTransaction } = require("../repositories/transaction");
 const { removeFiles } = require("./photo-files");
 const { assertDiveOwner, diveNotFound } = require("./dive-ownership");
 
+// Buddies, photos and reflection for a whole page of dives: one query per
+// relation, whatever the page size.
 async function attachRelations(dives) {
   const diveIds = dives.map((dive) => dive.id);
   const [buddiesByDive, photosByDive, reflectionsByDive] = await Promise.all([
@@ -22,6 +24,10 @@ async function attachRelations(dives) {
   }));
 }
 
+async function withRelations(dive) {
+  return (await attachRelations([dive]))[0];
+}
+
 // The dive row and its buddies are written together: a failure leaves neither.
 async function createDive(userId, input) {
   const dive = await withTransaction(async (client) => {
@@ -29,7 +35,7 @@ async function createDive(userId, input) {
     await buddyRepository.replaceAll(created.id, input.buddies, client);
     return created;
   });
-  return (await attachRelations([dive]))[0];
+  return withRelations(dive);
 }
 
 async function getDive(userId, diveId) {
@@ -37,7 +43,7 @@ async function getDive(userId, diveId) {
 
   if (!dive) throw diveNotFound();
 
-  return (await attachRelations([dive]))[0];
+  return withRelations(dive);
 }
 
 async function listDives(userId, filters) {
@@ -89,7 +95,7 @@ async function updateDive(userId, diveId, input) {
     await buddyRepository.replaceAll(updated.id, input.buddies, client);
     return updated;
   });
-  return (await attachRelations([dive]))[0];
+  return withRelations(dive);
 }
 
 // The dive is locked before its photo keys are read, so a concurrent upload

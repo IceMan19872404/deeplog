@@ -1,24 +1,20 @@
 const database = require("../config/database");
+const { groupByDive } = require("./group-by-dive");
+
+// Metadata the API returns; storage_key stays server-side.
+const photoColumns = "id, dive_id, original_name, mime_type, size_bytes, created_at";
 
 async function findByDiveIds(diveIds) {
   if (diveIds.length === 0) return new Map();
 
   const result = await database.query(
-    `SELECT id, dive_id, original_name, mime_type, size_bytes, created_at
+    `SELECT ${photoColumns}
        FROM dive_photos
       WHERE dive_id = ANY($1::bigint[])
       ORDER BY dive_id, created_at, id`,
     [diveIds]
   );
-  const grouped = new Map();
-
-  result.rows.forEach((row) => {
-    const key = String(row.dive_id);
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key).push(row);
-  });
-
-  return grouped;
+  return groupByDive(result.rows);
 }
 
 async function countByDiveId(diveId, db = database) {
@@ -48,7 +44,7 @@ async function createMany(diveId, photos, db = database) {
     `INSERT INTO dive_photos (
        dive_id, storage_key, original_name, mime_type, size_bytes
      ) VALUES ${placeholders.join(", ")}
-     RETURNING id, dive_id, original_name, mime_type, size_bytes, created_at`,
+     RETURNING ${photoColumns}`,
     values
   );
   return result.rows;
