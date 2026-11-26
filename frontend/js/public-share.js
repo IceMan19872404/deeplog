@@ -1,13 +1,18 @@
 import { getPublicDive, getPublicPhotoBlob, unlockPublicDive } from "./api.js?v=20261123-2";
-import { formatNumber } from "./format.js?v=20261123-2";
+import {
+  cylinderSummary,
+  formatCalendarDate,
+  formatNumber,
+  suitSummary,
+  waterSummary
+} from "./format.js?v=20261123-2";
+
+// Read-only page for a share link (?share=<token>, TD-020). The API only
+// returns the fields the owner chose to share, so each optional block is
+// shown when its field is present in the response.
 
 const photoUrls = [];
 const byId = (id) => document.querySelector(`#${id}`);
-
-function formatDate(date) {
-  return new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "long", year: "numeric" })
-    .format(new Date(`${date}T00:00:00`));
-}
 
 function fact(label, value) {
   const wrapper = document.createElement("div");
@@ -50,7 +55,7 @@ async function renderDive(dive, accessToken) {
   byId("public-diver-name").textContent = dive.diverName ? `Bitácora de ${dive.diverName}` : "";
   const facts = byId("public-dive-facts");
   facts.replaceChildren(
-    fact("Fecha", formatDate(dive.date)),
+    fact("Fecha", formatCalendarDate(dive.date, { day: "2-digit", month: "long", year: "numeric" })),
     fact("Duración", `${formatNumber(dive.durationMinutes)} minutos`),
     fact("Profundidad máxima", `${formatNumber(dive.maxDepthMeters)} metros`)
   );
@@ -58,11 +63,11 @@ async function renderDive(dive, accessToken) {
   if (Object.hasOwn(dive, "ballastKg")) facts.append(fact("Lastre", dive.ballastKg === null ? "No indicado" : `${formatNumber(dive.ballastKg)} kg`));
   if (Object.hasOwn(dive, "equipmentOwnership")) facts.append(fact("Material", dive.equipmentOwnership === "owned" ? "Propio" : dive.equipmentOwnership === "rented" ? "De alquiler" : "No indicado"));
   if (Object.hasOwn(dive, "suitType")) {
-    const suits = { wetsuit: "Húmedo", drysuit: "Seco", shorty: "Shorty", none: "Sin traje" };
-    facts.append(fact("Traje", [suits[dive.suitType], dive.suitThicknessMm === null ? null : `${formatNumber(dive.suitThicknessMm)} mm`].filter(Boolean).join(" · ") || "No indicado"));
-    const cylinders = { steel: "Acero", aluminum: "Aluminio" };
-    facts.append(fact("Botella", [cylinders[dive.cylinderMaterial], dive.cylinderVolumeLiters === null ? null : `${formatNumber(dive.cylinderVolumeLiters)} L`].filter(Boolean).join(" · ") || "No indicada"));
-    facts.append(fact("Agua", dive.waterType === "salt" ? "Salada" : dive.waterType === "fresh" ? "Dulce" : "No indicada"));
+    facts.append(
+      fact("Traje", suitSummary(dive)),
+      fact("Botella", cylinderSummary(dive)),
+      fact("Agua", waterSummary(dive.waterType))
+    );
   }
   byId("public-buddies-section").hidden = !Object.hasOwn(dive, "buddies");
   byId("public-buddies").textContent = dive.buddies?.length ? dive.buddies.join(", ") : "No se indicaron compañeros.";
