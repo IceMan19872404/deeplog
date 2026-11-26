@@ -184,3 +184,46 @@ test("rate limiters answer with the JSON error envelope and standard headers", a
   assert.ok(limited.headers["retry-after"]);
   assert.equal(limited.headers["x-ratelimit-limit"], undefined);
 });
+
+test("only unexpected errors are reported, by name and without their message", async () => {
+  const logger = require("../../src/config/logger");
+  const monitoring = require("../../src/config/monitoring");
+  const originals = { error: logger.error, captureException: monitoring.captureException };
+  const logged = [];
+  const captured = [];
+  logger.error = (fields, message) => logged.push([fields, message]);
+  monitoring.captureException = (error, context) => captured.push([error.message, context]);
+
+  const mini = express();
+  mini.use((req, _res, next) => { req.requestId = "req-1"; next(); });
+  mini.get("/expected", (_req, _res, next) => next(new AppError(400, "BAD", "Bad")));
+  mini.get("/charset", (_req, _res, next) => next(Object.assign(new Error("charset"), { type: "charset.unsupported", status: 415 })));
+  mini.get("/stream", (_req, res, next) => { res.status(200).write("partial"); next(new TypeError("stream failed")); });
+  mini.get("/crash/:id", () => { throw new RangeError("private detail carlos@example.com"); });
+  mini.use(notFoundHandler);
+  mini.use(errorHandler);
+
+  try {
+    assert.equal((await request(mini).get("/expected")).status, 400);
+    assert.equal((await request(mini).get("/missing")).status, 404);
+    assert.equal(logged.length, 0);
+
+    // Other body-parser failures are still treated as unexpected.
+    const charset = await request(mini).get("/charset");
+    assert.equal(charset.status, 500);
+
+    const crash = await request(mini).get("/crash/7");
+    assert.equal(crash.status, 500);
+    assert.doesNotMatch(crash.text, /private detail/);
+
+    await assert.rejects(request(mini).get("/stream"));
+
+    assert.deepEqual(logged.map(([fields]) => fields.errorName), ["Error", "RangeError", "TypeError"]);
+    assert.deepEqual(logged[1], [{ event: "unhandled_error", requestId: "req-1", errorName: "RangeError" }, "Unhandled request error"]);
+    assert.deepEqual(captured[1], ["private detail carlos@example.com", { requestId: "req-1", method: "GET", route: "/crash/:id" }]);
+    assert.equal(captured[2][1].route, "/stream");
+  } finally {
+    logger.error = originals.error;
+    monitoring.captureException = originals.captureException;
+  }
+});
