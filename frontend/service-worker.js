@@ -30,6 +30,9 @@ const SHELL = [
   "/js/text.js?v=20261126-1", "/js/dive-labels.js?v=20261126-1", "/js/dive-form-data.js?v=20261126-1",
   "/js/offline.js?v=20261126-1", "/js/photos.js?v=20261126-1", "/js/forms.js?v=20261126-1",
   "/js/view-auth.js?v=20261126-1", "/js/view-account.js?v=20261126-1", "/js/view-profile.js?v=20261126-1",
+  "/js/view-home.js?v=20261126-1", "/js/view-logbook.js?v=20261126-1", "/js/view-dive-editor.js?v=20261126-1",
+  "/js/view-dive-detail.js?v=20261126-1", "/js/view-share.js?v=20261126-1", "/js/view-map.js?v=20261126-1",
+  "/js/view-stats.js?v=20261126-1",
   "/manifest.webmanifest"
 ];
 
