@@ -1,7 +1,7 @@
 const AppError = require("../errors/app-error");
 const diveRepository = require("../repositories/dive.repository");
 const photoRepository = require("../repositories/dive-photo.repository");
-const { withTransaction } = require("../repositories/transaction");
+const { withTransaction } = require("../config/database");
 const { assertDiveOwner, diveNotFound } = require("./dive-ownership");
 const {
   hasValidSignature,

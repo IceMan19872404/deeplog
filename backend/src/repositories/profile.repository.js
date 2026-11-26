@@ -1,5 +1,5 @@
 const database = require("../config/database");
-const { withTransaction } = require("./transaction");
+const { withTransaction } = database;
 
 async function findByUserId(userId) {
   const result = await database.query(

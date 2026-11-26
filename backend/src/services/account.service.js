@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const AppError = require("../errors/app-error");
 const accountRepository = require("../repositories/account.repository");
-const { withTransaction } = require("../repositories/transaction");
+const { withTransaction } = require("../config/database");
 const { removeFiles } = require("./photo-files");
 
 async function deleteAccount(userId, input) {

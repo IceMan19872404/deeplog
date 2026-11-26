@@ -2,7 +2,7 @@ const diveRepository = require("../repositories/dive.repository");
 const buddyRepository = require("../repositories/dive-buddy.repository");
 const photoRepository = require("../repositories/dive-photo.repository");
 const reflectionRepository = require("../repositories/dive-reflection.repository");
-const { withTransaction } = require("../repositories/transaction");
+const { withTransaction } = require("../config/database");
 const { removeFiles } = require("./photo-files");
 const { assertDiveOwner, diveNotFound } = require("./dive-ownership");
 
