@@ -2,14 +2,8 @@
 // Spanish wording of dates and counts. Dates arrive from the API as
 // YYYY-MM-DD and are read as local calendar days, never as UTC midnight.
 
-export function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
+// Escaping lives in format.js (null becomes ""); re-exported for the views.
+export { escapeHtml } from "./format.js?v=20261123-2";
 
 function localDay(date) {
   return new Date(`${date}T00:00:00`);
