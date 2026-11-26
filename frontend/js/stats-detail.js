@@ -5,46 +5,28 @@
 // truth, panels hidden="until-found" so find-in-page still reaches them, and
 // selection follows focus because every panel is already rendered.
 
-import { formatNumber } from "./format.js?v=20261123-2";
+import {
+  escapeHtml,
+  formatCalendarDate,
+  formatMinutes,
+  formatMinutesCompact,
+  formatNumber
+} from "./format.js?v=20261123-2";
 
-const escapeHtml = (value) => String(value ?? "")
-  .replaceAll("&", "&amp;")
-  .replaceAll("<", "&lt;")
-  .replaceAll(">", "&gt;")
-  .replaceAll('"', "&quot;")
-  .replaceAll("'", "&#039;");
+// Re-exported: they lived here first and tests/stats-detail.test.js imports them.
+export { formatMinutes, formatMinutesCompact };
 
-// Compact form for narrow charts: «55m», «1h45», «2h».
-export function formatMinutesCompact(minutes) {
-  const total = Number(minutes) || 0;
-  const hours = Math.floor(total / 60);
-  const rest = total % 60;
-  if (!hours) return `${rest}m`;
-  return rest ? `${hours}h${String(rest).padStart(2, "0")}` : `${hours}h`;
-}
-
-export function formatMinutes(minutes) {
-  const total = Number(minutes) || 0;
-  const hours = Math.floor(total / 60);
-  const rest = total % 60;
-  if (!hours) return `${rest} min`;
-  return rest ? `${hours} h ${rest} min` : `${hours} h`;
-}
-
+// `month` is "YYYY-MM". Spanish short months end in a dot («sept.»): dropped.
 function monthShort(month) {
-  return new Intl.DateTimeFormat("es-ES", { month: "short" })
-    .format(new Date(`${month}-01T00:00:00`))
-    .replace(".", "");
+  return formatCalendarDate(`${month}-01`, { month: "short" }).replace(".", "");
 }
 
 function monthNarrow(month) {
-  return new Intl.DateTimeFormat("es-ES", { month: "narrow" }).format(new Date(`${month}-01T00:00:00`));
+  return formatCalendarDate(`${month}-01`, { month: "narrow" });
 }
 
 function dateLong(date) {
-  return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", year: "numeric" })
-    .format(new Date(`${date}T00:00:00`))
-    .replace(".", "");
+  return formatCalendarDate(date, { day: "numeric", month: "short", year: "numeric" }).replace(".", "");
 }
 
 // Vertical bars (months). `value` is what sets the height, `label` the text.

@@ -27,3 +27,8 @@ test("the chart says it is approximate and handles missing data", () => {
   assert.equal(profileSvg(null, 40), "");
   assert.equal(profileSvg(20, 0), "");
 });
+
+test("the chart label uses the same decimal comma as the rest of the app", () => {
+  assert.match(profileSvg("18.50", 40), /descenso hasta 18,5 m/);
+  assert.match(profileSvg(9, 30), /aria-label="Perfil aproximado: descenso hasta 9 m en 30 minutos\."/);
+});

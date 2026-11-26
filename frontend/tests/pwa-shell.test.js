@@ -166,6 +166,48 @@ test("offline, only navigations fall back to index.html", async () => {
   assert.equal(script.type, "error");
 });
 
+test("a versioned file missing from the cache is fetched once and stored; HTML fallbacks are not", async () => {
+  const sw = await loadWorker({ files: { "/js/extra.js": "export {}" } });
+  await sw.dispatch("install");
+  const first = await sw.dispatch("fetch", new Request("https://deeplog.test/js/extra.js?v=9"));
+  assert.equal(await first.text(), "export {}");
+  assert.ok(sw.cache().includes("https://deeplog.test/js/extra.js?v=9"));
+  const second = await sw.dispatch("fetch", new Request("https://deeplog.test/js/extra.js?v=9"));
+  assert.equal(await second.text(), "export {}");
+  assert.equal(sw.network.filter((url) => url.endsWith("/js/extra.js?v=9")).length, 1);
+
+  // A path the server does not have answers with index.html: never stored.
+  await sw.dispatch("fetch", new Request("https://deeplog.test/js/gone.js?v=9"));
+  assert.ok(!sw.cache().some((url) => url.includes("gone.js")));
+});
+
+test("unversioned files go to the network first and use the precached copy offline", async () => {
+  const online = await loadWorker({ files: { "/manifest.webmanifest": "{\"fresh\":true}" } });
+  await online.dispatch("install");
+  const fresh = await online.dispatch("fetch", new Request("https://deeplog.test/manifest.webmanifest"));
+  assert.equal(await fresh.text(), "{\"fresh\":true}");
+
+  const offline = await loadWorker({ online: false });
+  await offline.dispatch("install");
+  const cached = await offline.dispatch("fetch", new Request("https://deeplog.test/manifest.webmanifest"));
+  assert.equal(await cached.text(), "cached /manifest.webmanifest");
+  const missing = await offline.dispatch("fetch", new Request("https://deeplog.test/assets/unknown.png"));
+  assert.equal(missing.type, "error");
+});
+
+test("API calls, other origins and writes are left to the browser", async () => {
+  const sw = await loadWorker();
+  await sw.dispatch("install");
+  for (const request of [
+    new Request("https://deeplog.test/api/v1/dives?v=1"),
+    new Request("https://cdn.example/js/app.js?v=1"),
+    new Request("https://deeplog.test/js/app.js?v=1", { method: "POST", body: "x" })
+  ]) {
+    assert.equal(await sw.dispatch("fetch", request), undefined);
+  }
+  assert.equal(sw.network.length, 0);
+});
+
 test("every stylesheet in styles/ is linked once, in file-name order", async () => {
   const html = await read("../index.html");
   const files = (await readdir(new URL("../styles/", import.meta.url)))

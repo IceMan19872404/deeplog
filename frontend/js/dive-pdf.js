@@ -1,21 +1,13 @@
-import { formatNumber } from "./format.js?v=20261123-2";
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function formatDate(date) {
-  return new Intl.DateTimeFormat("es-ES", {
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-  }).format(new Date(`${date}T00:00:00`));
-}
+// Printable A4 story of one dive (TD-019): a self-contained HTML document
+// opened in a new tab, saved as PDF through the browser's print dialog.
+import {
+  cylinderSummary,
+  escapeHtml,
+  formatCalendarDate,
+  formatNumber,
+  suitSummary,
+  waterSummary
+} from "./format.js?v=20261123-2";
 
 function equipmentLabel(value) {
   if (value === "owned") return "Material propio";
@@ -23,18 +15,22 @@ function equipmentLabel(value) {
   return "No indicado";
 }
 
-function suitLabel(dive) {
-  const labels = { wetsuit: "Húmedo", drysuit: "Seco", shorty: "Shorty", none: "Sin traje" };
-  return [labels[dive.suitType], dive.suitThicknessMm === null ? null : `${formatNumber(dive.suitThicknessMm)} mm`].filter(Boolean).join(" · ") || "No indicado";
-}
+const comfortLabels = { comfortable: "Con comodidad", mixed: "Con sensaciones mixtas", challenging: "Fue exigente" };
 
-function cylinderLabel(dive) {
-  const labels = { steel: "Acero", aluminum: "Aluminio" };
-  return [labels[dive.cylinderMaterial], dive.cylinderVolumeLiters === null ? null : `${formatNumber(dive.cylinderVolumeLiters)} L`].filter(Boolean).join(" · ") || "No indicada";
-}
+// Reflection answers in print order; empty answers are left out.
+const reflectionRows = [
+  ["wentWell", "Salió bien"],
+  ["improveNext", "Quiero mejorar"],
+  ["practicedSkill", "Habilidad practicada"],
+  ["comfort", "Sensación general", (value) => comfortLabels[value] || ""],
+  ["incidents", "Situaciones a recordar"],
+  ["nextGoal", "Próximo objetivo"]
+];
 
-function comfortLabel(value) {
-  return ({ comfortable: "Con comodidad", mixed: "Con sensaciones mixtas", challenging: "Fue exigente" })[value] || "";
+function reflectionMarkup(reflection) {
+  return reflectionRows.map(([field, label, describe = (value) => value]) => (reflection[field]
+    ? `<p class="copy"><strong>${label}:</strong> ${escapeHtml(describe(reflection[field]))}</p>`
+    : "")).join("\n        ");
 }
 
 function fact(label, value) {
@@ -50,7 +46,7 @@ function photoMarkup(photo) {
 }
 
 export function buildDivePrintDocument({ dive, photos, diverName }) {
-  const date = formatDate(dive.date);
+  const date = formatCalendarDate(dive.date, { day: "numeric", month: "long", year: "numeric" });
   const center = dive.diveCenter || "un lugar no indicado";
   const buddies = dive.buddies.length
     ? dive.buddies.join(", ")
@@ -67,12 +63,7 @@ export function buildDivePrintDocument({ dive, photos, diverName }) {
     ? `<section class="story-section">
         <p class="eyebrow">Diario de aprendizaje</p>
         <h2>Lo que me llevo de esta inmersión</h2>
-        ${dive.reflection.wentWell ? `<p class="copy"><strong>Salió bien:</strong> ${escapeHtml(dive.reflection.wentWell)}</p>` : ""}
-        ${dive.reflection.improveNext ? `<p class="copy"><strong>Quiero mejorar:</strong> ${escapeHtml(dive.reflection.improveNext)}</p>` : ""}
-        ${dive.reflection.practicedSkill ? `<p class="copy"><strong>Habilidad practicada:</strong> ${escapeHtml(dive.reflection.practicedSkill)}</p>` : ""}
-        ${dive.reflection.comfort ? `<p class="copy"><strong>Sensación general:</strong> ${escapeHtml(comfortLabel(dive.reflection.comfort))}</p>` : ""}
-        ${dive.reflection.incidents ? `<p class="copy"><strong>Situaciones a recordar:</strong> ${escapeHtml(dive.reflection.incidents)}</p>` : ""}
-        ${dive.reflection.nextGoal ? `<p class="copy"><strong>Próximo objetivo:</strong> ${escapeHtml(dive.reflection.nextGoal)}</p>` : ""}
+        ${reflectionMarkup(dive.reflection)}
       </section>`
     : "";
 
@@ -148,9 +139,9 @@ export function buildDivePrintDocument({ dive, photos, diverName }) {
           ${fact("Centro de buceo", dive.diveCenter || "No indicado")}
           ${fact("Lastre", dive.ballastKg === null ? "No indicado" : `${formatNumber(dive.ballastKg)} kg`)}
           ${fact("Material", equipmentLabel(dive.equipmentOwnership))}
-          ${fact("Traje", suitLabel(dive))}
-          ${fact("Botella", cylinderLabel(dive))}
-          ${fact("Agua", dive.waterType === "salt" ? "Salada" : dive.waterType === "fresh" ? "Dulce" : "No indicada")}
+          ${fact("Traje", suitSummary(dive))}
+          ${fact("Botella", cylinderSummary(dive))}
+          ${fact("Agua", waterSummary(dive.waterType))}
         </dl>
         <section class="story-section">
           <p class="eyebrow">La experiencia compartida</p>
