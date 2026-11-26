@@ -1,4 +1,5 @@
 const database = require("../config/database");
+const { withTransaction } = database;
 
 async function findByUserId(userId) {
   const result = await database.query(
@@ -35,33 +36,52 @@ async function upsert(userId, profile) {
   return result.rows[0];
 }
 
+// Sets the new photo and returns the profile row plus the key it replaced
+// (previous_photo_storage_key). The old key is read under a row lock in the
+// same transaction, so concurrent uploads each remove the file they replaced.
 async function replacePhoto(userId, photo) {
-  const result = await database.query(
-    `INSERT INTO user_profiles (
-       user_id, photo_storage_key, photo_mime_type, photo_size_bytes
-     ) VALUES ($1, $2, $3, $4)
-     ON CONFLICT (user_id) DO UPDATE SET
-       photo_storage_key = EXCLUDED.photo_storage_key,
-       photo_mime_type = EXCLUDED.photo_mime_type,
-       photo_size_bytes = EXCLUDED.photo_size_bytes,
-       updated_at = NOW()
-     RETURNING *`,
-    [userId, photo.storageKey, photo.mimeType, photo.sizeBytes]
-  );
-  return result.rows[0];
+  return withTransaction(async (client) => {
+    const previous = await client.query(
+      "SELECT photo_storage_key FROM user_profiles WHERE user_id = $1 FOR UPDATE",
+      [userId]
+    );
+    const result = await client.query(
+      `INSERT INTO user_profiles (
+         user_id, photo_storage_key, photo_mime_type, photo_size_bytes
+       ) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id) DO UPDATE SET
+         photo_storage_key = EXCLUDED.photo_storage_key,
+         photo_mime_type = EXCLUDED.photo_mime_type,
+         photo_size_bytes = EXCLUDED.photo_size_bytes,
+         updated_at = NOW()
+       RETURNING *`,
+      [userId, photo.storageKey, photo.mimeType, photo.sizeBytes]
+    );
+    return {
+      ...result.rows[0],
+      previous_photo_storage_key: previous.rows[0]?.photo_storage_key || null
+    };
+  });
 }
 
+// Clears the photo in one statement and returns the removed key, or null when
+// there was no photo.
 async function removePhoto(userId) {
-  const current = await findByUserId(userId);
-  if (!current?.photo_storage_key) return null;
-  await database.query(
-    `UPDATE user_profiles
+  const result = await database.query(
+    `UPDATE user_profiles p
         SET photo_storage_key = NULL, photo_mime_type = NULL,
             photo_size_bytes = NULL, updated_at = NOW()
-      WHERE user_id = $1`,
+       FROM (
+         SELECT user_id, photo_storage_key
+           FROM user_profiles
+          WHERE user_id = $1 AND photo_storage_key IS NOT NULL
+            FOR UPDATE
+       ) previous
+      WHERE p.user_id = previous.user_id
+      RETURNING previous.photo_storage_key`,
     [userId]
   );
-  return current;
+  return result.rows[0]?.photo_storage_key || null;
 }
 
 module.exports = { findByUserId, upsert, replacePhoto, removePhoto };

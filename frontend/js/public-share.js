@@ -1,13 +1,18 @@
-import { getPublicDive, getPublicPhotoBlob, unlockPublicDive } from "./api.js?v=20261123-2";
-import { formatNumber } from "./format.js?v=20261123-2";
+import { getPublicDive, getPublicPhotoBlob, unlockPublicDive } from "./api.js?v=20261126-2";
+import {
+  cylinderSummary,
+  formatCalendarDate,
+  formatNumber,
+  suitSummary,
+  waterSummary
+} from "./format.js?v=20261126-2";
+
+// Read-only page for a share link (?share=<token>, TD-020). The API only
+// returns the fields the owner chose to share, so each optional block is
+// shown when its field is present in the response.
 
 const photoUrls = [];
 const byId = (id) => document.querySelector(`#${id}`);
-
-function formatDate(date) {
-  return new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "long", year: "numeric" })
-    .format(new Date(`${date}T00:00:00`));
-}
 
 function fact(label, value) {
   const wrapper = document.createElement("div");
@@ -50,7 +55,7 @@ async function renderDive(dive, accessToken) {
   byId("public-diver-name").textContent = dive.diverName ? `Bitácora de ${dive.diverName}` : "";
   const facts = byId("public-dive-facts");
   facts.replaceChildren(
-    fact("Fecha", formatDate(dive.date)),
+    fact("Fecha", formatCalendarDate(dive.date, { day: "2-digit", month: "long", year: "numeric" })),
     fact("Duración", `${formatNumber(dive.durationMinutes)} minutos`),
     fact("Profundidad máxima", `${formatNumber(dive.maxDepthMeters)} metros`)
   );
@@ -58,11 +63,11 @@ async function renderDive(dive, accessToken) {
   if (Object.hasOwn(dive, "ballastKg")) facts.append(fact("Lastre", dive.ballastKg === null ? "No indicado" : `${formatNumber(dive.ballastKg)} kg`));
   if (Object.hasOwn(dive, "equipmentOwnership")) facts.append(fact("Material", dive.equipmentOwnership === "owned" ? "Propio" : dive.equipmentOwnership === "rented" ? "De alquiler" : "No indicado"));
   if (Object.hasOwn(dive, "suitType")) {
-    const suits = { wetsuit: "Húmedo", drysuit: "Seco", shorty: "Shorty", none: "Sin traje" };
-    facts.append(fact("Traje", [suits[dive.suitType], dive.suitThicknessMm === null ? null : `${formatNumber(dive.suitThicknessMm)} mm`].filter(Boolean).join(" · ") || "No indicado"));
-    const cylinders = { steel: "Acero", aluminum: "Aluminio" };
-    facts.append(fact("Botella", [cylinders[dive.cylinderMaterial], dive.cylinderVolumeLiters === null ? null : `${formatNumber(dive.cylinderVolumeLiters)} L`].filter(Boolean).join(" · ") || "No indicada"));
-    facts.append(fact("Agua", dive.waterType === "salt" ? "Salada" : dive.waterType === "fresh" ? "Dulce" : "No indicada"));
+    facts.append(
+      fact("Traje", suitSummary(dive)),
+      fact("Botella", cylinderSummary(dive)),
+      fact("Agua", waterSummary(dive.waterType))
+    );
   }
   byId("public-buddies-section").hidden = !Object.hasOwn(dive, "buddies");
   byId("public-buddies").textContent = dive.buddies?.length ? dive.buddies.join(", ") : "No se indicaron compañeros.";
@@ -81,17 +86,44 @@ function showTerminalError(error) {
     SHARE_NOT_FOUND: ["No encontramos esta inmersión", "Comprueba que el enlace esté completo."]
   };
   const [title, copy] = messages[error.code] || ["No se pudo abrir la inmersión", "Inténtalo de nuevo más tarde."];
-  state.replaceChildren();
-  const heading = document.createElement("h1"); heading.textContent = title;
-  const paragraph = document.createElement("p"); paragraph.textContent = copy;
-  state.append(heading, paragraph);
+  const heading = document.createElement("h1");
+  heading.textContent = title;
+  const paragraph = document.createElement("p");
+  paragraph.textContent = copy;
+  state.replaceChildren(heading, paragraph);
   state.hidden = false;
+}
+
+// Password links: the form exchanges the password for a short-lived token
+// that also authorises the photos.
+function askForPassword(token) {
+  const form = byId("public-share-password-form");
+  form.hidden = false;
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = form.querySelector("button[type='submit']");
+    const message = byId("public-password-message");
+    message.hidden = true;
+    button.disabled = true;
+    try {
+      const unlocked = await unlockPublicDive(token, form.elements.password.value);
+      await renderDive(unlocked.data.dive, unlocked.data.accessToken);
+    } catch (unlockError) {
+      message.textContent = unlockError.code === "INVALID_SHARE_PASSWORD"
+        ? "La contraseña no es correcta." : "No se pudo abrir la inmersión.";
+      message.className = "message message-error";
+      message.hidden = false;
+    } finally {
+      button.disabled = false;
+    }
+  });
 }
 
 export async function initializePublicShare(token) {
   document.querySelector('meta[name="robots"]')?.remove();
   const robots = document.createElement("meta");
-  robots.name = "robots"; robots.content = "noindex,nofollow,noarchive";
+  robots.name = "robots";
+  robots.content = "noindex,nofollow,noarchive";
   document.head.append(robots);
   byId("auth-view").hidden = true;
   byId("dashboard-view").hidden = true;
@@ -100,24 +132,8 @@ export async function initializePublicShare(token) {
     const response = await getPublicDive(token);
     await renderDive(response.data.dive);
   } catch (error) {
-    if (error.code === "SHARE_PASSWORD_REQUIRED") {
-      byId("public-share-password-form").hidden = false;
-      byId("public-share-password-form").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const button = form.querySelector("button[type='submit']");
-        const message = byId("public-password-message");
-        message.hidden = true; button.disabled = true;
-        try {
-          const unlocked = await unlockPublicDive(token, form.elements.password.value);
-          await renderDive(unlocked.data.dive, unlocked.data.accessToken);
-        } catch (unlockError) {
-          message.textContent = unlockError.code === "INVALID_SHARE_PASSWORD"
-            ? "La contraseña no es correcta." : "No se pudo abrir la inmersión.";
-          message.className = "message message-error"; message.hidden = false;
-        } finally { button.disabled = false; }
-      });
-    } else showTerminalError(error);
+    if (error.code === "SHARE_PASSWORD_REQUIRED") askForPassword(token);
+    else showTerminalError(error);
   } finally {
     byId("public-share-loading").hidden = true;
   }

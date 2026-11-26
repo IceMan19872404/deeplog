@@ -4,6 +4,8 @@
 // descent at ~18 m/min, a bottom phase that slowly rises, ascent at ~9 m/min
 // and, below 10 m, a 3-minute safety stop at 5 m.
 
+import { formatNumber } from "./format.js?v=20261126-2";
+
 const DESCENT_RATE = 18;
 const ASCENT_RATE = 9;
 const STOP_DEPTH = 5;
@@ -52,7 +54,7 @@ export function profileSvg(maxDepth, duration, { width = 520, height = 120 } = {
   const stopIndex = points.findIndex(([, d], i) => i > 1 && d === STOP_DEPTH);
   const stop = stopIndex > 0 ? points[stopIndex] : null;
   const stopEnd = stop ? points[stopIndex + 1][0] : 0;
-  const label = `Perfil aproximado: descenso hasta ${String(maxDepth).replace(".", ",")} m` +
+  const label = `Perfil aproximado: descenso hasta ${formatNumber(maxDepth)} m` +
     (stop ? " y parada de seguridad a 5 m" : "") + ` en ${minutes} minutos.`;
   return `<svg class="dive-profile" viewBox="0 0 ${width} ${height}" role="img" aria-label="${label}">
     <path class="dive-profile-area" d="${line} L${x(minutes)} ${pad} L${x(0)} ${pad} Z"/>

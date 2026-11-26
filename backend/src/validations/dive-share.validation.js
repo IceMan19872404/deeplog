@@ -1,6 +1,8 @@
 const { z } = require("zod");
+const { positiveIdString } = require("./common.validation");
 
-const id = z.string().regex(/^[1-9]\d*$/, "ID must be a positive integer");
+const id = positiveIdString("ID must be a positive integer");
+const shareToken = z.string().regex(/^[a-f0-9]{64}$/, "Share token is invalid");
 
 const visibilitySchema = z.object({
   includeDiverName: z.boolean().default(false),
@@ -12,14 +14,8 @@ const visibilitySchema = z.object({
 }).strict();
 
 const createShareSchema = z.object({
-  visibility: visibilitySchema.default({
-    includeDiverName: false,
-    includeCenter: true,
-    includeEquipment: true,
-    includeBuddies: true,
-    includeComments: true,
-    photoIds: []
-  }),
+  // No visibility at all means every field default above.
+  visibility: visibilitySchema.default(() => visibilitySchema.parse({})),
   expiresInDays: z.union([z.literal(1), z.literal(7), z.literal(30), z.null()])
     .default(7),
   password: z.string().min(8).max(64).optional()
@@ -27,14 +23,12 @@ const createShareSchema = z.object({
 
 const diveIdSchema = z.object({ diveId: id }).strict();
 const shareIdSchema = z.object({ diveId: id, shareId: z.string().uuid() }).strict();
-const tokenSchema = z.object({
-  token: z.string().regex(/^[a-f0-9]{64}$/, "Share token is invalid")
-}).strict();
+const tokenSchema = z.object({ token: shareToken }).strict();
 const sharePasswordSchema = z.object({
   password: z.string().min(8).max(64)
 }).strict();
 const publicPhotoSchema = z.object({
-  token: z.string().regex(/^[a-f0-9]{64}$/, "Share token is invalid"),
+  token: shareToken,
   position: z.coerce.number().int().min(1).max(5)
 }).strict();
 

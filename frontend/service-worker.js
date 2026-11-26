@@ -1,32 +1,38 @@
-const CACHE = "deeplog-shell-v17";
+const CACHE = "deeplog-shell-v18";
 const SHELL = [
   "/", "/index.html",
-  "/styles/01-tokens.css?v=20261123-2",
-  "/styles/02-base.css?v=20261123-2",
-  "/styles/03-auth-and-forms.css?v=20261123-2",
-  "/styles/04-account-and-learning.css?v=20261123-2",
-  "/styles/05-app-shell.css?v=20261123-2",
-  "/styles/06-inicio.css?v=20261123-2",
-  "/styles/07-profile.css?v=20261123-2",
-  "/styles/08-stats.css?v=20261123-5",
-  "/styles/09-logbook.css?v=20261123-2",
-  "/styles/10-dialogs.css?v=20261123-2",
+  "/styles/01-tokens.css?v=20261126-2",
+  "/styles/02-base.css?v=20261126-2",
+  "/styles/03-auth-and-forms.css?v=20261126-2",
+  "/styles/04-account-and-learning.css?v=20261126-2",
+  "/styles/05-app-shell.css?v=20261126-2",
+  "/styles/06-inicio.css?v=20261126-2",
+  "/styles/07-profile.css?v=20261126-2",
+  "/styles/08-stats.css?v=20261126-2",
+  "/styles/09-logbook.css?v=20261126-2",
+  "/styles/10-dialogs.css?v=20261126-2",
   "/styles/11-keyframes.css?v=20261123-2",
-  "/styles/12-responsive.css?v=20261123-4",
+  "/styles/12-responsive.css?v=20261126-2",
   "/styles/13-reduced-motion.css?v=20261123-2",
-  "/styles/14-sharing-and-insights.css?v=20261123-2",
-  "/styles/15-theme-abismo.css?v=20261123-2",
-  "/styles/16-animations.css?v=20261123-2",
+  "/styles/14-sharing-and-insights.css?v=20261126-2",
+  "/styles/15-theme-abismo.css?v=20261126-2",
+  "/styles/16-animations.css?v=20261126-2",
   "/styles/17-dive-number.css?v=20261123-2",
-  "/styles/18-theme-superficie.css?v=20261123-2",
-  "/js/app.js?v=20261123-4", "/js/api.js?v=20261123-2",
-  "/js/dive-form.js?v=20261123-2", "/js/dialogs.js?v=20261123-2",
-  "/js/dive-map.js?v=20261123-2", "/js/tabs.js?v=20261123-2", "/js/theme.js?v=20261123-2", "/js/theme-init.js?v=20261123-2", "/js/dive-profile.js?v=20261121-2", "/js/motion.js?v=20261121-1",
+  "/styles/18-theme-superficie.css?v=20261126-2",
+  "/js/app.js?v=20261126-2", "/js/api.js?v=20261126-2",
+  "/js/dive-form.js?v=20261123-2", "/js/dialogs.js?v=20261126-2",
+  "/js/dive-map.js?v=20261123-2", "/js/tabs.js?v=20261123-2", "/js/theme.js?v=20261123-2", "/js/theme-init.js?v=20261123-2", "/js/dive-profile.js?v=20261126-2", "/js/motion.js?v=20261121-1",
   "/fonts/sora-latin-variable.woff2", "/fonts/ibm-plex-mono-latin-400.woff2",
   "/fonts/ibm-plex-mono-latin-500.woff2", "/fonts/ibm-plex-mono-latin-600.woff2", "/js/world-map-data.js?v=20261030-1",
   "/js/validation-messages.js?v=20261123-2",
-  "/js/client-monitoring.js?v=20261123-2", "/js/format.js?v=20261123-2", "/js/stats-detail.js?v=20261123-5", "/js/dive-pdf.js?v=20261123-2",
-  "/js/public-share.js?v=20261123-2", "/assets/deeplog-mark.svg",
+  "/js/client-monitoring.js?v=20261123-2", "/js/format.js?v=20261126-2", "/js/stats-detail.js?v=20261126-2", "/js/dive-pdf.js?v=20261126-2",
+  "/js/public-share.js?v=20261126-2", "/assets/deeplog-mark.svg",
+  "/js/text.js?v=20261126-2", "/js/dive-labels.js?v=20261126-2", "/js/dive-form-data.js?v=20261126-2",
+  "/js/offline.js?v=20261126-2", "/js/photos.js?v=20261126-2", "/js/forms.js?v=20261126-2",
+  "/js/view-auth.js?v=20261126-2", "/js/view-account.js?v=20261126-2", "/js/view-profile.js?v=20261126-2",
+  "/js/view-home.js?v=20261126-2", "/js/view-logbook.js?v=20261126-2", "/js/view-dive-editor.js?v=20261126-2",
+  "/js/view-dive-detail.js?v=20261126-2", "/js/view-share.js?v=20261126-2", "/js/view-map.js?v=20261126-2",
+  "/js/view-stats.js?v=20261126-2",
   "/manifest.webmanifest"
 ];
 
@@ -69,6 +75,29 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// A fetched static file is stored only if it is a real same-origin file at a
+// clean static URL (no tokens) and not the HTML fallback of a missing path.
+function isStorable(response, url) {
+  const html = (response.headers.get("content-type") || "").includes("text/html");
+  return response.ok && response.type === "basic" && !html && isCacheableUrl(url);
+}
+
+// Versioned files (?v=) and fonts never change under the same URL: cache
+// first, then network, keeping a copy of what the network returned.
+async function cacheFirst(event, url) {
+  const { request } = event;
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+  if (isStorable(response, url)) {
+    const copy = response.clone();
+    event.waitUntil(caches.open(CACHE).then((cache) => cache.put(request, copy)));
+  }
+  return response;
+}
+
+// The API is never handled here (always network, never cached), nor are
+// other origins or anything but GET.
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -82,17 +111,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Versioned files (?v=) and fonts never change under the same URL:
-  // cache first, then network, storing only clean static URLs.
   if (isVersioned(url)) {
-    event.respondWith(caches.match(request).then((cached) => cached || fetch(request).then((response) => {
-      const html = (response.headers.get("content-type") || "").includes("text/html");
-      if (response.ok && response.type === "basic" && !html && isCacheableUrl(url)) {
-        const copy = response.clone();
-        event.waitUntil(caches.open(CACHE).then((cache) => cache.put(request, copy)));
-      }
-      return response;
-    })).catch(() => Response.error()));
+    event.respondWith(cacheFirst(event, url).catch(() => Response.error()));
     return;
   }
 

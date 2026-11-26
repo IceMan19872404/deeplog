@@ -47,7 +47,7 @@
 
 .brand-copy {
   max-width: 560px;
-  color: var(--muted);
+  color: var(--on-water);
   font-size: 1.22rem;
   line-height: 1.6;
 }
@@ -55,14 +55,16 @@
 .eyebrow {
   margin: 0 0 10px;
   color: var(--aqua-dark);
+  font-family: var(--font-mono);
+  font-feature-settings: "zero" 0;
   font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  font-weight: 500;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.brand-panel > .eyebrow {
-  color: var(--aqua-dark);
+.brand-panel .eyebrow {
+  color: var(--on-water-accent);
 }
 
 .depth-scale {
@@ -72,7 +74,7 @@
   margin-top: 70px;
   padding-top: 14px;
   border-top: 1px solid var(--c-line-4);
-  color: var(--muted);
+  color: var(--on-water);
   font-size: 0.72rem;
 }
 
@@ -143,17 +145,24 @@
   font-weight: 700;
 }
 
-.auth-form input {
+/* Text fields shared by the sign-in, reflection and dive forms; each form
+   sets its own background (the profile form has a smaller field of its own). */
+.auth-form input,
+.reflection-form :is(input, textarea, select),
+.dive-form :is(input, textarea, select) {
   width: 100%;
   padding: 14px 15px;
   border: 1px solid var(--line);
   border-radius: 14px;
   outline: none;
-  background: var(--c-bg-10);
   color: var(--ink);
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease;
+}
+
+.auth-form input {
+  background: var(--c-bg-10);
 }
 
 .auth-form input:focus {
@@ -285,9 +294,16 @@
   margin-top: 8px;
   padding: 15px 18px;
   border: 0;
-  background: linear-gradient(135deg, var(--c-bg-11) 0%, var(--c-bg-12) 100%);
-  color: var(--c-text-1);
-  box-shadow: 0 12px 28px var(--c-shadow-7);
+  background: var(--primary-background);
+  color: var(--primary-ink);
+  box-shadow: var(--primary-shadow);
+}
+
+.ghost-button {
+  padding: 10px 15px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
 }
 
 @media (hover: hover) {
@@ -297,8 +313,10 @@
   }
 }
 
+/* Abismo keeps the label: the spinner colours are almost invisible on its
+   aqua button (see --primary-loading-ink). */
 .primary-button.is-loading {
-  color: transparent;
+  color: var(--primary-loading-ink);
 }
 
 .primary-button.is-loading::after,

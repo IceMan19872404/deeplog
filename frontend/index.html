@@ -17,25 +17,25 @@
     <!-- Same URL as the @font-face in 15-theme-abismo.css, so first paint uses Sora. -->
     <link rel="preload" href="/fonts/sora-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
     <!-- Styles are split by section and load in this order (later files win). -->
-    <link rel="stylesheet" href="/styles/01-tokens.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/02-base.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/03-auth-and-forms.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/04-account-and-learning.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/05-app-shell.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/06-inicio.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/07-profile.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/08-stats.css?v=20261123-5">
-    <link rel="stylesheet" href="/styles/09-logbook.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/10-dialogs.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/01-tokens.css?v=20261126-2">
+    <link rel="stylesheet" href="/styles/02-base.css?v=20261126-2">
+    <link rel="stylesheet" href="/styles/03-auth-and-forms.css?v=20261126-2">
+    <link rel="stylesheet" href="/styles/04-account-and-learning.css?v=20261126-2">
+    <link rel="stylesheet" href="/styles/05-app-shell.css?v=20261126-2">
+    <link rel="stylesheet" href="/styles/06-inicio.css?v=20261126-2">
+    <link rel="stylesheet" href="/styles/07-profile.css?v=20261126-2">
+    <link rel="stylesheet" href="/styles/08-stats.css?v=20261126-2">
+    <link rel="stylesheet" href="/styles/09-logbook.css?v=20261126-2">
+    <link rel="stylesheet" href="/styles/10-dialogs.css?v=20261126-2">
     <link rel="stylesheet" href="/styles/11-keyframes.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/12-responsive.css?v=20261123-4">
+    <link rel="stylesheet" href="/styles/12-responsive.css?v=20261126-2">
     <link rel="stylesheet" href="/styles/13-reduced-motion.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/14-sharing-and-insights.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/15-theme-abismo.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/16-animations.css?v=20261123-2">
+    <link rel="stylesheet" href="/styles/14-sharing-and-insights.css?v=20261126-2">
+    <link rel="stylesheet" href="/styles/15-theme-abismo.css?v=20261126-2">
+    <link rel="stylesheet" href="/styles/16-animations.css?v=20261126-2">
     <link rel="stylesheet" href="/styles/17-dive-number.css?v=20261123-2">
-    <link rel="stylesheet" href="/styles/18-theme-superficie.css?v=20261123-2">
-    <script type="module" src="/js/app.js?v=20261123-4"></script>
+    <link rel="stylesheet" href="/styles/18-theme-superficie.css?v=20261126-2">
+    <script type="module" src="/js/app.js?v=20261126-2"></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
@@ -313,7 +313,7 @@
                   required
                   minlength="8"
                   maxlength="72"
-                  pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).(8, 72)"
+                  pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,72}"
                   aria-labelledby="register-password-label"
                   aria-describedby="register-password-hint"
                   enterkeyhint="done"

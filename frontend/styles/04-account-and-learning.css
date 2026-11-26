@@ -103,19 +103,8 @@
   gap: 8px;
   font-weight: 700;
 }
-.reflection-form input,
-.reflection-form textarea,
-.reflection-form select {
-  width: 100%;
-  padding: 14px 15px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  outline: none;
+.reflection-form :is(input, textarea, select) {
   background: var(--c-bg-9);
-  color: var(--ink);
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease;
 }
 .reflection-form textarea {
   resize: vertical;

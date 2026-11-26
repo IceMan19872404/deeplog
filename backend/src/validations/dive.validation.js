@@ -1,4 +1,9 @@
 const { z } = require("zod");
+const { positiveIdString } = require("./common.validation");
+
+const suitTypes = ["wetsuit", "drysuit", "shorty", "none"];
+const cylinderMaterials = ["steel", "aluminum"];
+const waterTypes = ["salt", "fresh"];
 
 function isValidDate(value) {
   const [year, month, day] = value.split("-").map(Number);
@@ -44,11 +49,11 @@ const createDiveSchema = z
       .multipleOf(0.01, "Ballast can have at most two decimal places")
       .optional(),
     equipmentOwnership: z.enum(["owned", "rented"]).optional(),
-    suitType: z.enum(["wetsuit", "drysuit", "shorty", "none"]).optional(),
+    suitType: z.enum(suitTypes).optional(),
     suitThicknessMm: z.number().min(0).max(15).multipleOf(0.1).optional(),
-    cylinderMaterial: z.enum(["steel", "aluminum"]).optional(),
+    cylinderMaterial: z.enum(cylinderMaterials).optional(),
     cylinderVolumeLiters: z.number().min(3).max(20).multipleOf(0.1).optional(),
-    waterType: z.enum(["salt", "fresh"]).optional(),
+    waterType: z.enum(waterTypes).optional(),
     buddies: z
       .array(z.string().trim().min(2).max(80))
       .max(10)
@@ -74,16 +79,14 @@ const createDiveSchema = z
 
 const updateDiveSchema = createDiveSchema;
 
-const diveIdSchema = z
-  .object({
-    diveId: z.string().regex(/^[1-9]\d*$/, "Dive ID must be a positive integer")
-  })
-  .strict();
+const diveId = positiveIdString("Dive ID must be a positive integer");
+
+const diveIdSchema = z.object({ diveId }).strict();
 
 const divePhotoIdSchema = z
   .object({
-    diveId: z.string().regex(/^[1-9]\d*$/, "Dive ID must be a positive integer"),
-    photoId: z.string().regex(/^[1-9]\d*$/, "Photo ID must be a positive integer")
+    diveId,
+    photoId: positiveIdString("Photo ID must be a positive integer")
   })
   .strict();
 
@@ -117,10 +120,10 @@ const listDivesSchema = z
   );
 
 const configurationMemorySchema = z.object({
-  waterType: z.enum(["salt", "fresh"]).optional(),
-  suitType: z.enum(["wetsuit", "drysuit", "shorty", "none"]).optional(),
+  waterType: z.enum(waterTypes).optional(),
+  suitType: z.enum(suitTypes).optional(),
   suitThicknessMm: z.coerce.number().min(0).max(15).multipleOf(0.1).optional(),
-  cylinderMaterial: z.enum(["steel", "aluminum"]).optional(),
+  cylinderMaterial: z.enum(cylinderMaterials).optional(),
   cylinderVolumeLiters: z.coerce.number().min(3).max(20).multipleOf(0.1).optional(),
   excludeDiveId: z.coerce.number().int().positive().optional()
 }).strict().refine((value) => Object.keys(value).some((key) => key !== "excludeDiveId"), {

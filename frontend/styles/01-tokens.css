@@ -11,8 +11,7 @@
   --abyss: #142157;
   --line: rgba(16, 42, 67, 0.1);
   --shadow: 0 30px 80px rgba(21, 73, 114, 0.14);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-    "SF Pro Text", "Helvetica Neue", sans-serif;
+  font-family: var(--font-ui);
   color: var(--ink);
   background: var(--paper);
 }
@@ -23,15 +22,7 @@
   --c-text-1: #ffffff;
   --c-line-1: #006b87;
   --c-bg-1: rgba(155, 235, 240, 0.72);
-  --c-bg-2: rgba(137, 197, 255, 0.58);
-  --c-bg-3: #edfaff;
-  --c-bg-4: #dceeff;
-  --c-bg-5: #cadcff;
   --c-line-2: rgba(16, 122, 204, 0.1);
-  --c-line-3: rgba(16, 122, 204, 0.34);
-  --c-bg-6: rgba(255, 255, 255, 0.16);
-  --c-shadow-1: rgba(255, 255, 255, 0.72);
-  --c-shadow-2: rgba(16, 122, 204, 0.08);
   --c-shadow-3: rgba(16, 122, 204, 0.16);
   --c-line-4: rgba(16, 42, 67, 0.14);
   --c-line-5: rgba(255, 255, 255, 0.86);
@@ -44,9 +35,7 @@
   --c-line-6: #d86f61;
   --c-shadow-6: rgba(216, 111, 97, 0.13);
   --c-text-2: #9b3526;
-  --c-bg-11: #0cbccc;
   --c-bg-12: #107acc;
-  --c-shadow-7: rgba(16, 122, 204, 0.24);
   --c-line-7: rgba(255, 255, 255, 0.35);
   --c-line-8: #ffffff;
   --c-line-9: #ffc1b7;
@@ -63,12 +52,9 @@
   --c-bg-18: rgba(239, 247, 255, 0.8);
   --c-line-13: rgba(15, 137, 160, 0.28);
   --c-shadow-9: rgba(15, 137, 160, 0.25);
-  --c-bg-19: rgba(104, 216, 214, 0.22);
   --c-bg-21: rgba(245, 251, 255, 0.82);
   --c-bg-22: rgba(255, 255, 255, 0.6);
   --c-bg-23: rgba(16, 42, 67, 0.05);
-  --c-bg-24: #0f6f97;
-  --c-bg-25: #142157;
   --c-bg-26: rgba(255, 255, 255, 0.14);
   --c-bg-27: #68d8d6;
   --c-shadow-10: rgba(16, 42, 67, 0.18);
@@ -91,8 +77,6 @@
   --c-bg-39: rgba(255, 255, 255, 0.8);
   --c-bg-40: rgba(168, 238, 234, 0.76);
   --c-bg-41: #f7ffff;
-  --c-bg-42: rgba(159, 210, 255, 0.72);
-  --c-bg-43: #f8fbff;
   --c-text-4: #8ee4df;
   --c-text-5: rgba(255, 255, 255, 0.7);
   --c-bg-44: #8ee4df;
@@ -168,18 +152,9 @@
 }
 
 :root[data-theme="dark"] {
-  --c-text-1: #ffffff;
   --c-line-1: rgba(61, 215, 255, 0.6);
   --c-bg-1: rgba(20, 79, 83, 0.712);
-  --c-bg-2: rgba(20, 53, 84, 0.593);
-  --c-bg-3: rgba(11, 38, 48, 0.95);
-  --c-bg-4: rgba(13, 34, 54, 0.95);
-  --c-bg-5: rgba(14, 30, 61, 0.95);
   --c-line-2: rgba(75, 169, 241, 0.16);
-  --c-line-3: rgba(75, 169, 241, 0.544);
-  --c-bg-6: rgba(11, 25, 40, 0.236);
-  --c-shadow-1: rgba(0, 0, 0, 0.6);
-  --c-shadow-2: rgba(0, 0, 0, 0.36);
   --c-shadow-3: rgba(0, 0, 0, 0.6);
   --c-line-4: rgba(150, 205, 235, 0.196);
   --c-line-5: rgba(92, 242, 227, 0.298);
@@ -192,9 +167,7 @@
   --c-line-6: rgba(92, 242, 227, 0.34);
   --c-shadow-6: rgba(0, 0, 0, 0.51);
   --c-text-2: #ef7c6c;
-  --c-bg-11: #10def1;
   --c-bg-12: #1890ed;
-  --c-shadow-7: rgba(0, 0, 0, 0.6);
   --c-line-7: rgba(92, 242, 227, 0.145);
   --c-line-8: rgba(92, 242, 227, 0.34);
   --c-line-9: rgba(92, 242, 227, 0.34);
@@ -211,12 +184,9 @@
   --c-bg-18: rgba(11, 29, 47, 0.78);
   --c-line-13: rgba(78, 213, 238, 0.448);
   --c-shadow-9: rgba(0, 0, 0, 0.6);
-  --c-bg-19: rgba(101, 215, 213, 0.22);
   --c-bg-21: rgba(12, 26, 42, 0.797);
   --c-bg-22: rgba(11, 25, 40, 0.61);
   --c-bg-23: rgba(232, 243, 255, 0.065);
-  --c-bg-24: #138abc;
-  --c-bg-25: #11226a;
   --c-bg-26: rgba(11, 25, 40, 0.219);
   --c-bg-27: #65d7d5;
   --c-shadow-10: rgba(0, 0, 0, 0.6);
@@ -239,10 +209,6 @@
   --c-bg-39: rgba(11, 25, 40, 0.78);
   --c-bg-40: rgba(19, 79, 76, 0.746);
   --c-bg-41: rgba(12, 26, 41, 0.95);
-  --c-bg-42: rgba(18, 49, 76, 0.712);
-  --c-bg-43: rgba(12, 26, 41, 0.95);
-  --c-text-4: #8ee4df;
-  --c-text-5: rgba(255, 255, 255, 0.7);
   --c-bg-44: rgba(22, 92, 88, 0.95);
   --c-bg-45: #56a5e6;
   --c-shadow-13: rgba(0, 0, 0, 0.6);
@@ -298,7 +264,6 @@
   --c-bg-75: #429edf;
   --c-bg-76: #1b56b2;
   --c-bg-77: rgba(14, 62, 62, 0.95);
-  --c-text-7: rgba(255, 255, 255, 0.8);
   --c-line-31: rgba(92, 242, 227, 0.265);
   --c-bg-78: rgba(11, 43, 48, 0.797);
   --c-line-32: rgba(150, 205, 235, 0.168);
@@ -325,6 +290,81 @@
   --header-solid: rgba(245, 251, 255, 0.96);
   --tabbar-solid: rgba(255, 255, 255, 0.96);
   color-scheme: light;
+
+  /* Fonts (self-hosted, see 15-theme-abismo.css) and motion. */
+  --font-ui: "Sora", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+    sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --ease-water: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Marine ambience: light rays, particles, dive profile and depth bars. */
+  --ray: rgba(255, 255, 255, 0.5);
+  --particle: rgba(255, 255, 255, 0.85);
+  --particle-glow: rgba(16, 122, 204, 0.18);
+  --glow: 0 12px 28px rgba(16, 122, 204, 0.22);
+  --profile-line: #9ff8ff;
+  --profile-area: rgba(159, 248, 255, 0.18);
+  --profile-stop: rgba(199, 190, 255, 0.35);
+  --profile-dot: #0b2d50;
+  --depth-start: #68d8d6;
+  --depth-end: #107acc;
+  --depth-deep: #6b5bea;
+  --depth-track: rgba(16, 42, 67, 0.08);
+
+  /* Superficie water (TD-038): background, caustics, bubbles and the darker
+     ink for text that sits straight on the water. */
+  --shallow-glare: #f4fffd;
+  --shallow-haze: rgba(124, 230, 255, 0.6);
+  --shallow-top: #c9f6f1;
+  --shallow-mid: #7fe0e3;
+  --shallow-low: #3fbfe0;
+  --shallow-deep: #2a8fd0;
+  --caustic: rgba(255, 255, 255, 0.5);
+  --bubble-rim: rgba(255, 255, 255, 0.95);
+  --bubble-core: rgba(255, 255, 255, 0.95);
+  --bubble-film: rgba(255, 255, 255, 0.28);
+  --bubble-clear: rgba(255, 255, 255, 0.08);
+  --bubble-edge: rgba(14, 120, 150, 0.18);
+  --on-water: #06324a;
+  --on-water-accent: #04445e;
+
+  /* Per-theme component values (Abismo overrides them below). */
+  --page-background: radial-gradient(
+      ellipse 70% 35% at 30% -5%,
+      var(--shallow-glare),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 90% 30%,
+      var(--shallow-haze),
+      transparent 70%
+    ),
+    linear-gradient(
+      170deg,
+      var(--shallow-top) 0%,
+      var(--shallow-mid) 35%,
+      var(--shallow-low) 75%,
+      var(--shallow-deep) 110%
+    );
+  --current-opacity: 1;
+  --bubble-scale: 1;
+  --bubble-border: 1.5px solid var(--bubble-rim);
+  --bubble-fill: radial-gradient(
+    circle at 32% 30%,
+    var(--bubble-core) 0 18%,
+    var(--bubble-film) 38%,
+    var(--bubble-clear) 70%
+  );
+  --bubble-shadow: 0 0 0 1px var(--bubble-edge), 0 4px 14px var(--bubble-edge);
+  --primary-background: linear-gradient(135deg, #0cbccc 0%, #107acc 100%);
+  --primary-ink: var(--c-text-1);
+  --primary-shadow: 0 12px 28px rgba(16, 122, 204, 0.24);
+  --primary-loading-ink: transparent;
+  --accent-glow: none;
+  --last-dive-border: 0;
+  --last-dive-background: linear-gradient(145deg, #0f6f97, #142157);
+  --cluster-ink: var(--c-text-1);
+  --cluster-shadow: 0 6px 16px var(--c-shadow-21);
 }
 
 :root[data-theme="dark"] {
@@ -344,4 +384,49 @@
   --header-solid: rgba(6, 20, 40, 0.97);
   --tabbar-solid: rgba(8, 24, 46, 0.97);
   color-scheme: dark;
+
+  /* Marine ambience: the deep sea and glowing particles. */
+  --ray: rgba(159, 248, 255, 0.075);
+  --particle: rgba(92, 242, 227, 0.9);
+  --particle-glow: rgba(92, 242, 227, 0.55);
+  --glow: 0 0 26px rgba(92, 242, 227, 0.42);
+  --profile-line: #5cf2e3;
+  --profile-area: rgba(92, 242, 227, 0.16);
+  --profile-stop: rgba(139, 124, 255, 0.35);
+  --profile-dot: #031024;
+  --depth-start: #5cf2e3;
+  --depth-end: #2bb5c9;
+  --depth-deep: #8b7cff;
+  --depth-track: rgba(232, 243, 255, 0.07);
+  --abyss-top: #0b2d50;
+  --abyss-mid: #071a33;
+  --abyss-bottom: #02060f;
+
+  /* The page is the deep sea; bubbles become glowing particles. */
+  --page-background: radial-gradient(
+      ellipse 80% 50% at 60% -10%,
+      var(--abyss-top),
+      transparent 70%
+    ),
+    linear-gradient(180deg, var(--abyss-mid) 0%, var(--abyss-bottom) 100%);
+  --current-opacity: 0.35;
+  --bubble-scale: 0.28;
+  --bubble-border: 0;
+  --bubble-fill: var(--particle);
+  --bubble-shadow: 0 0 12px var(--particle-glow);
+  --primary-background: var(--accent-strong);
+  --primary-ink: var(--on-accent-strong);
+  --primary-shadow: var(--glow);
+  --primary-loading-ink: var(--on-accent-strong);
+  --accent-glow: var(--glow);
+  --last-dive-border: 1px solid var(--line);
+  --last-dive-background: linear-gradient(
+    160deg,
+    var(--abyss-top),
+    var(--abyss-bottom)
+  );
+  --cluster-ink: var(--on-accent-strong);
+  --cluster-shadow: var(--glow);
+  --on-water: var(--muted);
+  --on-water-accent: var(--aqua-dark);
 }
