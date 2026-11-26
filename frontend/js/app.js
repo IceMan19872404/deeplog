@@ -10,7 +10,6 @@ import {
   getDive,
   getDiveInsights,
   getDiveMap,
-  getDivePhotoBlob,
   getDiveStats,
   getDiveShares,
   getDives,
@@ -54,7 +53,42 @@ import {
   requestDialogClose
 } from "./dialogs.js?v=20261123-2";
 import { formatNumber } from "./format.js?v=20261123-2";
-import { createStatTabs, renderStatsDetail } from "./stats-detail.js?v=20261123-5";
+import { createStatTabs, formatMinutes, renderStatsDetail } from "./stats-detail.js?v=20261123-5";
+import {
+  countLabel,
+  daysAgoLabel,
+  escapeHtml,
+  formatDate,
+  formatLongToday,
+  formatMonthYear
+} from "./text.js?v=20261126-1";
+import {
+  CERTIFICATION_LABELS,
+  COMFORT_LABELS,
+  WATER_LABELS,
+  configurationName,
+  cylinderDescription,
+  locationDescription,
+  ownershipLabel,
+  suitDescription
+} from "./dive-labels.js?v=20261126-1";
+import { buddiesError, divePayload, photosError } from "./dive-form-data.js?v=20261126-1";
+import {
+  applyOfflineMode,
+  clearOfflineSnapshot,
+  isNetworkError,
+  isOffline,
+  readOfflineSnapshot,
+  setOffline,
+  updateOfflineSnapshot
+} from "./offline.js?v=20261126-1";
+import {
+  PHOTO_LOADING_MARKUP,
+  createUrlPool,
+  loadPhotoUrls,
+  photoCard,
+  photoErrorMarkup
+} from "./photos.js?v=20261126-1";
 
 initializeClientMonitoring();
 createTheme();
@@ -68,15 +102,17 @@ const state = {
   editingDiveId: null,
   deletingDive: null,
   currentPhotos: [],
-  selectedPhotoUrls: [],
-  existingPhotoUrls: [],
-  detailPhotoUrls: [],
   detailDive: null,
   detailPrintPhotos: [],
   shares: [],
   profile: null,
-  profilePhotoUrl: null,
-  offline: false
+  profilePhotoUrl: null
+};
+
+const photoUrls = {
+  selected: createUrlPool(),
+  existing: createUrlPool(),
+  detail: createUrlPool()
 };
 
 const elements = {
@@ -94,7 +130,6 @@ const elements = {
   authMessage: document.querySelector("#auth-message"),
   dashboardMessage: document.querySelector("#dashboard-message"),
   userName: document.querySelector("#user-name"),
-  openProfileHeader: document.querySelector("#open-profile-header"),
   openProfile: document.querySelector("#open-profile"),
   profileDialog: document.querySelector("#profile-dialog"),
   profileForm: document.querySelector("#profile-form"),
@@ -410,30 +445,14 @@ function validateForm(form) {
   }
 
   if (form === elements.diveForm) {
-    const buddiesInput = form.elements.buddiesText;
-    const buddies = parseBuddies(buddiesInput.value);
-    if (buddies.length > 10) {
-      setFieldError(form, "buddiesText", "Puedes añadir un máximo de 10 compañeros.");
-      firstInvalid ||= buddiesInput;
-    } else if (buddies.some((name) => name.length < 2 || name.length > 80)) {
-      setFieldError(
-        form,
-        "buddiesText",
-        "Cada nombre debe tener entre 2 y 80 caracteres."
-      );
-      firstInvalid ||= buddiesInput;
+    const buddies = buddiesError(form.elements.buddiesText.value);
+    if (buddies) {
+      setFieldError(form, "buddiesText", buddies);
+      firstInvalid ||= form.elements.buddiesText;
     }
-
-    const files = [...form.elements.photos.files];
-    const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-    if (state.currentPhotos.length + files.length > 5) {
-      setFieldError(form, "photos", "Cada inmersión puede contener hasta 5 fotos.");
-      firstInvalid ||= form.elements.photos;
-    } else if (files.some((file) => !allowedTypes.has(file.type))) {
-      setFieldError(form, "photos", "Utiliza únicamente imágenes JPEG, PNG o WebP.");
-      firstInvalid ||= form.elements.photos;
-    } else if (files.some((file) => file.size > 8 * 1024 * 1024)) {
-      setFieldError(form, "photos", "Cada fotografía debe ocupar 8 MB o menos.");
+    const photos = photosError([...form.elements.photos.files], state.currentPhotos.length);
+    if (photos) {
+      setFieldError(form, "photos", photos);
       firstInvalid ||= form.elements.photos;
     }
   }
@@ -473,70 +492,6 @@ function formDataToObject(form) {
   return Object.fromEntries(
     [...new FormData(form).entries()].filter(([, value]) => value !== "")
   );
-}
-
-function parseBuddies(value) {
-  const seen = new Set();
-  return value
-    .split(",")
-    .map((name) => name.trim())
-    .filter((name) => {
-      if (!name) return false;
-      const key = name.toLocaleLowerCase("es");
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-}
-
-function diveFormData() {
-  const data = formDataToObject(elements.diveForm);
-  const { buddiesText = "", photos: _photos, ...diveData } = data;
-
-  ["suitThicknessMm", "cylinderVolumeLiters", "latitude", "longitude"].forEach((key) => {
-    if (diveData[key] !== undefined) diveData[key] = Number(diveData[key]);
-  });
-  if (diveData.latitude === undefined && diveData.longitude === undefined) {
-    delete diveData.locationPrecision;
-  }
-  return {
-    ...diveData,
-    durationMinutes: Number(data.durationMinutes),
-    maxDepthMeters: Number(data.maxDepthMeters),
-    ...(data.ballastKg !== undefined && { ballastKg: Number(data.ballastKg) }),
-    buddies: parseBuddies(buddiesText)
-  };
-}
-
-const offlineKey = "deeplog.offline.v1";
-
-const onlineOnlySelector = [
-  "[data-open-dive-form]", ".dive-card [data-action]", "#open-share-dialog",
-  "#reflection-form button[type=\"submit\"]", "#delete-reflection", "#open-profile",
-  "[data-export-format]", "#logout-all-button", "#open-delete-account", "#refresh-button"
-].join(", ");
-
-function applyOfflineMode() {
-  document.body.classList.toggle("is-offline", state.offline);
-  document.querySelectorAll(onlineOnlySelector).forEach((control) => {
-    control.disabled = state.offline;
-    if (state.offline) control.title = "Disponible al recuperar la conexión";
-    else control.removeAttribute("title");
-  });
-}
-
-function isNetworkError(error) {
-  return !navigator.onLine || error instanceof TypeError;
-}
-
-function writeOfflineSnapshot(data) {
-  try {
-    localStorage.setItem(offlineKey, JSON.stringify({ ...data, user: state.user, savedAt: Date.now() }));
-  } catch (_error) { /* Storage can be unavailable in private browsing. */ }
-}
-
-function readOfflineSnapshot() {
-  try { return JSON.parse(localStorage.getItem(offlineKey)); } catch (_error) { return null; }
 }
 
 // Data for a tab that is not on screen is fetched with low priority so it
@@ -587,7 +542,7 @@ async function loadDiveMap() {
   try {
     const response = await getDiveMap({ priority: backgroundPriority("mapa") });
     renderDiveMap(response.data.dives);
-    writeOfflineSnapshot({ ...(readOfflineSnapshot() || {}), map: response.data.dives });
+    updateOfflineSnapshot({ map: response.data.dives }, state.user);
   } catch (error) {
     const cached = readOfflineSnapshot()?.map;
     if (cached) {
@@ -599,136 +554,52 @@ async function loadDiveMap() {
   }
 }
 
-function clearPhotoUrls(type) {
-  const keyByType = {
-    selected: "selectedPhotoUrls",
-    existing: "existingPhotoUrls",
-    detail: "detailPhotoUrls"
-  };
-  const key = keyByType[type];
-  state[key].forEach(URL.revokeObjectURL);
-  state[key] = [];
-}
-
-function clearAllPhotoUrls() {
-  clearPhotoUrls("selected");
-  clearPhotoUrls("existing");
-  clearPhotoUrls("detail");
-}
-
-function photoCard(url, label, deleteButton = "") {
-  return `
-    <figure class="photo-card">
-      <img src="${url}" alt="${escapeHtml(label)}">
-      <figcaption>${escapeHtml(label)}</figcaption>
-      ${deleteButton}
-    </figure>
-  `;
-}
-
 function renderSelectedPhotos() {
-  clearPhotoUrls("selected");
+  photoUrls.selected.revokeAll();
   const files = [...elements.diveForm.elements.photos.files];
   elements.selectedPhotos.hidden = files.length === 0;
   elements.selectedPhotos.innerHTML = files
-    .map((file) => {
-      const url = URL.createObjectURL(file);
-      state.selectedPhotoUrls.push(url);
-      return photoCard(url, file.name);
-    })
+    .map((file) => photoCard(photoUrls.selected.add(file), file.name))
     .join("");
 }
 
 async function renderExistingPhotos(photos, diveId) {
-  clearPhotoUrls("existing");
+  photoUrls.existing.revokeAll();
   state.currentPhotos = photos;
   elements.existingPhotos.hidden = photos.length === 0;
-  elements.existingPhotos.innerHTML = photos.length
-    ? '<span class="photo-loading">Cargando galería...</span>'
-    : "";
+  elements.existingPhotos.innerHTML = photos.length ? PHOTO_LOADING_MARKUP : "";
   if (photos.length === 0) return;
 
-  const cards = await Promise.all(
-    photos.map(async (photo) => {
-      try {
-        const blob = await getDivePhotoBlob(photo.url);
-        const url = URL.createObjectURL(blob);
-        state.existingPhotoUrls.push(url);
-        const button = `
+  const loaded = await loadPhotoUrls(photos, photoUrls.existing);
+  elements.existingPhotos.innerHTML = loaded.map(({ photo, url }) => url
+    ? photoCard(url, photo.originalName, `
           <button
             class="photo-remove"
             type="button"
             data-photo-id="${escapeHtml(photo.id)}"
             data-dive-id="${escapeHtml(diveId)}"
             aria-label="Eliminar ${escapeHtml(photo.originalName)}"
-          >×</button>`;
-        return photoCard(url, photo.originalName, button);
-      } catch (_error) {
-        return `<span class="photo-load-error">No se pudo cargar ${escapeHtml(photo.originalName)}</span>`;
-      }
-    })
-  );
-  elements.existingPhotos.innerHTML = cards.join("");
+          >×</button>`)
+    : photoErrorMarkup(photo)).join("");
 }
 
+// The detail gallery also chooses which photos go into the PDF.
 async function renderDetailPhotos(photos) {
-  clearPhotoUrls("detail");
+  photoUrls.detail.revokeAll();
   state.detailPrintPhotos = [];
   elements.detailGallerySection.hidden = photos.length === 0;
-  elements.detailPhotos.innerHTML = photos.length
-    ? '<span class="photo-loading">Cargando galería...</span>'
-    : "";
+  elements.detailPhotos.innerHTML = photos.length ? PHOTO_LOADING_MARKUP : "";
   if (photos.length === 0) return;
 
-  const cards = await Promise.all(
-    photos.map(async (photo) => {
-      try {
-        const blob = await getDivePhotoBlob(photo.url);
-        const url = URL.createObjectURL(blob);
-        state.detailPhotoUrls.push(url);
-        return {
-          photo: { ...photo, url },
-          card: `
-            <figure class="photo-card photo-card-selectable">
-              <img src="${url}" alt="${escapeHtml(photo.originalName)}">
-              <figcaption>${escapeHtml(photo.originalName)}</figcaption>
+  const loaded = await loadPhotoUrls(photos, photoUrls.detail);
+  state.detailPrintPhotos = loaded.filter(({ url }) => url).map(({ photo, url }) => ({ ...photo, url }));
+  elements.detailPhotos.innerHTML = loaded.map(({ photo, url }) => url
+    ? photoCard(url, photo.originalName, `
               <label class="photo-export-toggle">
                 <input type="checkbox" value="${escapeHtml(photo.id)}" checked>
                 <span>Incluir en PDF</span>
-              </label>
-            </figure>`
-        };
-      } catch (_error) {
-        return {
-          photo: null,
-          card: `<span class="photo-load-error">No se pudo cargar ${escapeHtml(photo.originalName)}</span>`
-        };
-      }
-    })
-  );
-  state.detailPrintPhotos = cards.flatMap((item) => item.photo ? [item.photo] : []);
-  elements.detailPhotos.innerHTML = cards.map((item) => item.card).join("");
-}
-
-const suitLabels = { wetsuit: "Traje húmedo", drysuit: "Traje seco", shorty: "Shorty", none: "Sin traje" };
-const cylinderLabels = { steel: "Acero", aluminum: "Aluminio" };
-const waterLabels = { salt: "Agua salada", fresh: "Agua dulce" };
-const comfortLabels = {
-  comfortable: "Con comodidad",
-  mixed: "Con sensaciones mixtas",
-  challenging: "Fue exigente"
-};
-
-function suitDescription(dive) {
-  if (!dive.suitType && dive.suitThicknessMm === null) return "No indicado";
-  return [suitLabels[dive.suitType], dive.suitThicknessMm === null ? null : `${formatNumber(dive.suitThicknessMm)} mm`]
-    .filter(Boolean).join(" · ");
-}
-
-function cylinderDescription(dive) {
-  if (!dive.cylinderMaterial && dive.cylinderVolumeLiters === null) return "No indicada";
-  return [cylinderLabels[dive.cylinderMaterial], dive.cylinderVolumeLiters === null ? null : `${formatNumber(dive.cylinderVolumeLiters)} L`]
-    .filter(Boolean).join(" · ");
+              </label>`, "photo-card photo-card-selectable")
+    : photoErrorMarkup(photo)).join("");
 }
 
 function configurationFilters() {
@@ -753,7 +624,7 @@ async function searchConfigurationMemory() {
     const response = await getConfigurationMemory(filters);
     const dives = response.data.dives;
     elements.configurationMemoryMessage.textContent = dives.length
-      ? `${dives.length} ${dives.length === 1 ? "experiencia similar encontrada" : "experiencias similares encontradas"}. Referencia personal, no recomendación.`
+      ? `${countLabel(dives.length, "experiencia similar encontrada", "experiencias similares encontradas")}. Referencia personal, no recomendación.`
       : "No hay experiencias anteriores que coincidan con esta configuración.";
     elements.configurationMemoryResults.innerHTML = dives.map((dive) => `
       <article class="memory-card">
@@ -763,23 +634,6 @@ async function searchConfigurationMemory() {
   } catch (error) {
     if (!handleUnauthorized(error)) elements.configurationMemoryMessage.textContent = "No se pudo consultar tu historial.";
   } finally { elements.searchConfigurationMemory.disabled = false; }
-}
-
-function formatDate(date) {
-  return new Intl.DateTimeFormat("es-ES", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  }).format(new Date(`${date}T00:00:00`));
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
 
 function renderDives(dives) {
@@ -820,15 +674,7 @@ function renderDives(dives) {
                   ? ""
                   : `<span>${escapeHtml(formatNumber(dive.ballastKg))} kg de lastre</span>`
               }
-              ${
-                dive.equipmentOwnership
-                  ? `<span>${
-                      dive.equipmentOwnership === "owned"
-                        ? "Material propio"
-                        : "Material de alquiler"
-                    }</span>`
-                  : ""
-              }
+              ${dive.equipmentOwnership ? `<span>${ownershipLabel(dive.equipmentOwnership)}</span>` : ""}
             </div>
             ${
               dive.buddies.length
@@ -837,9 +683,7 @@ function renderDives(dives) {
             }
             ${
               dive.photos.length
-                ? `<span class="photo-count">${escapeHtml(dive.photos.length)} ${
-                    dive.photos.length === 1 ? "foto" : "fotos"
-                  }</span>`
+                ? `<span class="photo-count">${escapeHtml(countLabel(dive.photos.length, "foto", "fotos"))}</span>`
                 : ""
             }
           </div>
@@ -892,7 +736,7 @@ function closeDiveDetail() {
 }
 
 function clearDiveDetail() {
-  clearPhotoUrls("detail");
+  photoUrls.detail.revokeAll();
   state.detailDive = null;
   state.detailPrintPhotos = [];
   elements.detailPhotos.replaceChildren();
@@ -1028,7 +872,7 @@ async function handleShareListClick(event) {
 }
 
 async function openDiveDetail(diveId) {
-  clearPhotoUrls("detail");
+  photoUrls.detail.revokeAll();
   elements.detailName.textContent = "Detalle de la inmersión";
   elements.detailSubtitle.textContent = "Consulta toda la información registrada.";
   elements.detailLoading.hidden = false;
@@ -1056,16 +900,12 @@ async function openDiveDetail(diveId) {
     elements.detailBallast.textContent =
       dive.ballastKg === null ? "No indicado" : `${formatNumber(dive.ballastKg)} kg`;
     elements.detailEquipment.textContent = dive.equipmentOwnership
-      ? dive.equipmentOwnership === "owned"
-        ? "Material propio"
-        : "Material de alquiler"
+      ? ownershipLabel(dive.equipmentOwnership)
       : "No indicado";
     elements.detailSuit.textContent = suitDescription(dive);
     elements.detailCylinder.textContent = cylinderDescription(dive);
-    elements.detailWater.textContent = waterLabels[dive.waterType] || "No indicado";
-    elements.detailLocation.textContent = dive.location
-      ? `${dive.location.latitude}, ${dive.location.longitude} · ${dive.location.precision === "approximate" ? "aproximada" : "exacta y privada"}`
-      : "No indicada";
+    elements.detailWater.textContent = WATER_LABELS[dive.waterType] || "No indicado";
+    elements.detailLocation.textContent = locationDescription(dive.location);
     elements.detailBuddies.textContent = dive.buddies.length
       ? dive.buddies.join(", ")
       : "No se indicaron compañeros.";
@@ -1141,16 +981,9 @@ function renderPagination(meta) {
   elements.nextPage.disabled = meta.page >= meta.totalPages;
 }
 
-function formatTotalTime(minutes) {
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return remainingMinutes ? `${hours} h ${remainingMinutes} min` : `${hours} h`;
-}
-
 function renderStats(stats) {
   countUp(elements.divesTotal, stats.totalDives);
-  elements.totalTime.textContent = formatTotalTime(stats.totalMinutes);
+  elements.totalTime.textContent = formatMinutes(stats.totalMinutes);
   elements.maxDepth.textContent = stats.maxDepthMeters === null
     ? "—"
     : `${formatNumber(stats.maxDepthMeters)} m`;
@@ -1162,7 +995,7 @@ function renderStats(stats) {
   elements.homeMaxDepth.textContent = elements.maxDepth.textContent;
   countUp(elements.homeThisYear, stats.divesThisYear);
   elements.homeSummary.textContent = stats.totalDives
-    ? `Llevas ${stats.totalDives} ${stats.totalDives === 1 ? "inmersión" : "inmersiones"} y ${formatTotalTime(stats.totalMinutes)} bajo el agua.`
+    ? `Llevas ${countLabel(stats.totalDives, "inmersión", "inmersiones")} y ${formatMinutes(stats.totalMinutes)} bajo el agua.`
     : "Tu bitácora está lista para su primera inmersión.";
   elements.favoriteCenter.textContent = stats.favoriteCenter
     ? `Tu centro más visitado: ${stats.favoriteCenter.name}`
@@ -1173,12 +1006,6 @@ function renderStats(stats) {
 function frequencyMarkup(items, emptyLabel) {
   if (!items.length) return `<li class="frequency-empty">${escapeHtml(emptyLabel)}</li>`;
   return items.map((item) => `<li><span>${escapeHtml(item.name)}</span><strong>${escapeHtml(item.total)}</strong></li>`).join("");
-}
-
-function configurationName(item) {
-  const suit = [suitLabels[item.suitType], item.suitThicknessMm === null ? null : `${formatNumber(item.suitThicknessMm)} mm`].filter(Boolean).join(" ");
-  const cylinder = [cylinderLabels[item.cylinderMaterial], item.cylinderVolumeLiters === null ? null : `${formatNumber(item.cylinderVolumeLiters)} L`].filter(Boolean).join(" ");
-  return [suit, cylinder, waterLabels[item.waterType]].filter(Boolean).join(" · ") || "Configuración parcial";
 }
 
 function renderEvolution(items) {
@@ -1195,7 +1022,7 @@ function renderEvolution(items) {
         <span class="evolution-depth" style="--value:${Math.max(6, item.maxDepthMeters / maxDepth * 100)}%"></span>
         <span class="evolution-duration" style="--value:${Math.max(6, item.durationMinutes / maxDuration * 100)}%"></span>
       </div>
-      <small>${escapeHtml(new Intl.DateTimeFormat("es-ES", { month: "short", year: "2-digit" }).format(new Date(`${item.date}T00:00:00`)).replace(".", ""))}</small>
+      <small>${escapeHtml(formatMonthYear(item.date))}</small>
     </div>`).join("");
   elements.evolutionChart.setAttribute(
     "aria-label",
@@ -1214,11 +1041,11 @@ function renderAdvancedInsights(insights) {
   elements.frequentCenters.innerHTML = frequencyMarkup(insights.frequentCenters, "Aún no hay centros registrados.");
   elements.ownershipComparison.innerHTML = insights.equipmentOwnership.length
     ? insights.equipmentOwnership.map((item) => `
-      <div class="ownership-row"><div><strong>${item.type === "owned" ? "Material propio" : "Material de alquiler"}</strong><span>${escapeHtml(item.sampleSize)} ${item.sampleSize === 1 ? "inmersión" : "inmersiones"}</span></div><p><b>${escapeHtml(formatNumber(item.averageDurationMinutes))} min</b><span>duración media</span></p><p><b>${escapeHtml(formatNumber(item.averageDepthMeters))} m</b><span>profundidad media</span></p></div>`).join("")
+      <div class="ownership-row"><div><strong>${ownershipLabel(item.type)}</strong><span>${escapeHtml(countLabel(item.sampleSize, "inmersión", "inmersiones"))}</span></div><p><b>${escapeHtml(formatNumber(item.averageDurationMinutes))} min</b><span>duración media</span></p><p><b>${escapeHtml(formatNumber(item.averageDepthMeters))} m</b><span>profundidad media</span></p></div>`).join("")
     : '<p class="frequency-empty">Indica si el material es propio o alquilado para comparar.</p>';
   elements.ballastPatterns.innerHTML = insights.ballastConfigurations.length
     ? insights.ballastConfigurations.map((item) => `
-      <article class="ballast-pattern"><div><strong>${escapeHtml(configurationName(item))}</strong><span>${escapeHtml(item.sampleSize)} ${item.sampleSize === 1 ? "registro" : "registros"}</span></div><p><b>${escapeHtml(formatNumber(item.averageBallastKg))} kg</b><span>media observada</span></p><p><b>${escapeHtml(formatNumber(item.minimumBallastKg))}-${escapeHtml(formatNumber(item.maximumBallastKg))} kg</b><span>rango registrado</span></p></article>`).join("")
+      <article class="ballast-pattern"><div><strong>${escapeHtml(configurationName(item))}</strong><span>${escapeHtml(countLabel(item.sampleSize, "registro", "registros"))}</span></div><p><b>${escapeHtml(formatNumber(item.averageBallastKg))} kg</b><span>media observada</span></p><p><b>${escapeHtml(formatNumber(item.minimumBallastKg))}-${escapeHtml(formatNumber(item.maximumBallastKg))} kg</b><span>rango registrado</span></p></article>`).join("")
     : '<p class="frequency-empty">Completa lastre y configuración para crear grupos comparables.</p>';
   elements.reflectionEvolution.innerHTML = insights.reflectionEvolution.length
     ? insights.reflectionEvolution.map((item) => `
@@ -1226,7 +1053,7 @@ function renderAdvancedInsights(insights) {
         <time>${escapeHtml(formatDate(item.date))}</time>
         <div><strong>${escapeHtml(item.diveName)}</strong>
           ${item.practicedSkill ? `<span>Practiqué: ${escapeHtml(item.practicedSkill)}</span>` : ""}
-          ${item.comfort ? `<span>${escapeHtml(comfortLabels[item.comfort])}</span>` : ""}
+          ${item.comfort ? `<span>${escapeHtml(COMFORT_LABELS[item.comfort])}</span>` : ""}
           ${item.nextGoal ? `<p>Próximo objetivo: ${escapeHtml(item.nextGoal)}</p>` : ""}
         </div>
       </article>`).join("")
@@ -1261,15 +1088,6 @@ async function loadStats() {
   }
 }
 
-const certificationLabels = {
-  beginner: "En formación",
-  open_water: "Open Water",
-  advanced: "Advanced",
-  rescue: "Rescue Diver",
-  divemaster: "Divemaster",
-  instructor: "Instructor/a"
-};
-
 function setProfileAvatars(photoUrl = null) {
   const initials = state.user
     ? `${state.user.firstName[0] || ""}${state.user.lastName[0] || ""}`.toUpperCase()
@@ -1300,7 +1118,7 @@ function renderProfile(profile) {
   elements.profileSummaryCopy.textContent = profile.bio ||
     "Completa tu perfil para reunir trayectoria y preferencias.";
   elements.profileCertification.textContent =
-    certificationLabels[profile.certificationLevel] || "Sin indicar";
+    CERTIFICATION_LABELS[profile.certificationLevel] || "Sin indicar";
   elements.profileSince.textContent = profile.divingSince || "Sin indicar";
   elements.profilePrivacy.textContent = profile.shareNameByDefault
     ? "Nombre incluido por defecto"
@@ -1396,15 +1214,6 @@ async function loadDashboardData() {
   await Promise.all([loadProfile(), loadStats(), loadAdvancedInsights(), loadDives(), loadDiveMap()]);
 }
 
-function daysAgoLabel(date) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const days = Math.round((today - new Date(`${date}T00:00:00`)) / 86400000);
-  if (days <= 0) return "hoy";
-  if (days === 1) return "ayer";
-  return `hace ${days} días`;
-}
-
 // Inicio shows the newest dives. The list endpoint is ordered by date, so the
 // first page of the logbook already holds them.
 function renderHome(dives) {
@@ -1455,13 +1264,12 @@ async function loadDives() {
     renderDives(response.data.dives);
     renderPagination(response.meta);
     if (state.page === 1) renderHome(response.data.dives);
-    writeOfflineSnapshot({ ...(readOfflineSnapshot() || {}), dives: response.data.dives, meta: response.meta });
+    updateOfflineSnapshot({ dives: response.data.dives, meta: response.meta }, state.user);
   } catch (error) {
     if (handleUnauthorized(error)) return;
     const cached = readOfflineSnapshot();
     if (cached?.dives) {
-      state.offline = true;
-      applyOfflineMode();
+      setOffline(true);
       renderDives(cached.dives);
       renderPagination(cached.meta || { page: 1, totalPages: 1 });
       renderHome(cached.dives);
@@ -1482,7 +1290,8 @@ function resetDiveForm() {
   elements.diveFormTitle.textContent = "Registrar inmersión";
   elements.diveFormEyebrow.textContent = "Nueva experiencia";
   elements.saveDiveButton.textContent = "Guardar inmersión";
-  clearAllPhotoUrls();
+  photoUrls.selected.revokeAll();
+  photoUrls.existing.revokeAll();
   state.currentPhotos = [];
   elements.selectedPhotos.replaceChildren();
   elements.selectedPhotos.hidden = true;
@@ -1546,7 +1355,7 @@ async function handleDiveSubmit(event) {
   elements.diveForm.classList.add("is-busy");
 
   try {
-    const data = diveFormData();
+    const data = divePayload(formDataToObject(elements.diveForm));
     const photoFiles = [...elements.diveForm.elements.photos.files];
     const isEditing = Boolean(state.editingDiveId);
     let response;
@@ -1564,7 +1373,7 @@ async function handleDiveSubmit(event) {
       } catch (photoError) {
         state.editingDiveId = response.data.dive.id;
         elements.diveForm.elements.photos.value = "";
-        clearPhotoUrls("selected");
+        photoUrls.selected.revokeAll();
         elements.selectedPhotos.hidden = true;
         const refreshed = await getDive(response.data.dive.id);
         await renderExistingPhotos(refreshed.data.dive.photos, response.data.dive.id);
@@ -1615,7 +1424,6 @@ async function handlePhotoDelete(event) {
     const remaining = state.currentPhotos.filter(
       (photo) => String(photo.id) !== button.dataset.photoId
     );
-    clearPhotoUrls("existing");
     await renderExistingPhotos(remaining, button.dataset.diveId);
     setMessage(elements.diveFormMessage, "Fotografía eliminada.", "success");
   } catch (error) {
@@ -1708,7 +1516,7 @@ function showDashboard(user) {
   state.user = user;
   elements.userName.textContent = `${user.firstName} ${user.lastName}`;
   elements.greetingName.textContent = user.firstName;
-  elements.homeDate.textContent = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
+  elements.homeDate.textContent = formatLongToday();
   elements.authView.hidden = true;
   elements.dashboardView.hidden = false;
   document.documentElement.removeAttribute("data-boot");
@@ -1756,7 +1564,7 @@ function showAuth() {
 function endSessionLocally() {
   closeAllDialogs();
   clearToken();
-  localStorage.removeItem(offlineKey);
+  clearOfflineSnapshot();
   showAuth();
 }
 
@@ -2031,9 +1839,8 @@ async function restoreSession() {
     // synchronised read-only copy instead of wiping it and showing the login.
     const snapshot = readOfflineSnapshot();
     if (isNetworkError(error) && snapshot?.user && snapshot?.dives) {
-      state.offline = true;
+      setOffline(true);
       showDashboard(snapshot.user);
-      applyOfflineMode();
       return;
     }
     endSessionLocally();
@@ -2042,15 +1849,13 @@ async function restoreSession() {
 
 window.addEventListener("offline", () => {
   if (elements.dashboardView.hidden) return;
-  state.offline = true;
-  applyOfflineMode();
+  setOffline(true);
   setMessage(elements.dashboardMessage, "Sin conexión: consulta en solo lectura. La edición requiere conexión.", "success");
 });
 
 window.addEventListener("online", () => {
-  if (!state.offline) return;
-  state.offline = false;
-  applyOfflineMode();
+  if (!isOffline()) return;
+  setOffline(false);
   if (state.user) restoreSession();
 });
 
