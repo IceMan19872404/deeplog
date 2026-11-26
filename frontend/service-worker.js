@@ -69,6 +69,29 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// A fetched static file is stored only if it is a real same-origin file at a
+// clean static URL (no tokens) and not the HTML fallback of a missing path.
+function isStorable(response, url) {
+  const html = (response.headers.get("content-type") || "").includes("text/html");
+  return response.ok && response.type === "basic" && !html && isCacheableUrl(url);
+}
+
+// Versioned files (?v=) and fonts never change under the same URL: cache
+// first, then network, keeping a copy of what the network returned.
+async function cacheFirst(event, url) {
+  const { request } = event;
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+  if (isStorable(response, url)) {
+    const copy = response.clone();
+    event.waitUntil(caches.open(CACHE).then((cache) => cache.put(request, copy)));
+  }
+  return response;
+}
+
+// The API is never handled here (always network, never cached), nor are
+// other origins or anything but GET.
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -82,17 +105,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Versioned files (?v=) and fonts never change under the same URL:
-  // cache first, then network, storing only clean static URLs.
   if (isVersioned(url)) {
-    event.respondWith(caches.match(request).then((cached) => cached || fetch(request).then((response) => {
-      const html = (response.headers.get("content-type") || "").includes("text/html");
-      if (response.ok && response.type === "basic" && !html && isCacheableUrl(url)) {
-        const copy = response.clone();
-        event.waitUntil(caches.open(CACHE).then((cache) => cache.put(request, copy)));
-      }
-      return response;
-    })).catch(() => Response.error()));
+    event.respondWith(cacheFirst(event, url).catch(() => Response.error()));
     return;
   }
 
