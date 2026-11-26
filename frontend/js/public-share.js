@@ -86,17 +86,44 @@ function showTerminalError(error) {
     SHARE_NOT_FOUND: ["No encontramos esta inmersión", "Comprueba que el enlace esté completo."]
   };
   const [title, copy] = messages[error.code] || ["No se pudo abrir la inmersión", "Inténtalo de nuevo más tarde."];
-  state.replaceChildren();
-  const heading = document.createElement("h1"); heading.textContent = title;
-  const paragraph = document.createElement("p"); paragraph.textContent = copy;
-  state.append(heading, paragraph);
+  const heading = document.createElement("h1");
+  heading.textContent = title;
+  const paragraph = document.createElement("p");
+  paragraph.textContent = copy;
+  state.replaceChildren(heading, paragraph);
   state.hidden = false;
+}
+
+// Password links: the form exchanges the password for a short-lived token
+// that also authorises the photos.
+function askForPassword(token) {
+  const form = byId("public-share-password-form");
+  form.hidden = false;
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = form.querySelector("button[type='submit']");
+    const message = byId("public-password-message");
+    message.hidden = true;
+    button.disabled = true;
+    try {
+      const unlocked = await unlockPublicDive(token, form.elements.password.value);
+      await renderDive(unlocked.data.dive, unlocked.data.accessToken);
+    } catch (unlockError) {
+      message.textContent = unlockError.code === "INVALID_SHARE_PASSWORD"
+        ? "La contraseña no es correcta." : "No se pudo abrir la inmersión.";
+      message.className = "message message-error";
+      message.hidden = false;
+    } finally {
+      button.disabled = false;
+    }
+  });
 }
 
 export async function initializePublicShare(token) {
   document.querySelector('meta[name="robots"]')?.remove();
   const robots = document.createElement("meta");
-  robots.name = "robots"; robots.content = "noindex,nofollow,noarchive";
+  robots.name = "robots";
+  robots.content = "noindex,nofollow,noarchive";
   document.head.append(robots);
   byId("auth-view").hidden = true;
   byId("dashboard-view").hidden = true;
@@ -105,24 +132,8 @@ export async function initializePublicShare(token) {
     const response = await getPublicDive(token);
     await renderDive(response.data.dive);
   } catch (error) {
-    if (error.code === "SHARE_PASSWORD_REQUIRED") {
-      byId("public-share-password-form").hidden = false;
-      byId("public-share-password-form").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const button = form.querySelector("button[type='submit']");
-        const message = byId("public-password-message");
-        message.hidden = true; button.disabled = true;
-        try {
-          const unlocked = await unlockPublicDive(token, form.elements.password.value);
-          await renderDive(unlocked.data.dive, unlocked.data.accessToken);
-        } catch (unlockError) {
-          message.textContent = unlockError.code === "INVALID_SHARE_PASSWORD"
-            ? "La contraseña no es correcta." : "No se pudo abrir la inmersión.";
-          message.className = "message message-error"; message.hidden = false;
-        } finally { button.disabled = false; }
-      });
-    } else showTerminalError(error);
+    if (error.code === "SHARE_PASSWORD_REQUIRED") askForPassword(token);
+    else showTerminalError(error);
   } finally {
     byId("public-share-loading").hidden = true;
   }
