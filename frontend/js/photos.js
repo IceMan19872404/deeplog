@@ -2,8 +2,8 @@
 // shown through an object URL, which must be revoked when it is no longer on
 // screen. A pool holds the URLs of one gallery so they go away together.
 
-import { getDivePhotoBlob } from "./api.js?v=20261123-2";
-import { escapeHtml } from "./text.js?v=20261126-1";
+import { getDivePhotoBlob } from "./api.js?v=20261126-2";
+import { escapeHtml } from "./text.js?v=20261126-2";
 
 export function createUrlPool(urlApi = URL) {
   let urls = [];

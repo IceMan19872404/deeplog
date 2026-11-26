@@ -70,6 +70,21 @@ los errores conocidos que siguen sin corregir y las mejoras pendientes.
   Safari y Firefox. Está en `api.js`, en `downloadAccountExport`.
 - **E13.** Las capturas de comparación del tema Superficie en móvil no siempre
   salen idénticas: hay diferencias mínimas de antialiasing.
+- **E15. Botón principal mientras carga en Abismo.** El texto sigue visible y
+  el indicador de carga casi no se ve sobre el aguamarina. Hay que elegir
+  colores para el indicador en Abismo y después ocultar el texto, como en
+  Superficie. Ahora mismo se mantiene a propósito con
+  `--primary-loading-ink` (`01-tokens.css`).
+- **E16.** En móvil, la regla que daba 120 px de margen inferior al contenido
+  nunca se aplicaba, porque ganaba otra de 80 px. Se ha eliminado sin cambiar
+  nada visible. Si se quieren de verdad los 120 px, hay que añadirla en
+  `05-app-shell.css`, y eso sí cambia el aspecto.
+- **E17.** `15-theme-abismo.css` ya solo contiene las fuentes, y
+  `18-theme-superficie.css` solo las cáusticas. Conviene renombrarlos, lo que
+  exige tocar `index.html` y el service worker.
+- **E18.** Los fondos dependen ahora de que exista `data-theme`. `theme-init.js`
+  lo pone siempre antes de pintar y una prueba lo comprueba, pero si algún día
+  se carga la página sin él, se vería Superficie.
 
 ### De las herramientas
 - **E14.** `npm test` del backend no fija `NODE_ENV=test`, así que los

@@ -2,9 +2,9 @@
 // module brings ~140 KB of coastline data, so it is imported only when the
 // Mapa tab is shown with dives to place (it stays in the offline shell).
 
-import { getDiveMap } from "./api.js?v=20261123-2";
-import { readOfflineSnapshot, updateOfflineSnapshot } from "./offline.js?v=20261126-1";
-import { formatDate } from "./text.js?v=20261126-1";
+import { getDiveMap } from "./api.js?v=20261126-2";
+import { readOfflineSnapshot, updateOfflineSnapshot } from "./offline.js?v=20261126-2";
+import { formatDate } from "./text.js?v=20261126-2";
 
 function describeDive(dive) {
   const precision = dive.precision === "approximate" ? "ubicación aproximada" : "ubicación exacta privada";

@@ -2,31 +2,31 @@
 // with the photos chosen for the PDF (TD-019), and the learning journal
 // (TD-024) saved per dive.
 
-import { deleteDiveReflection, getDive, saveDiveReflection } from "./api.js?v=20261123-2";
+import { deleteDiveReflection, getDive, saveDiveReflection } from "./api.js?v=20261126-2";
 import {
   WATER_LABELS,
   cylinderDescription,
   locationDescription,
   ownershipLabel,
   suitDescription
-} from "./dive-labels.js?v=20261126-1";
-import { openDivePrintPreview } from "./dive-pdf.js?v=20261123-2";
-import { formatNumber } from "./format.js?v=20261123-2";
+} from "./dive-labels.js?v=20261126-2";
+import { openDivePrintPreview } from "./dive-pdf.js?v=20261126-2";
+import { formatNumber } from "./format.js?v=20261126-2";
 import {
   formDataToObject,
   setFormBusy,
   setMessage,
   showApiFieldErrors,
   validateForm
-} from "./forms.js?v=20261126-1";
+} from "./forms.js?v=20261126-2";
 import {
   PHOTO_LOADING_MARKUP,
   createUrlPool,
   loadPhotoUrls,
   photoCard,
   photoErrorMarkup
-} from "./photos.js?v=20261126-1";
-import { escapeHtml, formatDate } from "./text.js?v=20261126-1";
+} from "./photos.js?v=20261126-2";
+import { escapeHtml, formatDate } from "./text.js?v=20261126-2";
 
 function reflectionErrors(form) {
   const values = [...new FormData(form).values()];

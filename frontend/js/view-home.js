@@ -1,10 +1,10 @@
 // Inicio: greeting, headline figures, the latest dive with its approximate
 // profile (TD-036) and the next few recent dives.
 
-import { profileSvg } from "./dive-profile.js?v=20261121-2";
-import { formatNumber } from "./format.js?v=20261123-2";
+import { profileSvg } from "./dive-profile.js?v=20261126-2";
+import { formatNumber } from "./format.js?v=20261126-2";
 import { countUp } from "./motion.js?v=20261121-1";
-import { countLabel, daysAgoLabel, escapeHtml, formatDate, formatLongToday } from "./text.js?v=20261126-1";
+import { countLabel, daysAgoLabel, escapeHtml, formatDate, formatLongToday } from "./text.js?v=20261126-2";
 
 export function createHomeView({ openDiveDetail, openCreateDiveForm }) {
   const lastDive = document.querySelector("#home-last-dive");

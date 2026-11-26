@@ -3,14 +3,14 @@
 // switch and the start-up route (?share=, ?resetToken= or the session).
 // Each section of the page lives in its own view-*.js module.
 
-import { clearToken, logoutUser, restoreUserSession } from "./api.js?v=20261123-2";
+import { clearToken, logoutUser, restoreUserSession } from "./api.js?v=20261126-2";
 import { initializeClientMonitoring } from "./client-monitoring.js?v=20261123-2";
 import {
   closeAllDialogs,
   createConfirmDialog,
   installLightDismissFallback
-} from "./dialogs.js?v=20261123-2";
-import { installFormBehaviour } from "./forms.js?v=20261126-1";
+} from "./dialogs.js?v=20261126-2";
+import { installFormBehaviour } from "./forms.js?v=20261126-2";
 import { createMotionPreference } from "./motion.js?v=20261121-1";
 import {
   clearOfflineSnapshot,
@@ -18,19 +18,19 @@ import {
   isOffline,
   readOfflineSnapshot,
   setOffline
-} from "./offline.js?v=20261126-1";
+} from "./offline.js?v=20261126-2";
 import { TABS, createTabs } from "./tabs.js?v=20261123-2";
 import { createTheme } from "./theme.js?v=20261123-2";
-import { createAccountView } from "./view-account.js?v=20261126-1";
-import { createAuthView } from "./view-auth.js?v=20261126-1";
-import { createDiveDetail } from "./view-dive-detail.js?v=20261126-1";
-import { createDiveEditor } from "./view-dive-editor.js?v=20261126-1";
-import { createHomeView } from "./view-home.js?v=20261126-1";
-import { createLogbookView } from "./view-logbook.js?v=20261126-1";
-import { createMapView } from "./view-map.js?v=20261126-1";
-import { createProfileView } from "./view-profile.js?v=20261126-1";
-import { createShareView } from "./view-share.js?v=20261126-1";
-import { createStatsView } from "./view-stats.js?v=20261126-1";
+import { createAccountView } from "./view-account.js?v=20261126-2";
+import { createAuthView } from "./view-auth.js?v=20261126-2";
+import { createDiveDetail } from "./view-dive-detail.js?v=20261126-2";
+import { createDiveEditor } from "./view-dive-editor.js?v=20261126-2";
+import { createHomeView } from "./view-home.js?v=20261126-2";
+import { createLogbookView } from "./view-logbook.js?v=20261126-2";
+import { createMapView } from "./view-map.js?v=20261126-2";
+import { createProfileView } from "./view-profile.js?v=20261126-2";
+import { createShareView } from "./view-share.js?v=20261126-2";
+import { createStatsView } from "./view-stats.js?v=20261126-2";
 
 initializeClientMonitoring();
 createTheme();
@@ -219,7 +219,7 @@ const shareTokenFromUrl = urlParameters.get("share");
 const resetTokenFromUrl = urlParameters.get("resetToken");
 if (shareTokenFromUrl) {
   // Only share recipients need this module; it stays in the offline shell.
-  import("./public-share.js?v=20261123-2")
+  import("./public-share.js?v=20261126-2")
     .then(({ initializePublicShare }) => {
       const loading = initializePublicShare(shareTokenFromUrl); // swaps the views synchronously
       document.documentElement.removeAttribute("data-boot");

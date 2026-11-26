@@ -1,7 +1,7 @@
 // Spanish labels for the dive and profile values the API stores as codes, and
 // the short descriptions built from them (list card, detail, statistics).
 
-import { formatNumber } from "./format.js?v=20261123-2";
+import { formatNumber } from "./format.js?v=20261126-2";
 
 export const SUIT_LABELS = { wetsuit: "Traje húmedo", drysuit: "Traje seco", shorty: "Shorty", none: "Sin traje" };
 export const CYLINDER_LABELS = { steel: "Acero", aluminum: "Aluminio" };

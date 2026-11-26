@@ -1,8 +1,8 @@
 // Perfil › Cuenta: close every session, download the data (JSON, CSV or the
 // full ZIP with photos) and delete the account.
 
-import { deleteAccount, downloadAccountExport, logoutAllSessions } from "./api.js?v=20261123-2";
-import { guardDialogClose, requestDialogClose } from "./dialogs.js?v=20261123-2";
+import { deleteAccount, downloadAccountExport, logoutAllSessions } from "./api.js?v=20261126-2";
+import { guardDialogClose, requestDialogClose } from "./dialogs.js?v=20261126-2";
 import {
   formDataToObject,
   isFormBusy,
@@ -11,7 +11,7 @@ import {
   setMessage,
   showApiFieldErrors,
   validateForm
-} from "./forms.js?v=20261126-1";
+} from "./forms.js?v=20261126-2";
 
 // `endSession(message, { showLogin })` signs out locally and tells the user
 // why on the login screen.

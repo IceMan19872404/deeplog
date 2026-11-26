@@ -1223,3 +1223,40 @@ escape, estado inicial en el HTML). Playwright: clic en cada cifra, teclado
 nativo y con el respaldo sin `focusgroup`, «Abrir ficha», `beforematch`, sin
 desbordamiento en movil y sin avisos de la CSP. Capturas frente a `main`:
 solo cambia Estadisticas.
+
+## TD-042 - Revision general del codigo sin cambios de comportamiento
+
+Contexto:
+Tras el PR #9 el codigo habia crecido por partes: `app.js` tenia 2.203 lineas,
+habia ayudantes duplicados en varios modulos, transacciones escritas a mano y
+reglas de estilo que se pisaban entre archivos.
+
+Decision:
+Cinco revisiones en paralelo (dominio del backend, plataforma del backend,
+`app.js`, resto de modulos del frontend y estilos) con una regla comun: el
+comportamiento, el contrato HTTP (`openapi.json`) y el aspecto no cambian.
+- Backend: `withTransaction` en `config/database.js` para todas las
+  transacciones; un constructor de limitadores (`middlewares/rate-limit.js`) y
+  de subidas de imagen; el sobre de error en `errors/error-response.js`;
+  `getStatsByUserId` dividido en consultas con nombre; una comprobacion de
+  propiedad para fotos, enlaces y reflexiones (`services/dive-ownership.js`).
+- Frontend: `app.js` queda como orquestador (237 lineas) y cada seccion vive
+  en `js/view-*.js`; `format.js` reune escape, fechas, duraciones y resumenes
+  de equipo; `api.js` tiene un solo constructor de errores.
+- Estilos: todos los tokens en `01-tokens.css` y los temas como tokens con un
+  valor por tema en lugar de reglas que se pisan.
+
+Consecuencias:
+- Se corrigieron diez errores reales (lista en `docs/PENDIENTES.md`), entre
+  ellos el patron de la contraseña del registro, que impedia crear cuentas.
+- `15-theme-abismo.css` y `18-theme-superficie.css` ya solo contienen fuentes
+  y causticas; renombrarlos queda pendiente.
+- Lo encontrado y no corregido queda en `docs/PENDIENTES.md`.
+
+Validacion:
+Backend 86 pruebas y frontend 127; `openapi.json` sin cambios; 86 llamadas a
+la API identicas antes y despues; capturas frente a `main` sin cambios reales;
+recorridos de Playwright (dialogos, formularios, PWA, tema y navegacion,
+Estadisticas, y recorridos completos de inmersiones, fotos, enlaces, perfil,
+exportacion y sin conexion).
+

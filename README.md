@@ -673,7 +673,9 @@ cualquier escritura. La politica se documenta en `docs/OFFLINE_STRATEGY.md`.
 - `frontend/`: cliente HTML/CSS/JS servido por Nginx
 - `frontend-react-poc/`: vertical React + TypeScript aislada de la Semana 23
 - `frontend/js/api.js`: acceso centralizado a la API
-- `frontend/js/app.js`: estado y comportamiento de la interfaz
+- `frontend/js/app.js`: arranque, sesion, pestañas y modo sin conexion; crea las vistas
+- `frontend/js/view-*.js`: una vista por seccion (Inicio, Inmersiones, ficha, editor, Estadisticas, mapa, compartir, perfil, cuenta y acceso)
+- `frontend/js/format.js`, `text.js`, `forms.js`: formatos, textos y comportamiento comun de formularios
 - `frontend/js/dive-pdf.js`: documento editorial A4 y previsualizacion PDF
 - `frontend/js/public-share.js`: ficha publica y acceso mediante contraseña
 - `docker-compose.yml`: orquestacion local
@@ -688,6 +690,7 @@ cualquier escritura. La politica se documenta en `docs/OFFLINE_STRATEGY.md`.
 - `docs/ACCESSIBILITY_AUDIT.md`: revision WCAG, evidencia y pruebas manuales
 - `docs/OFFLINE_STRATEGY.md`: cache local, privacidad y resolucion de conflictos
 - `docs/FRONTEND_EVOLUTION_ADR.md`: metricas y decision sobre React/Next/Tailwind
+- `docs/PENDIENTES.md`: errores conocidos y mejoras pendientes
 
 ## Siguiente paso
 Preparar la Semana 24: produccion, portfolio y validacion con buceadores. La POC

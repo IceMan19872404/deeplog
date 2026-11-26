@@ -3,7 +3,7 @@
 // YYYY-MM-DD and are read as local calendar days, never as UTC midnight.
 
 // Escaping lives in format.js (null becomes ""); re-exported for the views.
-export { escapeHtml } from "./format.js?v=20261123-2";
+export { escapeHtml } from "./format.js?v=20261126-2";
 
 function localDay(date) {
   return new Date(`${date}T00:00:00`);

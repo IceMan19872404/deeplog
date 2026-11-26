@@ -3,12 +3,12 @@
 // evolution, frequent buddies and centres, own vs rented equipment, ballast
 // by configuration and the learning journal over time.
 
-import { getDiveInsights, getDiveStats } from "./api.js?v=20261123-2";
-import { COMFORT_LABELS, configurationName, ownershipLabel } from "./dive-labels.js?v=20261126-1";
-import { formatNumber } from "./format.js?v=20261123-2";
+import { getDiveInsights, getDiveStats } from "./api.js?v=20261126-2";
+import { COMFORT_LABELS, configurationName, ownershipLabel } from "./dive-labels.js?v=20261126-2";
+import { formatNumber } from "./format.js?v=20261126-2";
 import { countUp } from "./motion.js?v=20261121-1";
-import { createStatTabs, formatMinutes, renderStatsDetail } from "./stats-detail.js?v=20261123-5";
-import { countLabel, escapeHtml, formatDate, formatMonthYear } from "./text.js?v=20261126-1";
+import { createStatTabs, formatMinutes, renderStatsDetail } from "./stats-detail.js?v=20261126-2";
+import { countLabel, escapeHtml, formatDate, formatMonthYear } from "./text.js?v=20261126-2";
 
 function frequencyMarkup(items, emptyLabel) {
   if (!items.length) return `<li class="frequency-empty">${escapeHtml(emptyLabel)}</li>`;

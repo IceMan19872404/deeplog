@@ -2,18 +2,18 @@
 // delete confirmation and where focus goes after the list is redrawn. The
 // first page is also what Inicio and the offline copy show.
 
-import { deleteDive, getDives } from "./api.js?v=20261123-2";
-import { guardDialogClose } from "./dialogs.js?v=20261123-2";
-import { ownershipLabel } from "./dive-labels.js?v=20261126-1";
-import { formatNumber } from "./format.js?v=20261123-2";
-import { setMessage } from "./forms.js?v=20261126-1";
+import { deleteDive, getDives } from "./api.js?v=20261126-2";
+import { guardDialogClose } from "./dialogs.js?v=20261126-2";
+import { ownershipLabel } from "./dive-labels.js?v=20261126-2";
+import { formatNumber } from "./format.js?v=20261126-2";
+import { setMessage } from "./forms.js?v=20261126-2";
 import {
   applyOfflineMode,
   readOfflineSnapshot,
   setOffline,
   updateOfflineSnapshot
-} from "./offline.js?v=20261126-1";
-import { countLabel, escapeHtml, formatDate } from "./text.js?v=20261126-1";
+} from "./offline.js?v=20261126-2";
+import { countLabel, escapeHtml, formatDate } from "./text.js?v=20261126-2";
 
 const PAGE_SIZE = 6;
 // The depth bar is full at 40 m, the recreational limit.

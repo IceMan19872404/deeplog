@@ -1,11 +1,11 @@
-import { getPublicDive, getPublicPhotoBlob, unlockPublicDive } from "./api.js?v=20261123-2";
+import { getPublicDive, getPublicPhotoBlob, unlockPublicDive } from "./api.js?v=20261126-2";
 import {
   cylinderSummary,
   formatCalendarDate,
   formatNumber,
   suitSummary,
   waterSummary
-} from "./format.js?v=20261123-2";
+} from "./format.js?v=20261126-2";
 
 // Read-only page for a share link (?share=<token>, TD-020). The API only
 // returns the fields the owner chose to share, so each optional block is

@@ -8,9 +8,9 @@ import {
   getProfilePhotoBlob,
   updateProfile,
   uploadProfilePhoto
-} from "./api.js?v=20261123-2";
-import { createUnsavedChanges, guardDialogClose, requestDialogClose } from "./dialogs.js?v=20261123-2";
-import { CERTIFICATION_LABELS } from "./dive-labels.js?v=20261126-1";
+} from "./api.js?v=20261126-2";
+import { createUnsavedChanges, guardDialogClose, requestDialogClose } from "./dialogs.js?v=20261126-2";
+import { CERTIFICATION_LABELS } from "./dive-labels.js?v=20261126-2";
 import {
   clearFieldError,
   clearFormErrors,
@@ -20,7 +20,7 @@ import {
   setMessage,
   showApiFieldErrors,
   validateForm
-} from "./forms.js?v=20261126-1";
+} from "./forms.js?v=20261126-2";
 import { profilePhotoMessage } from "./validation-messages.js?v=20261123-2";
 
 function profileFormErrors(form) {

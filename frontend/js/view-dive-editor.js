@@ -10,11 +10,11 @@ import {
   getDive,
   updateDive,
   uploadDivePhotos
-} from "./api.js?v=20261123-2";
-import { createUnsavedChanges, guardDialogClose, requestDialogClose } from "./dialogs.js?v=20261123-2";
+} from "./api.js?v=20261126-2";
+import { createUnsavedChanges, guardDialogClose, requestDialogClose } from "./dialogs.js?v=20261126-2";
 import { localIsoDate, populateDiveForm } from "./dive-form.js?v=20261123-2";
-import { buddiesError, divePayload, photosError } from "./dive-form-data.js?v=20261126-1";
-import { formatNumber } from "./format.js?v=20261123-2";
+import { buddiesError, divePayload, photosError } from "./dive-form-data.js?v=20261126-2";
+import { formatNumber } from "./format.js?v=20261126-2";
 import {
   clearFieldError,
   formDataToObject,
@@ -23,15 +23,15 @@ import {
   setMessage,
   showApiFieldErrors,
   validateForm
-} from "./forms.js?v=20261126-1";
+} from "./forms.js?v=20261126-2";
 import {
   PHOTO_LOADING_MARKUP,
   createUrlPool,
   loadPhotoUrls,
   photoCard,
   photoErrorMarkup
-} from "./photos.js?v=20261126-1";
-import { countLabel, escapeHtml, formatDate } from "./text.js?v=20261126-1";
+} from "./photos.js?v=20261126-2";
+import { countLabel, escapeHtml, formatDate } from "./text.js?v=20261126-2";
 
 const MEMORY_FIELDS = ["waterType", "suitType", "suitThicknessMm", "cylinderMaterial", "cylinderVolumeLiters"];
 

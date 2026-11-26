@@ -11,7 +11,7 @@ import {
   formatMinutes,
   formatMinutesCompact,
   formatNumber
-} from "./format.js?v=20261123-2";
+} from "./format.js?v=20261126-2";
 
 // Re-exported: they lived here first and tests/stats-detail.test.js imports them.
 export { formatMinutes, formatMinutesCompact };

@@ -1,9 +1,9 @@
 // Private share links for one dive (TD-020): choose what the recipient sees,
 // an optional password and expiry, get the link and its QR, and revoke links.
 
-import { createDiveShare, getDiveShares, revokeDiveShare } from "./api.js?v=20261123-2";
-import { clearFormErrors, setMessage, validateForm } from "./forms.js?v=20261126-1";
-import { escapeHtml } from "./text.js?v=20261126-1";
+import { createDiveShare, getDiveShares, revokeDiveShare } from "./api.js?v=20261126-2";
+import { clearFormErrors, setMessage, validateForm } from "./forms.js?v=20261126-2";
+import { escapeHtml } from "./text.js?v=20261126-2";
 
 const STATUS_LABELS = { active: "Activo", expired: "Caducado", revoked: "Revocado" };
 const COPIED_LABEL_MS = 1800;

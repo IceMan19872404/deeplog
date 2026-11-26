@@ -7,7 +7,7 @@ import {
   formatNumber,
   suitSummary,
   waterSummary
-} from "./format.js?v=20261123-2";
+} from "./format.js?v=20261126-2";
 
 function equipmentLabel(value) {
   if (value === "owned") return "Material propio";

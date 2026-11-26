@@ -4,7 +4,7 @@
 // descent at ~18 m/min, a bottom phase that slowly rises, ascent at ~9 m/min
 // and, below 10 m, a 3-minute safety stop at 5 m.
 
-import { formatNumber } from "./format.js?v=20261123-2";
+import { formatNumber } from "./format.js?v=20261126-2";
 
 const DESCENT_RATE = 18;
 const ASCENT_RATE = 9;

@@ -1,7 +1,7 @@
 // Helpers for the app's native modal <dialog>s: closing paths, light dismiss
 // where `closedby` is missing, unsaved-changes and busy guards, and small
 // confirmation dialogs. Cleanup after a dialog closes belongs in that
-// dialog's own `close` listener (app.js), so every closing path runs it.
+// dialog's own `close` listener (view-*.js), so every closing path runs it.
 
 export function isOutsideRect(rect, x, y) {
   return x < rect.left || x > rect.right || y < rect.top || y > rect.bottom;

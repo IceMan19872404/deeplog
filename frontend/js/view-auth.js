@@ -7,7 +7,7 @@ import {
   requestPasswordReset,
   resetPassword,
   setToken
-} from "./api.js?v=20261123-2";
+} from "./api.js?v=20261126-2";
 import {
   clearFormErrors,
   formDataToObject,
@@ -17,7 +17,7 @@ import {
   setMessage,
   showApiFieldErrors,
   validateForm
-} from "./forms.js?v=20261126-1";
+} from "./forms.js?v=20261126-2";
 
 function passwordConfirmationErrors(form) {
   const password = form.elements.password;
