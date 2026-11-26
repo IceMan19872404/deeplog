@@ -186,20 +186,9 @@
   font-weight: 700;
 }
 
-.dive-form input,
-.dive-form textarea,
-.dive-form select {
-  width: 100%;
-  padding: 14px 15px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  outline: none;
+.dive-form :is(input, textarea, select) {
   background: var(--c-bg-36);
-  color: var(--ink);
   resize: vertical;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease;
 }
 
 .dive-form select {
@@ -259,9 +248,9 @@
 }
 
 .photo-picker {
-  display: inline-flex !important;
+  display: inline-flex;
   width: auto;
-  margin-bottom: 18px !important;
+  margin-bottom: 18px;
   padding: 11px 16px;
   border: 1px solid var(--c-line-14);
   border-radius: 999px;

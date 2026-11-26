@@ -145,17 +145,24 @@
   font-weight: 700;
 }
 
-.auth-form input {
+/* Text fields shared by the sign-in, reflection and dive forms; each form
+   sets its own background (the profile form has a smaller field of its own). */
+.auth-form input,
+.reflection-form :is(input, textarea, select),
+.dive-form :is(input, textarea, select) {
   width: 100%;
   padding: 14px 15px;
   border: 1px solid var(--line);
   border-radius: 14px;
   outline: none;
-  background: var(--c-bg-10);
   color: var(--ink);
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease;
+}
+
+.auth-form input {
+  background: var(--c-bg-10);
 }
 
 .auth-form input:focus {
