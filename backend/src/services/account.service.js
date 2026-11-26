@@ -1,9 +1,8 @@
 const bcrypt = require("bcryptjs");
-const path = require("path");
 const AppError = require("../errors/app-error");
 const accountRepository = require("../repositories/account.repository");
 const { withTransaction } = require("../repositories/transaction");
-const photoService = require("./dive-photo.service");
+const { removeFiles } = require("./photo-files");
 
 async function deleteAccount(userId, input) {
   const storageKeys = await withTransaction(async (client) => {
@@ -28,7 +27,7 @@ async function deleteAccount(userId, input) {
   });
 
   // Files go only after COMMIT, so a failed deletion never loses photos.
-  await photoService.removeFiles(storageKeys.map((key) => path.basename(key)));
+  await removeFiles(storageKeys);
   return { deleted: true, removedPhotoFiles: storageKeys.length };
 }
 

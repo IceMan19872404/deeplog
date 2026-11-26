@@ -1,14 +1,13 @@
 const { ZipArchive } = require("archiver");
-const fs = require("fs");
 const path = require("path");
 const { once } = require("events");
 const { PassThrough } = require("stream");
-const env = require("../config/env");
 const accountRepository = require("../repositories/account.repository");
 const userRepository = require("../repositories/user.repository");
 const profileRepository = require("../repositories/profile.repository");
 const { toDateOnly, toNumberOrNull } = require("../utils/dive-response");
 const toUserResponse = require("../utils/user-response");
+const { photoPath } = require("./photo-files");
 
 const CSV_COLUMNS = [
   "sourceId", "name", "date", "durationMinutes", "maxDepthMeters",
@@ -133,8 +132,7 @@ function safeName(name) {
 async function appendPhotoFiles(archive, userId) {
   const photos = await accountRepository.findAllPhotoFiles(userId);
   photos.forEach((photo) => {
-    const absolutePath = path.join(env.uploadsDir, photo.storage_key);
-    archive.file(absolutePath, {
+    archive.file(photoPath(photo.storage_key), {
       name: `photos/dive-${photo.dive_id}/${photo.id}-${safeName(photo.original_name)}`
     });
   });
@@ -142,7 +140,7 @@ async function appendPhotoFiles(archive, userId) {
 
 function appendProfilePhoto(archive, profile) {
   if (!profile?.photo_storage_key) return;
-  archive.file(path.join(env.uploadsDir, profile.photo_storage_key), {
+  archive.file(photoPath(profile.photo_storage_key), {
     name: `profile/${safeName(profile.photo_storage_key)}`
   });
 }

@@ -3,7 +3,7 @@ const buddyRepository = require("../repositories/dive-buddy.repository");
 const photoRepository = require("../repositories/dive-photo.repository");
 const reflectionRepository = require("../repositories/dive-reflection.repository");
 const { withTransaction } = require("../repositories/transaction");
-const photoService = require("./dive-photo.service");
+const { removeFiles } = require("./photo-files");
 const { assertDiveOwner, diveNotFound } = require("./dive-ownership");
 
 async function attachRelations(dives) {
@@ -103,7 +103,7 @@ async function deleteDive(userId, diveId) {
     await diveRepository.remove(diveId, userId, client);
     return keys;
   });
-  await photoService.removeFiles(storageKeys);
+  await removeFiles(storageKeys);
 }
 
 module.exports = {

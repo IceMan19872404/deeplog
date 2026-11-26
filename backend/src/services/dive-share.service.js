@@ -1,5 +1,4 @@
 const crypto = require("crypto");
-const path = require("path");
 const bcrypt = require("bcryptjs");
 const QRCode = require("qrcode");
 const env = require("../config/env");
@@ -9,6 +8,7 @@ const photoRepository = require("../repositories/dive-photo.repository");
 const shareRepository = require("../repositories/dive-share.repository");
 const { toDateOnly, toEquipmentResponse } = require("../utils/dive-response");
 const { assertDiveOwner } = require("./dive-ownership");
+const { photoPath } = require("./photo-files");
 const tokenService = require("./token.service");
 
 const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
@@ -132,7 +132,7 @@ async function getPublicPhoto(rawToken, position, accessToken) {
   const photos = await shareRepository.findVisiblePhotos(share.dive_id, [requestedId]);
   const photo = photos[0];
   if (!photo) throw new AppError(404, "PHOTO_NOT_FOUND", "Photo not found");
-  return { ...photo, absolutePath: path.join(env.uploadsDir, photo.storage_key) };
+  return { ...photo, absolutePath: photoPath(photo.storage_key) };
 }
 
 module.exports = { createShare, listShares, revokeShare, viewShare, unlockShare, getPublicPhoto };
