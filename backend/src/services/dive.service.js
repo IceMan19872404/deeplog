@@ -2,9 +2,12 @@ const diveRepository = require("../repositories/dive.repository");
 const buddyRepository = require("../repositories/dive-buddy.repository");
 const photoRepository = require("../repositories/dive-photo.repository");
 const reflectionRepository = require("../repositories/dive-reflection.repository");
-const photoService = require("./dive-photo.service");
-const AppError = require("../errors/app-error");
+const { withTransaction } = require("../repositories/transaction");
+const { removeFiles } = require("./photo-files");
+const { assertDiveOwner, diveNotFound } = require("./dive-ownership");
 
+// Buddies, photos and reflection for a whole page of dives: one query per
+// relation, whatever the page size.
 async function attachRelations(dives) {
   const diveIds = dives.map((dive) => dive.id);
   const [buddiesByDive, photosByDive, reflectionsByDive] = await Promise.all([
@@ -21,20 +24,26 @@ async function attachRelations(dives) {
   }));
 }
 
-async function createDive(userId, input) {
-  const dive = await diveRepository.create(userId, input);
-  await buddyRepository.replaceAll(dive.id, input.buddies);
+async function withRelations(dive) {
   return (await attachRelations([dive]))[0];
+}
+
+// The dive row and its buddies are written together: a failure leaves neither.
+async function createDive(userId, input) {
+  const dive = await withTransaction(async (client) => {
+    const created = await diveRepository.create(userId, input, client);
+    await buddyRepository.replaceAll(created.id, input.buddies, client);
+    return created;
+  });
+  return withRelations(dive);
 }
 
 async function getDive(userId, diveId) {
   const dive = await diveRepository.findByIdAndUserId(diveId, userId);
 
-  if (!dive) {
-    throw new AppError(404, "DIVE_NOT_FOUND", "Dive not found");
-  }
+  if (!dive) throw diveNotFound();
 
-  return (await attachRelations([dive]))[0];
+  return withRelations(dive);
 }
 
 async function listDives(userId, filters) {
@@ -67,36 +76,40 @@ function normalizeReflection(input) {
   );
 }
 
+// Saves the reflection and returns the whole dive, as the endpoint responds.
 async function saveReflection(userId, diveId, input) {
-  const dive = await diveRepository.findByIdAndUserId(diveId, userId);
-  if (!dive) throw new AppError(404, "DIVE_NOT_FOUND", "Dive not found");
-  return reflectionRepository.upsert(diveId, normalizeReflection(input));
+  await assertDiveOwner(userId, diveId);
+  await reflectionRepository.upsert(diveId, normalizeReflection(input));
+  return getDive(userId, diveId);
 }
 
 async function deleteReflection(userId, diveId) {
-  const dive = await diveRepository.findByIdAndUserId(diveId, userId);
-  if (!dive) throw new AppError(404, "DIVE_NOT_FOUND", "Dive not found");
+  await assertDiveOwner(userId, diveId);
   return reflectionRepository.remove(diveId);
 }
 
 async function updateDive(userId, diveId, input) {
-  const dive = await diveRepository.update(diveId, userId, input);
-
-  if (!dive) {
-    throw new AppError(404, "DIVE_NOT_FOUND", "Dive not found");
-  }
-  await buddyRepository.replaceAll(dive.id, input.buddies);
-  return (await attachRelations([dive]))[0];
+  const dive = await withTransaction(async (client) => {
+    const updated = await diveRepository.update(diveId, userId, input, client);
+    if (!updated) throw diveNotFound();
+    await buddyRepository.replaceAll(updated.id, input.buddies, client);
+    return updated;
+  });
+  return withRelations(dive);
 }
 
+// The dive is locked before its photo keys are read, so a concurrent upload
+// cannot add a file that the cascade would orphan. Files go after COMMIT.
 async function deleteDive(userId, diveId) {
-  const storageKeys = await photoRepository.findStorageKeysByDiveId(diveId);
-  const deleted = await diveRepository.remove(diveId, userId);
-
-  if (!deleted) {
-    throw new AppError(404, "DIVE_NOT_FOUND", "Dive not found");
-  }
-  await photoService.removeFiles(storageKeys);
+  const storageKeys = await withTransaction(async (client) => {
+    if (!(await diveRepository.lockForUser(diveId, userId, client))) {
+      throw diveNotFound();
+    }
+    const keys = await photoRepository.findStorageKeysByDiveId(diveId, client);
+    await diveRepository.remove(diveId, userId, client);
+    return keys;
+  });
+  await removeFiles(storageKeys);
 }
 
 module.exports = {

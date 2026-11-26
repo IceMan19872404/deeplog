@@ -77,3 +77,33 @@ test("profile rejects unknown fields and future experience dates", async () => {
     .send({ shareNameByDefault: false, divingSince: 2099, ranking: 1 });
   assert.equal(response.status, 400);
 });
+
+test("replacing or deleting the profile photo removes the old file", async () => {
+  const fs = require("fs/promises");
+  const path = require("path");
+  const env = require("../../src/config/env");
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
+  const storedKey = async () => (await database.query(
+    "SELECT photo_storage_key FROM user_profiles p JOIN users u ON u.id = p.user_id WHERE u.email = $1",
+    [emails[0]]
+  )).rows[0]?.photo_storage_key;
+  const upload = () => request(app).put("/api/v1/profile/photo")
+    .set("Authorization", `Bearer ${token}`)
+    .attach("photo", png, { filename: "avatar.png", contentType: "image/png" });
+
+  assert.equal((await upload()).status, 200);
+  const firstKey = await storedKey();
+  assert.equal((await upload()).status, 200);
+  const secondKey = await storedKey();
+  assert.notEqual(secondKey, firstKey);
+  await assert.rejects(fs.access(path.join(env.uploadsDir, firstKey)));
+  await fs.access(path.join(env.uploadsDir, secondKey));
+
+  const removed = await request(app).delete("/api/v1/profile/photo").set("Authorization", `Bearer ${token}`);
+  assert.equal(removed.status, 204);
+  assert.equal(await storedKey(), null);
+  await assert.rejects(fs.access(path.join(env.uploadsDir, secondKey)));
+  const again = await request(app).delete("/api/v1/profile/photo").set("Authorization", `Bearer ${token}`);
+  assert.equal(again.status, 404);
+  assert.equal(again.body.error.code, "PROFILE_PHOTO_NOT_FOUND");
+});

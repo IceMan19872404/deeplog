@@ -37,8 +37,8 @@ async function findDiveBatch(userId, afterId = 0) {
   return result.rows;
 }
 
-async function findAllPhotoFiles(userId) {
-  const result = await database.query(
+async function findAllPhotoFiles(userId, db = database) {
+  const result = await db.query(
     `SELECT p.id, p.dive_id, p.storage_key, p.original_name,
             p.mime_type, p.size_bytes
        FROM dive_photos p
@@ -50,7 +50,27 @@ async function findAllPhotoFiles(userId) {
   return result.rows;
 }
 
+// Locks the user row for the deletion transaction and returns what it needs:
+// the password hash to verify and the profile photo key to remove afterwards.
+async function lockForDeletion(userId, client) {
+  const result = await client.query(
+    `SELECT u.password_hash, p.photo_storage_key
+       FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id
+      WHERE u.id = $1 FOR UPDATE OF u`,
+    [userId]
+  );
+  return result.rows[0] || null;
+}
+
+// Foreign keys cascade to dives, buddies, photo rows, reflections, shares,
+// profile and sessions (TD-023).
+async function deleteUser(userId, client) {
+  await client.query("DELETE FROM users WHERE id = $1", [userId]);
+}
+
 module.exports = {
   findDiveBatch,
-  findAllPhotoFiles
+  findAllPhotoFiles,
+  lockForDeletion,
+  deleteUser
 };

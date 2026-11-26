@@ -1,5 +1,11 @@
 const diveService = require("../services/dive.service");
 const toDiveResponse = require("../utils/dive-response");
+const {
+  toInsightsResponse,
+  toMapPointResponse,
+  toPhotoResponse,
+  toStatsResponse
+} = require("../utils/dive-response");
 const photoService = require("../services/dive-photo.service");
 
 async function create(req, res, next) {
@@ -52,50 +58,10 @@ async function getById(req, res, next) {
   }
 }
 
-// A record dive for the Estadísticas detail panels (just enough to show it and
-// open its record).
-function statsRecord(row) {
-  if (!row) return null;
-  return {
-    id: row.id,
-    name: row.name,
-    date: toDiveResponse.toDateOnly(row.dive_date),
-    diveCenter: row.dive_center,
-    maxDepthMeters: Number(row.max_depth_meters),
-    durationMinutes: row.duration_minutes
-  };
-}
-
 async function stats(req, res, next) {
   try {
     const result = await diveService.getDiveStats(req.auth.userId);
-    return res.status(200).json({
-      data: {
-        stats: {
-          totalDives: result.total_dives,
-          totalMinutes: result.total_minutes,
-          maxDepthMeters: result.max_depth_meters === null
-            ? null
-            : Number(result.max_depth_meters),
-          averageDepthMeters: result.average_depth_meters === null
-            ? null
-            : Number(result.average_depth_meters),
-          longestDurationMinutes: result.longest_duration_minutes,
-          divesThisYear: result.dives_this_year,
-          favoriteCenter: result.favorite_center,
-          monthlyActivity: result.monthly_activity,
-          averageDurationMinutes: result.average_duration_minutes,
-          deepestDive: statsRecord(result.deepest_dive),
-          longestDive: statsRecord(result.longest_dive),
-          depthRanges: result.depth_ranges,
-          durationRanges: result.duration_ranges,
-          yearActivity: {
-            months: result.year_activity.months,
-            previousYearTotal: result.year_activity.previous_year_total
-          }
-        }
-      }
-    });
+    return res.status(200).json({ data: { stats: toStatsResponse(result) } });
   } catch (error) {
     return next(error);
   }
@@ -104,16 +70,7 @@ async function stats(req, res, next) {
 async function map(req, res, next) {
   try {
     const dives = await diveService.getDiveMap(req.auth.userId);
-    return res.status(200).json({ data: { dives: dives.map((dive) => ({
-      id: dive.id,
-      name: dive.name,
-      date: dive.dive_date instanceof Date
-        ? dive.dive_date.toISOString().slice(0, 10)
-        : dive.dive_date,
-      latitude: Number(dive.latitude),
-      longitude: Number(dive.longitude),
-      precision: dive.location_precision
-    })) } });
+    return res.status(200).json({ data: { dives: dives.map(toMapPointResponse) } });
   } catch (error) {
     return next(error);
   }
@@ -131,53 +88,7 @@ async function configurationMemory(req, res, next) {
 async function insights(req, res, next) {
   try {
     const result = await diveService.getDiveInsights(req.auth.userId);
-    return res.status(200).json({
-      data: {
-        insights: {
-          ballastConfigurations: result.ballast_configurations.map((row) => ({
-            suitType: row.suit_type,
-            suitThicknessMm: row.suit_thickness_mm === null ? null : Number(row.suit_thickness_mm),
-            cylinderMaterial: row.cylinder_material,
-            cylinderVolumeLiters: row.cylinder_volume_liters === null ? null : Number(row.cylinder_volume_liters),
-            waterType: row.water_type,
-            sampleSize: row.sample_size,
-            averageBallastKg: Number(row.average_ballast_kg),
-            minimumBallastKg: Number(row.minimum_ballast_kg),
-            maximumBallastKg: Number(row.maximum_ballast_kg)
-          })),
-          equipmentOwnership: result.equipment_ownership.map((row) => ({
-            type: row.equipment_ownership,
-            sampleSize: row.sample_size,
-            averageDurationMinutes: Number(row.average_duration_minutes),
-            averageDepthMeters: Number(row.average_depth_meters)
-          })),
-          frequentCenters: result.frequent_centers,
-          frequentBuddies: result.frequent_buddies,
-          evolution: result.evolution.map((row) => ({
-            date: row.dive_date instanceof Date
-              ? row.dive_date.toISOString().slice(0, 10)
-              : row.dive_date,
-            maxDepthMeters: Number(row.max_depth_meters),
-            durationMinutes: row.duration_minutes
-          })),
-          reflectionEvolution: result.reflection_evolution.map((row) => ({
-            date: row.dive_date instanceof Date
-              ? row.dive_date.toISOString().slice(0, 10)
-              : row.dive_date,
-            diveName: row.name,
-            practicedSkill: row.practiced_skill,
-            comfort: row.comfort,
-            nextGoal: row.next_goal
-          })),
-          methodology: {
-            ballast: "Averages group only dives with recorded ballast and matching configuration.",
-            ownership: "Averages compare recorded dives, not controlled conditions.",
-            evolution: "Shows up to the 12 most recent dives in chronological order.",
-            warning: "Personal history only. These metrics are not safety recommendations."
-          }
-        }
-      }
-    });
+    return res.status(200).json({ data: { insights: toInsightsResponse(result) } });
   } catch (error) {
     return next(error);
   }
@@ -219,14 +130,7 @@ async function uploadPhotos(req, res, next) {
     );
     return res.status(201).json({
       data: {
-        photos: photos.map((photo) => ({
-          id: photo.id,
-          originalName: photo.original_name,
-          mimeType: photo.mime_type,
-          sizeBytes: photo.size_bytes,
-          url: `/api/v1/dives/${req.params.diveId}/photos/${photo.id}/content`,
-          createdAt: photo.created_at
-        }))
+        photos: photos.map((photo) => toPhotoResponse(req.params.diveId, photo))
       }
     });
   } catch (error) {
@@ -264,8 +168,11 @@ async function removePhoto(req, res, next) {
 
 async function saveReflection(req, res, next) {
   try {
-    await diveService.saveReflection(req.auth.userId, req.params.diveId, req.body);
-    const dive = await diveService.getDive(req.auth.userId, req.params.diveId);
+    const dive = await diveService.saveReflection(
+      req.auth.userId,
+      req.params.diveId,
+      req.body
+    );
     return res.status(200).json({ data: { dive: toDiveResponse(dive) } });
   } catch (error) {
     return next(error);
