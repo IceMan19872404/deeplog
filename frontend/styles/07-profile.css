@@ -4,6 +4,10 @@
   font-size: 1.45rem;
 }
 
+.brand-compact span {
+  letter-spacing: -0.035em;
+}
+
 .brand-compact .brand-mark {
   width: 42px;
   height: 42px;

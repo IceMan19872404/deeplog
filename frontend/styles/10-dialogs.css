@@ -25,10 +25,7 @@
   overscroll-behavior: contain;
 }
 
-.dive-form {
-  padding: clamp(24px, 5vw, 48px);
-}
-
+.dive-form,
 .dive-detail {
   padding: clamp(24px, 5vw, 48px);
 }

@@ -1,8 +1,14 @@
-/* Dashboard shell, sticky header and the depth tabs. */
+/* Dashboard shell, content column, sticky header and the depth tabs. */
 
 .dashboard {
   min-height: 100vh;
   min-height: 100dvh;
+}
+
+.dashboard-content {
+  width: min(1180px, calc(100% - 48px));
+  margin: auto;
+  padding: 44px 0 80px;
 }
 
 /* Focus, find-in-page and scrollIntoView stop below the sticky header
