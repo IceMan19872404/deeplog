@@ -8,6 +8,7 @@ const diveRepository = require("../repositories/dive.repository");
 const buddyRepository = require("../repositories/dive-buddy.repository");
 const photoRepository = require("../repositories/dive-photo.repository");
 const shareRepository = require("../repositories/dive-share.repository");
+const { toDateOnly, toEquipmentResponse } = require("../utils/dive-response");
 const tokenService = require("./token.service");
 
 const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
@@ -92,20 +93,12 @@ async function buildPublicDive(share, rawToken) {
     ? await buddyRepository.findByDiveIds([share.dive_id]) : new Map();
   return {
     name: share.name,
-    date: share.dive_date instanceof Date ? share.dive_date.toISOString().slice(0, 10) : share.dive_date,
+    date: toDateOnly(share.dive_date),
     durationMinutes: share.duration_minutes,
     maxDepthMeters: Number(share.max_depth_meters),
     ...(visibility.includeDiverName && { diverName: `${share.first_name} ${share.last_name}` }),
     ...(visibility.includeCenter && { diveCenter: share.dive_center }),
-    ...(visibility.includeEquipment && {
-      ballastKg: share.ballast_kg === null ? null : Number(share.ballast_kg),
-      equipmentOwnership: share.equipment_ownership,
-      suitType: share.suit_type,
-      suitThicknessMm: share.suit_thickness_mm === null ? null : Number(share.suit_thickness_mm),
-      cylinderMaterial: share.cylinder_material,
-      cylinderVolumeLiters: share.cylinder_volume_liters === null ? null : Number(share.cylinder_volume_liters),
-      waterType: share.water_type
-    }),
+    ...(visibility.includeEquipment && toEquipmentResponse(share)),
     ...(visibility.includeBuddies && {
       buddies: buddiesByDive.get(String(share.dive_id)) || []
     }),
