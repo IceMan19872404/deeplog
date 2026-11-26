@@ -2,7 +2,6 @@ import {
   clearToken,
   createDiveShare,
   createDive,
-  deleteAccount,
   deleteDive,
   deleteDivePhoto,
   deleteDiveReflection,
@@ -13,41 +12,29 @@ import {
   getDiveStats,
   getDiveShares,
   getDives,
-  getProfile,
-  getProfilePhotoBlob,
-  loginUser,
-  logoutAllSessions,
   logoutUser,
-  downloadAccountExport,
-  requestPasswordReset,
-  registerUser,
-  resetPassword,
   restoreUserSession,
   saveDiveReflection,
   revokeDiveShare,
-  setToken,
-  updateProfile,
-  uploadProfilePhoto,
-  deleteProfilePhoto,
   updateDive,
   uploadDivePhotos
 } from "./api.js?v=20261123-2";
 import { openDivePrintPreview } from "./dive-pdf.js?v=20261123-2";
 import { initializeClientMonitoring } from "./client-monitoring.js?v=20261123-2";
-import { profilePhotoMessage } from "./validation-messages.js?v=20261123-2";
 import {
   clearFieldError,
   clearFormErrors,
   formDataToObject,
   installFormBehaviour,
   isFormBusy,
-  maskPasswords,
-  setFieldError,
   setFormBusy,
   setMessage,
   showApiFieldErrors,
   validateForm
 } from "./forms.js?v=20261126-1";
+import { createAuthView } from "./view-auth.js?v=20261126-1";
+import { createAccountView } from "./view-account.js?v=20261126-1";
+import { createProfileView } from "./view-profile.js?v=20261126-1";
 import { localIsoDate, populateDiveForm } from "./dive-form.js?v=20261123-2";
 import { TABS, createTabs } from "./tabs.js?v=20261123-2";
 import { createTheme } from "./theme.js?v=20261123-2";
@@ -72,7 +59,6 @@ import {
   formatMonthYear
 } from "./text.js?v=20261126-1";
 import {
-  CERTIFICATION_LABELS,
   COMFORT_LABELS,
   WATER_LABELS,
   configurationName,
@@ -113,9 +99,7 @@ const state = {
   currentPhotos: [],
   detailDive: null,
   detailPrintPhotos: [],
-  shares: [],
-  profile: null,
-  profilePhotoUrl: null
+  shares: []
 };
 
 const photoUrls = {
@@ -127,32 +111,9 @@ const photoUrls = {
 const elements = {
   authView: document.querySelector("#auth-view"),
   dashboardView: document.querySelector("#dashboard-view"),
-  loginTab: document.querySelector("#login-tab"),
-  registerTab: document.querySelector("#register-tab"),
-  loginForm: document.querySelector("#login-form"),
-  registerForm: document.querySelector("#register-form"),
-  forgotPasswordForm: document.querySelector("#forgot-password-form"),
-  resetPasswordForm: document.querySelector("#reset-password-form"),
-  forgotPasswordButton: document.querySelector("#forgot-password-button"),
-  backLoginButtons: document.querySelectorAll("[data-back-login]"),
-  authTabs: document.querySelector(".auth-tabs"),
-  authMessage: document.querySelector("#auth-message"),
   dashboardMessage: document.querySelector("#dashboard-message"),
   userName: document.querySelector("#user-name"),
-  openProfile: document.querySelector("#open-profile"),
-  profileDialog: document.querySelector("#profile-dialog"),
-  profileForm: document.querySelector("#profile-form"),
-  closeProfile: document.querySelector("#close-profile"),
-  cancelProfile: document.querySelector("#cancel-profile"),
-  removeProfilePhoto: document.querySelector("#remove-profile-photo"),
-  profileMessage: document.querySelector("#profile-message"),
-  profileSummaryCopy: document.querySelector("#profile-summary-copy"),
-  profileCertification: document.querySelector("#profile-certification"),
-  profileSince: document.querySelector("#profile-since"),
-  profilePrivacy: document.querySelector("#profile-privacy"),
-  profileAvatars: document.querySelectorAll("#header-avatar, #profile-avatar, #profile-form-avatar"),
   logoutButton: document.querySelector("#logout-button"),
-  logoutAllButton: document.querySelector("#logout-all-button"),
   refreshButton: document.querySelector("#refresh-button"),
   divesTotal: document.querySelector("#dives-total"),
   greetingName: document.querySelector("#greeting-name"),
@@ -181,13 +142,6 @@ const elements = {
   frequentCenters: document.querySelector("#frequent-centers"),
   ballastPatterns: document.querySelector("#ballast-patterns"),
   reflectionEvolution: document.querySelector("#reflection-evolution"),
-  exportButtons: document.querySelectorAll("[data-export-format]"),
-  accountMessage: document.querySelector("#account-message"),
-  openDeleteAccount: document.querySelector("#open-delete-account"),
-  deleteAccountDialog: document.querySelector("#delete-account-dialog"),
-  deleteAccountForm: document.querySelector("#delete-account-form"),
-  deleteAccountMessage: document.querySelector("#delete-account-message"),
-  cancelDeleteAccount: document.querySelector("#cancel-delete-account"),
   divesLoading: document.querySelector("#dives-loading"),
   divesEmpty: document.querySelector("#dives-empty"),
   divesList: document.querySelector("#dives-list"),
@@ -262,7 +216,14 @@ const elements = {
 const confirmDiscard = createConfirmDialog(elements.discardDialog);
 const confirmDeleteReflection = createConfirmDialog(elements.deleteReflectionDialog);
 const diveFormChanges = createUnsavedChanges(elements.diveForm);
-const profileFormChanges = createUnsavedChanges(elements.profileForm);
+
+const authView = createAuthView({ onSignedIn: showDashboard });
+const profileView = createProfileView({
+  getUser: () => state.user,
+  handleUnauthorized,
+  confirmDiscard
+});
+createAccountView({ handleUnauthorized, endSession: endSessionWithMessage });
 
 // Each tab sits one "depth" lower than the previous one, so moving right dives
 // deeper and moving left rises to the surface; CSS animates the panel to match.
@@ -298,35 +259,7 @@ function syncDisappearingExamples() {
   });
 }
 
-function switchAuthMode(mode) {
-  maskPasswords(elements.authView);
-  const loginActive = mode === "login";
-  const registerActive = mode === "register";
-
-  elements.loginForm.hidden = !loginActive;
-  elements.registerForm.hidden = !registerActive;
-  elements.forgotPasswordForm.hidden = mode !== "forgot";
-  elements.resetPasswordForm.hidden = mode !== "reset";
-  elements.authTabs.hidden = !loginActive && !registerActive;
-  elements.loginTab.classList.toggle("is-active", loginActive);
-  elements.registerTab.classList.toggle("is-active", registerActive);
-  elements.loginTab.setAttribute("aria-selected", String(loginActive));
-  elements.registerTab.setAttribute("aria-selected", String(registerActive));
-  elements.loginTab.tabIndex = loginActive ? 0 : -1;
-  elements.registerTab.tabIndex = registerActive ? 0 : -1;
-  setMessage(elements.authMessage, "");
-  clearFormErrors(elements.authView);
-}
-
 // Rules the browser cannot check, per form, as [field, message] pairs.
-function passwordConfirmationErrors(form) {
-  const password = form.elements.password;
-  const confirmation = form.elements.passwordConfirmation;
-  return password.value && confirmation.value && password.value !== confirmation.value
-    ? [["passwordConfirmation", "Las contraseñas no coinciden."]]
-    : [];
-}
-
 function diveFormErrors(form) {
   const errors = [];
   const buddies = buddiesError(form.elements.buddiesText.value);
@@ -334,11 +267,6 @@ function diveFormErrors(form) {
   const photos = photosError([...form.elements.photos.files], state.currentPhotos.length);
   if (photos) errors.push(["photos", photos]);
   return errors;
-}
-
-function profileFormErrors(form) {
-  const photoMessage = profilePhotoMessage(form.elements.photo.files[0]);
-  return photoMessage ? [["photo", photoMessage]] : [];
 }
 
 function reflectionFormErrors(form) {
@@ -576,8 +504,7 @@ function handleUnauthorized(error) {
   if (error.status !== 401) return false;
 
   endSessionLocally();
-  setMessage(
-    elements.authMessage,
+  authView.showMessage(
     "Tu sesión ha caducado. Inicia sesión de nuevo."
   );
   return true;
@@ -652,7 +579,7 @@ function openShareDialog() {
   clearFormErrors(elements.shareForm);
   elements.shareForm.elements.expiresInDays.value = "7";
   [...elements.shareForm.querySelectorAll('.share-options input[type="checkbox"]')].forEach((input) => { input.checked = true; });
-  elements.shareForm.elements.includeDiverName.checked = Boolean(state.profile?.shareNameByDefault);
+  elements.shareForm.elements.includeDiverName.checked = Boolean(profileView.profile?.shareNameByDefault);
   elements.shareResult.hidden = true;
   setMessage(elements.shareMessage, "");
   elements.sharePhotoOptions.hidden = state.detailDive.photos.length === 0;
@@ -940,130 +867,8 @@ async function loadStats() {
   }
 }
 
-function setProfileAvatars(photoUrl = null) {
-  const initials = state.user
-    ? `${state.user.firstName[0] || ""}${state.user.lastName[0] || ""}`.toUpperCase()
-    : "";
-  elements.profileAvatars.forEach((avatar) => {
-    avatar.textContent = photoUrl ? "" : initials;
-    avatar.style.backgroundImage = photoUrl ? `url("${photoUrl}")` : "";
-    avatar.classList.toggle("has-photo", Boolean(photoUrl));
-  });
-}
-
-async function loadProfilePhoto(profile) {
-  if (state.profilePhotoUrl) URL.revokeObjectURL(state.profilePhotoUrl);
-  state.profilePhotoUrl = null;
-  if (profile.photoUrl) {
-    try {
-      state.profilePhotoUrl = URL.createObjectURL(await getProfilePhotoBlob());
-    } catch (_error) {
-      state.profilePhotoUrl = null;
-    }
-  }
-  setProfileAvatars(state.profilePhotoUrl);
-  elements.removeProfilePhoto.hidden = !state.profilePhotoUrl;
-}
-
-function renderProfile(profile) {
-  state.profile = profile;
-  elements.profileSummaryCopy.textContent = profile.bio ||
-    "Completa tu perfil para reunir trayectoria y preferencias.";
-  elements.profileCertification.textContent =
-    CERTIFICATION_LABELS[profile.certificationLevel] || "Sin indicar";
-  elements.profileSince.textContent = profile.divingSince || "Sin indicar";
-  elements.profilePrivacy.textContent = profile.shareNameByDefault
-    ? "Nombre incluido por defecto"
-    : "Nombre oculto por defecto";
-}
-
-async function loadProfile() {
-  try {
-    const response = await getProfile();
-    renderProfile(response.data.profile);
-    await loadProfilePhoto(response.data.profile);
-  } catch (error) {
-    if (!handleUnauthorized(error)) {
-      elements.profileSummaryCopy.textContent = "No se pudo cargar el perfil.";
-    }
-  }
-}
-
-function openProfileDialog() {
-  const profile = state.profile || {};
-  elements.profileForm.elements.bio.value = profile.bio || "";
-  elements.profileForm.elements.certificationLevel.value = profile.certificationLevel || "";
-  elements.profileForm.elements.divingSince.value = profile.divingSince || "";
-  elements.profileForm.elements.divingSince.max = new Date().getFullYear();
-  elements.profileForm.elements.shareNameByDefault.checked = Boolean(profile.shareNameByDefault);
-  elements.profileForm.elements.photo.value = "";
-  setMessage(elements.profileMessage, "");
-  clearFormErrors(elements.profileForm);
-  profileFormChanges.markClean();
-  elements.profileDialog.showModal();
-}
-
-function closeProfileDialog() {
-  requestDialogClose(elements.profileDialog);
-}
-
-async function handleProfileSubmit(event) {
-  event.preventDefault();
-  if (!validateForm(elements.profileForm, profileFormErrors)) return;
-  const form = elements.profileForm.elements;
-  const photo = form.photo.files[0];
-  setFormBusy(elements.profileForm, true);
-  setMessage(elements.profileMessage, "");
-  try {
-    const response = await updateProfile({
-      bio: form.bio.value.trim() || null,
-      certificationLevel: form.certificationLevel.value || null,
-      divingSince: form.divingSince.value ? Number(form.divingSince.value) : null,
-      shareNameByDefault: form.shareNameByDefault.checked
-    });
-    let profile = response.data.profile;
-    if (photo) {
-      try {
-        profile = (await uploadProfilePhoto(photo)).data.profile;
-      } catch (photoError) {
-        renderProfile(profile);
-        await loadProfilePhoto(profile);
-        profileFormChanges.markClean();
-        setMessage(elements.profileMessage, "Los datos se guardaron, pero la fotografía no era válida o superaba 3 MB.");
-        return;
-      }
-    }
-    renderProfile(profile);
-    await loadProfilePhoto(profile);
-    profileFormChanges.markClean();
-    setMessage(elements.profileMessage, "Perfil actualizado.", "success");
-    setTimeout(() => { if (elements.profileDialog.open) closeProfileDialog(); }, 500);
-  } catch (error) {
-    if (handleUnauthorized(error)) return;
-    const fields = showApiFieldErrors(elements.profileForm, error.details);
-    setMessage(elements.profileMessage, fields ? "Revisa los campos señalados." : "No se pudo guardar el perfil.");
-  } finally {
-    setFormBusy(elements.profileForm, false);
-  }
-}
-
-async function handleProfilePhotoDelete() {
-  elements.removeProfilePhoto.disabled = true;
-  try {
-    await deleteProfilePhoto();
-    const profile = { ...state.profile, photoUrl: null };
-    renderProfile(profile);
-    await loadProfilePhoto(profile);
-    setMessage(elements.profileMessage, "Fotografía eliminada.", "success");
-  } catch (error) {
-    if (!handleUnauthorized(error)) setMessage(elements.profileMessage, "No se pudo eliminar la fotografía.");
-  } finally {
-    elements.removeProfilePhoto.disabled = false;
-  }
-}
-
 async function loadDashboardData() {
-  await Promise.all([loadProfile(), loadStats(), loadAdvancedInsights(), loadDives(), loadDiveMap()]);
+  await Promise.all([profileView.load(), loadStats(), loadAdvancedInsights(), loadDives(), loadDiveMap()]);
 }
 
 // Inicio shows the newest dives. The list endpoint is ordered by date, so the
@@ -1404,9 +1209,7 @@ function clearLocation() {
 function showAuth() {
   state.user = null;
   state.page = 1;
-  if (state.profilePhotoUrl) URL.revokeObjectURL(state.profilePhotoUrl);
-  state.profilePhotoUrl = null;
-  state.profile = null;
+  profileView.reset();
   elements.dashboardView.hidden = true;
   elements.authView.hidden = false;
   document.documentElement.removeAttribute("data-boot");
@@ -1428,252 +1231,12 @@ async function logout() {
   }
 }
 
-async function handleLogoutAll() {
-  elements.logoutAllButton.disabled = true;
-  elements.accountMessage.textContent = "Cerrando todas las sesiones...";
-  try {
-    await logoutAllSessions();
-    endSessionLocally();
-    setMessage(elements.authMessage, "Se han cerrado todas tus sesiones.", "success");
-  } catch (_error) {
-    elements.accountMessage.textContent = "No se pudieron cerrar todas las sesiones.";
-  } finally {
-    elements.logoutAllButton.disabled = false;
-  }
-}
-
-async function handleAccountExport(event) {
-  const button = event.currentTarget;
-  const format = button.dataset.exportFormat;
-  elements.accountMessage.textContent = "Preparando descarga...";
-  button.disabled = true;
-  try {
-    await downloadAccountExport(format);
-    elements.accountMessage.textContent = format === "zip"
-      ? "Archivo completo preparado. Incluye datos y fotografías."
-      : `Exportación ${format.toUpperCase()} preparada.`;
-  } catch (error) {
-    if (handleUnauthorized(error)) return;
-    elements.accountMessage.textContent = "No se pudo preparar la exportación.";
-  } finally {
-    button.disabled = false;
-  }
-}
-
-function openDeleteAccountDialog() {
-  elements.deleteAccountForm.reset();
-  setMessage(elements.deleteAccountMessage, "");
-  elements.deleteAccountDialog.showModal();
-}
-
-function closeDeleteAccountDialog() {
-  requestDialogClose(elements.deleteAccountDialog);
-}
-
-async function handleDeleteAccount(event) {
-  event.preventDefault();
-  setMessage(elements.deleteAccountMessage, "");
-  if (!validateForm(elements.deleteAccountForm)) return;
-
-  setFormBusy(elements.deleteAccountForm, true);
-  try {
-    await deleteAccount(formDataToObject(elements.deleteAccountForm));
-    elements.deleteAccountDialog.close();
-    endSessionLocally();
-    switchAuthMode("login");
-    setMessage(elements.authMessage, "Tu cuenta y todos sus datos se han eliminado.", "success");
-  } catch (error) {
-    if (handleUnauthorized(error) && error.code !== "INVALID_ACCOUNT_PASSWORD") return;
-    if (error.code === "INVALID_ACCOUNT_PASSWORD") {
-      setFieldError(elements.deleteAccountForm, "password", "La contraseña no es correcta.");
-    } else {
-      showApiFieldErrors(elements.deleteAccountForm, error.details);
-    }
-    setMessage(elements.deleteAccountMessage,
-      error.code === "INVALID_ACCOUNT_PASSWORD"
-        ? "La contraseña no es correcta."
-        : "No se pudo eliminar la cuenta.");
-  } finally {
-    setFormBusy(elements.deleteAccountForm, false);
-  }
-}
-
-async function handleLogin(event) {
-  event.preventDefault();
-  setMessage(elements.authMessage, "");
-
-  if (!validateForm(elements.loginForm)) return;
-
-  setFormBusy(elements.loginForm, true);
-
-  try {
-    const response = await loginUser(formDataToObject(elements.loginForm));
-    setToken(response.data.accessToken);
-    elements.loginForm.reset();
-    showDashboard(response.data.user);
-  } catch (error) {
-    if (error.code === "INVALID_CREDENTIALS") {
-      const message = "El correo o la contraseña no coinciden con una cuenta.";
-      setFieldError(elements.loginForm, "email", message);
-      setFieldError(elements.loginForm, "password", message);
-    } else {
-      showApiFieldErrors(elements.loginForm, error.details);
-    }
-    const message = error.code === "INVALID_CREDENTIALS"
-      ? "El correo o la contraseña no son correctos."
-      : error.code === "RATE_LIMIT_EXCEEDED"
-        ? "Demasiados intentos. Espera unos minutos antes de volver a intentarlo."
-        : "No se pudo iniciar sesión. Inténtalo de nuevo.";
-    setMessage(elements.authMessage, message);
-  } finally {
-    setFormBusy(elements.loginForm, false);
-  }
-}
-
-async function handleRegister(event) {
-  event.preventDefault();
-  setMessage(elements.authMessage, "");
-
-  if (!validateForm(elements.registerForm)) return;
-
-  setFormBusy(elements.registerForm, true);
-
-  try {
-    const data = formDataToObject(elements.registerForm);
-    await registerUser(data);
-    elements.registerForm.reset();
-    switchAuthMode("login");
-    elements.loginForm.elements.email.value = data.email;
-    setMessage(
-      elements.authMessage,
-      "Cuenta creada. Ya puedes iniciar sesión.",
-      "success"
-    );
-  } catch (error) {
-    if (error.code === "RATE_LIMIT_EXCEEDED") {
-      setMessage(
-        elements.authMessage,
-        "Se han creado demasiadas cuentas desde esta conexión. Inténtalo más tarde."
-      );
-      return;
-    }
-    if (error.code === "EMAIL_ALREADY_REGISTERED") {
-      setFieldError(
-        elements.registerForm,
-        "email",
-        "Ya existe una cuenta registrada con este correo."
-      );
-    } else {
-      showApiFieldErrors(elements.registerForm, error.details);
-    }
-    const message =
-      error.code === "EMAIL_ALREADY_REGISTERED"
-        ? "Ya existe una cuenta con ese correo."
-        : error.details?.[0]?.message ||
-          "No se pudo crear la cuenta. Revisa los datos.";
-    setMessage(elements.authMessage, message);
-  } finally {
-    setFormBusy(elements.registerForm, false);
-  }
-}
-
-async function handleForgotPassword(event) {
-  event.preventDefault();
-  setMessage(elements.authMessage, "");
-  if (!validateForm(elements.forgotPasswordForm)) return;
-
-  setFormBusy(elements.forgotPasswordForm, true);
-  try {
-    const response = await requestPasswordReset(
-      formDataToObject(elements.forgotPasswordForm)
-    );
-    const resetToken = response.data.resetToken;
-
-    if (resetToken) {
-      switchAuthMode("reset");
-      elements.resetPasswordForm.elements.token.value = resetToken;
-      elements.resetPasswordForm.elements.password.focus();
-      setMessage(
-        elements.authMessage,
-        "Cuenta localizada. Ya puedes establecer una contraseña nueva.",
-        "success"
-      );
-    } else {
-      switchAuthMode("login");
-      setMessage(
-        elements.authMessage,
-        "Si existe una cuenta con ese correo, recibirás instrucciones para recuperarla.",
-        "success"
-      );
-    }
-  } catch (error) {
-    if (error.code === "RATE_LIMIT_EXCEEDED") {
-      setMessage(
-        elements.authMessage,
-        "Has solicitado demasiados enlaces. Espera unos minutos antes de repetirlo."
-      );
-      return;
-    }
-    const hasFieldErrors = showApiFieldErrors(
-      elements.forgotPasswordForm,
-      error.details
-    );
-    setMessage(
-      elements.authMessage,
-      hasFieldErrors
-        ? "Revisa el campo señalado."
-        : "No se pudo preparar la recuperación. Inténtalo de nuevo."
-    );
-  } finally {
-    setFormBusy(elements.forgotPasswordForm, false);
-  }
-}
-
-async function handleResetPassword(event) {
-  event.preventDefault();
-  setMessage(elements.authMessage, "");
-  if (!validateForm(elements.resetPasswordForm, passwordConfirmationErrors)) return;
-
-  setFormBusy(elements.resetPasswordForm, true);
-  try {
-    const { token, password } = formDataToObject(elements.resetPasswordForm);
-    await resetPassword({ token, password });
-    elements.resetPasswordForm.reset();
-    history.replaceState({}, "", location.pathname);
-    switchAuthMode("login");
-    setMessage(
-      elements.authMessage,
-      "Contraseña actualizada. Ya puedes iniciar sesión.",
-      "success"
-    );
-  } catch (error) {
-    if (error.code === "RATE_LIMIT_EXCEEDED") {
-      setMessage(
-        elements.authMessage,
-        "Demasiados intentos. Solicita un enlace nuevo dentro de unos minutos."
-      );
-      return;
-    }
-    if (error.code === "INVALID_OR_EXPIRED_RESET_TOKEN") {
-      setMessage(
-        elements.authMessage,
-        "El enlace de recuperación ha caducado o ya se ha utilizado. Solicita uno nuevo."
-      );
-    } else {
-      const hasFieldErrors = showApiFieldErrors(
-        elements.resetPasswordForm,
-        error.details
-      );
-      setMessage(
-        elements.authMessage,
-        hasFieldErrors
-          ? "Revisa los campos señalados."
-          : "No se pudo cambiar la contraseña. Inténtalo de nuevo."
-      );
-    }
-  } finally {
-    setFormBusy(elements.resetPasswordForm, false);
-  }
+// Signs out here and explains why on the login screen (logout everywhere,
+// deleted account).
+function endSessionWithMessage(message, { showLogin = false } = {}) {
+  endSessionLocally();
+  if (showLogin) authView.switchMode("login");
+  authView.showMessage(message, "success");
 }
 
 async function restoreSession() {
@@ -1711,58 +1274,11 @@ window.addEventListener("online", () => {
   if (state.user) restoreSession();
 });
 
-elements.loginTab.addEventListener("click", () => switchAuthMode("login"));
-elements.registerTab.addEventListener("click", () => switchAuthMode("register"));
-elements.authTabs.addEventListener("keydown", (event) => {
-  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-  event.preventDefault();
-  const login = event.key === "ArrowLeft" || event.key === "Home";
-  switchAuthMode(login ? "login" : "register");
-  (login ? elements.loginTab : elements.registerTab).focus();
-});
-elements.loginForm.addEventListener("submit", handleLogin);
-elements.registerForm.addEventListener("submit", handleRegister);
-elements.forgotPasswordForm.addEventListener("submit", handleForgotPassword);
-elements.resetPasswordForm.addEventListener("submit", handleResetPassword);
-elements.forgotPasswordButton.addEventListener("click", () => {
-  switchAuthMode("forgot");
-  elements.forgotPasswordForm.elements.email.value =
-    elements.loginForm.elements.email.value;
-  elements.forgotPasswordForm.elements.email.focus();
-});
-elements.backLoginButtons.forEach((button) =>
-  button.addEventListener("click", () => switchAuthMode("login"))
-);
 installFormBehaviour();
 elements.logoutButton.addEventListener("click", logout);
-elements.openProfile.addEventListener("click", openProfileDialog);
 elements.homeLastDive.addEventListener("click", handleHomeClick);
 createStatTabs(elements.insightsPanel, { onOpenDive: openDiveDetail });
 elements.homeRecent.addEventListener("click", handleHomeClick);
-elements.closeProfile.addEventListener("click", closeProfileDialog);
-elements.cancelProfile.addEventListener("click", closeProfileDialog);
-elements.profileForm.addEventListener("submit", handleProfileSubmit);
-elements.removeProfilePhoto.addEventListener("click", handleProfilePhotoDelete);
-elements.profileForm.elements.photo.addEventListener("change", (event) => {
-  const message = profilePhotoMessage(event.target.files[0]);
-  if (message) setFieldError(elements.profileForm, "photo", message);
-  else clearFieldError(event.target);
-});
-guardDialogClose(elements.profileDialog, {
-  isBusy: () => isFormBusy(elements.profileForm),
-  isDirty: profileFormChanges.isDirty,
-  confirmDiscard
-});
-elements.logoutAllButton.addEventListener("click", handleLogoutAll);
-elements.exportButtons.forEach((button) =>
-  button.addEventListener("click", handleAccountExport)
-);
-elements.openDeleteAccount.addEventListener("click", openDeleteAccountDialog);
-elements.cancelDeleteAccount.addEventListener("click", closeDeleteAccountDialog);
-elements.deleteAccountForm.addEventListener("submit", handleDeleteAccount);
-guardDialogClose(elements.deleteAccountDialog, {
-  isBusy: () => isFormBusy(elements.deleteAccountForm)
-});
 elements.refreshButton.addEventListener("click", loadDashboardData);
 elements.openDiveFormButtons.forEach((button) =>
   button.addEventListener("click", openCreateDiveForm)
@@ -1835,8 +1351,7 @@ if (shareTokenFromUrl) {
     });
 } else if (resetTokenFromUrl) {
   showAuth();
-  switchAuthMode("reset");
-  elements.resetPasswordForm.elements.token.value = resetTokenFromUrl;
+  authView.startPasswordReset(resetTokenFromUrl);
 } else {
   restoreSession();
 }

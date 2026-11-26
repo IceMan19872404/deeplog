@@ -29,6 +29,7 @@ const SHELL = [
   "/js/public-share.js?v=20261123-2", "/assets/deeplog-mark.svg",
   "/js/text.js?v=20261126-1", "/js/dive-labels.js?v=20261126-1", "/js/dive-form-data.js?v=20261126-1",
   "/js/offline.js?v=20261126-1", "/js/photos.js?v=20261126-1", "/js/forms.js?v=20261126-1",
+  "/js/view-auth.js?v=20261126-1", "/js/view-account.js?v=20261126-1", "/js/view-profile.js?v=20261126-1",
   "/manifest.webmanifest"
 ];
 
