@@ -37,13 +37,20 @@ async function register(req, res, next) {
 async function login(req, res, next) {
   try {
     const result = await authService.login(req.body);
-
     return sessionResponse(res, result);
   } catch (error) {
     return next(error);
   }
 }
 
+function endedSessionResponse(res) {
+  clearSessionCookies(res);
+  res.set("Cache-Control", "no-store");
+  return res.status(204).send();
+}
+
+// Refresh and logout clear the session cookies even when they fail, so the
+// browser never keeps a refresh token the server rejected.
 async function refresh(req, res, next) {
   try {
     const result = await authService.refresh(readSessionCredentials(req));
@@ -57,9 +64,7 @@ async function refresh(req, res, next) {
 async function logout(req, res, next) {
   try {
     await authService.logout(readSessionCredentials(req));
-    clearSessionCookies(res);
-    res.set("Cache-Control", "no-store");
-    return res.status(204).send();
+    return endedSessionResponse(res);
   } catch (error) {
     clearSessionCookies(res);
     return next(error);
@@ -69,9 +74,7 @@ async function logout(req, res, next) {
 async function logoutAll(req, res, next) {
   try {
     await authService.logoutAll(req.auth.userId, readSessionCredentials(req));
-    clearSessionCookies(res);
-    res.set("Cache-Control", "no-store");
-    return res.status(204).send();
+    return endedSessionResponse(res);
   } catch (error) {
     clearSessionCookies(res);
     return next(error);

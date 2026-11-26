@@ -21,8 +21,26 @@ async function checkDatabaseConnection() {
   await pool.query("SELECT 1");
 }
 
+// Runs `work(client)` inside BEGIN/COMMIT on a dedicated pool client and rolls
+// back if it throws. Returning early (for example "nothing to do") commits.
+async function withTransaction(work) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await work(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   query,
   checkDatabaseConnection,
+  withTransaction,
   pool
 };

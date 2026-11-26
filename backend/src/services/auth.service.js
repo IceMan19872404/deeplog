@@ -7,45 +7,24 @@ const passwordResetRepository = require("../repositories/password-reset.reposito
 const sessionRepository = require("../repositories/auth-session.repository");
 const tokenService = require("./token.service");
 
+const resetTokenLifetimeMs = 30 * 60 * 1000;
+
+const emailAlreadyRegistered = () =>
+  new AppError(409, "EMAIL_ALREADY_REGISTERED", "An account with this email already exists");
+const invalidRefreshSession = (code = "INVALID_REFRESH_TOKEN") =>
+  new AppError(401, code, "Refresh session is invalid or expired");
+
 function normalizeEmail(email) {
   return email.trim().toLowerCase();
 }
 
-async function register(input) {
-  const email = normalizeEmail(input.email);
-  const existingUser = await userRepository.findByEmail(email);
-
-  if (existingUser) {
-    throw new AppError(
-      409,
-      "EMAIL_ALREADY_REGISTERED",
-      "An account with this email already exists"
-    );
-  }
-
-  const passwordHash = await bcrypt.hash(input.password, env.bcryptRounds);
-
-  try {
-    return await userRepository.create({
-      ...input,
-      email,
-      passwordHash
-    });
-  } catch (error) {
-    // The database unique constraint closes the race between lookup and insert.
-    if (error.code === "23505") {
-      throw new AppError(
-        409,
-        "EMAIL_ALREADY_REGISTERED",
-        "An account with this email already exists"
-      );
-    }
-
-    throw error;
-  }
+// Opaque secrets (refresh, CSRF and reset tokens) are 32 random bytes; only
+// their SHA-256 reaches the database (TD-010, TD-026).
+function randomSecret() {
+  return crypto.randomBytes(32).toString("hex");
 }
 
-function hashSessionSecret(value) {
+function hashSecret(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
@@ -56,16 +35,8 @@ function secretsMatch(first, second) {
   return left.length === right.length && crypto.timingSafeEqual(left, right);
 }
 
-function newSessionSecrets() {
-  return {
-    id: crypto.randomUUID(),
-    refreshToken: crypto.randomBytes(32).toString("hex"),
-    csrfToken: crypto.randomBytes(32).toString("hex")
-  };
-}
-
-function expiresAt() {
-  return new Date(Date.now() + env.refreshTokenDays * 24 * 60 * 60 * 1000);
+function hashPassword(password) {
+  return bcrypt.hash(password, env.bcryptRounds);
 }
 
 // Unknown emails are compared against a throwaway hash with the same cost, so
@@ -75,151 +46,131 @@ const timingEqualizerHash = bcrypt.hashSync(
   env.bcryptRounds
 );
 
-async function login(input) {
+async function register(input) {
   const email = normalizeEmail(input.email);
-  const user = await userRepository.findByEmail(email);
+  if (await userRepository.findByEmail(email)) throw emailAlreadyRegistered();
+
+  const passwordHash = await hashPassword(input.password);
+  try {
+    return await userRepository.create({ ...input, email, passwordHash });
+  } catch (error) {
+    // The database unique constraint closes the race between lookup and insert.
+    if (error.code === "23505") throw emailAlreadyRegistered();
+    throw error;
+  }
+}
+
+// A session row stores hashes of a fresh refresh token and CSRF token. The
+// plain values only travel to the client, in cookies.
+function newSession() {
+  const refreshToken = randomSecret();
+  const csrfToken = randomSecret();
+  return {
+    refreshToken,
+    csrfToken,
+    record: {
+      id: crypto.randomUUID(),
+      tokenHash: hashSecret(refreshToken),
+      csrfHash: hashSecret(csrfToken),
+      expiresAt: new Date(Date.now() + env.refreshTokenDays * 24 * 60 * 60 * 1000)
+    }
+  };
+}
+
+function sessionResult(user, userId, familyId, session) {
+  return {
+    user,
+    accessToken: tokenService.createAccessToken(userId, familyId),
+    tokenType: "Bearer",
+    expiresIn: env.jwtExpiresIn,
+    refreshToken: session.refreshToken,
+    csrfToken: session.csrfToken
+  };
+}
+
+async function login(input) {
+  const user = await userRepository.findByEmail(normalizeEmail(input.email));
   const passwordMatches = await bcrypt.compare(
     input.password,
     user ? user.password_hash : timingEqualizerHash
   ) && Boolean(user);
 
   if (!passwordMatches) {
-    throw new AppError(
-      401,
-      "INVALID_CREDENTIALS",
-      "Email or password is incorrect"
-    );
+    throw new AppError(401, "INVALID_CREDENTIALS", "Email or password is incorrect");
   }
 
-  const secrets = newSessionSecrets();
+  const session = newSession();
   const familyId = crypto.randomUUID();
-  await sessionRepository.create({
-    id: secrets.id,
-    familyId,
-    userId: user.id,
-    tokenHash: hashSessionSecret(secrets.refreshToken),
-    csrfHash: hashSessionSecret(secrets.csrfToken),
-    expiresAt: expiresAt()
-  });
-
-  return {
-    user,
-    accessToken: tokenService.createAccessToken(user.id, familyId),
-    tokenType: "Bearer",
-    expiresIn: env.jwtExpiresIn,
-    refreshToken: secrets.refreshToken,
-    csrfToken: secrets.csrfToken
-  };
+  await sessionRepository.create({ ...session.record, familyId, userId: user.id });
+  return sessionResult(user, user.id, familyId, session);
 }
 
-function validateSessionCredentials(credentials) {
+// Refresh and logout need the refresh cookie and a CSRF header equal to the
+// CSRF cookie. Returns the hashes that identify the session in the database.
+function sessionHashes(credentials) {
   if (!credentials.refreshToken) {
     throw new AppError(401, "REFRESH_TOKEN_REQUIRED", "Refresh session is required");
   }
   if (!secretsMatch(credentials.csrfCookie, credentials.csrfHeader)) {
     throw new AppError(403, "CSRF_VALIDATION_FAILED", "CSRF validation failed");
   }
+  return [hashSecret(credentials.refreshToken), hashSecret(credentials.csrfHeader)];
 }
 
 async function refresh(credentials) {
-  validateSessionCredentials(credentials);
-  const secrets = newSessionSecrets();
-  const result = await sessionRepository.rotate(
-    hashSessionSecret(credentials.refreshToken),
-    hashSessionSecret(credentials.csrfHeader),
-    {
-      id: secrets.id,
-      tokenHash: hashSessionSecret(secrets.refreshToken),
-      csrfHash: hashSessionSecret(secrets.csrfToken),
-      expiresAt: expiresAt()
-    }
-  );
+  const [tokenHash, csrfHash] = sessionHashes(credentials);
+  const replacement = newSession();
+  const result = await sessionRepository.rotate(tokenHash, csrfHash, replacement.record);
 
   if (result.status !== "rotated") {
-    throw new AppError(
-      401,
-      result.status === "reused" ? "REFRESH_TOKEN_REUSED" : "INVALID_REFRESH_TOKEN",
-      "Refresh session is invalid or expired"
-    );
+    throw invalidRefreshSession(result.status === "reused" ? "REFRESH_TOKEN_REUSED" : undefined);
   }
 
-  return {
-    user: result.user,
-    accessToken: tokenService.createAccessToken(result.session.user_id, result.session.family_id),
-    tokenType: "Bearer",
-    expiresIn: env.jwtExpiresIn,
-    refreshToken: secrets.refreshToken,
-    csrfToken: secrets.csrfToken
-  };
+  return sessionResult(result.user, result.session.user_id, result.session.family_id, replacement);
+}
+
+async function revokeCurrentFamily(credentials) {
+  const revoked = await sessionRepository.revokeFamily(...sessionHashes(credentials));
+  if (!revoked) throw invalidRefreshSession();
 }
 
 async function logout(credentials) {
-  validateSessionCredentials(credentials);
-  const revoked = await sessionRepository.revokeFamily(
-    hashSessionSecret(credentials.refreshToken),
-    hashSessionSecret(credentials.csrfHeader)
-  );
-  if (!revoked) throw new AppError(401, "INVALID_REFRESH_TOKEN", "Refresh session is invalid or expired");
+  await revokeCurrentFamily(credentials);
 }
 
 async function logoutAll(userId, credentials) {
-  validateSessionCredentials(credentials);
-  const currentSession = await sessionRepository.revokeFamily(
-    hashSessionSecret(credentials.refreshToken),
-    hashSessionSecret(credentials.csrfHeader)
-  );
-  if (!currentSession) throw new AppError(401, "INVALID_REFRESH_TOKEN", "Refresh session is invalid or expired");
+  await revokeCurrentFamily(credentials);
   await sessionRepository.revokeAllForUser(userId);
 }
 
 async function getCurrentUser(userId) {
   const user = await userRepository.findById(userId);
-
   if (!user) {
-    throw new AppError(
-      401,
-      "INVALID_ACCESS_TOKEN",
-      "The user for this access token no longer exists"
-    );
+    throw new AppError(401, "INVALID_ACCESS_TOKEN", "The user for this access token no longer exists");
   }
-
   return user;
-}
-
-function hashResetToken(token) {
-  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 async function requestPasswordReset(input) {
   const user = await userRepository.findByEmail(normalizeEmail(input.email));
-
   if (!user) return null;
 
-  const token = crypto.randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+  const token = randomSecret();
   await passwordResetRepository.replaceForUser(
     user.id,
-    hashResetToken(token),
-    expiresAt
+    hashSecret(token),
+    new Date(Date.now() + resetTokenLifetimeMs)
   );
-
   return token;
 }
 
 async function resetPassword(input) {
-  const passwordHash = await bcrypt.hash(input.password, env.bcryptRounds);
-  const consumed = await passwordResetRepository.consume(
-    hashResetToken(input.token),
-    passwordHash
-  );
+  const passwordHash = await hashPassword(input.password);
+  const consumed = await passwordResetRepository.consume(hashSecret(input.token), passwordHash);
 
   if (!consumed) {
-    throw new AppError(
-      400,
-      "INVALID_OR_EXPIRED_RESET_TOKEN",
-      "Password reset token is invalid or expired",
-      [{ field: "token", message: "Password reset token is invalid or expired" }]
-    );
+    const message = "Password reset token is invalid or expired";
+    throw new AppError(400, "INVALID_OR_EXPIRED_RESET_TOKEN", message, [{ field: "token", message }]);
   }
 }
 

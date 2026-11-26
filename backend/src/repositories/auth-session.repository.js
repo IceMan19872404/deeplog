@@ -1,4 +1,4 @@
-const { pool } = require("../config/database");
+const { pool, withTransaction } = require("../config/database");
 const crypto = require("node:crypto");
 
 function secretsMatch(first, second) {
@@ -21,10 +21,11 @@ async function create(session) {
   );
 }
 
+// Exchanges a refresh session for `replacement` under a row lock. A session
+// that was already rotated or revoked means the token was reused: the whole
+// family is revoked (TD-026).
 async function rotate(currentTokenHash, csrfHash, replacement) {
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
+  return withTransaction(async (client) => {
     const result = await client.query(
       `SELECT s.*, ${userColumns}
          FROM auth_sessions s
@@ -36,7 +37,6 @@ async function rotate(currentTokenHash, csrfHash, replacement) {
     const session = result.rows[0];
 
     if (!session || !secretsMatch(session.csrf_hash, csrfHash)) {
-      await client.query("ROLLBACK");
       return { status: "invalid" };
     }
     if (session.revoked_at || session.replaced_by) {
@@ -44,12 +44,10 @@ async function rotate(currentTokenHash, csrfHash, replacement) {
         "UPDATE auth_sessions SET revoked_at = COALESCE(revoked_at, NOW()) WHERE family_id = $1",
         [session.family_id]
       );
-      await client.query("COMMIT");
       return { status: "reused" };
     }
     if (new Date(session.expires_at) <= new Date()) {
       await client.query("UPDATE auth_sessions SET revoked_at = NOW() WHERE id = $1", [session.id]);
-      await client.query("COMMIT");
       return { status: "expired" };
     }
 
@@ -65,7 +63,6 @@ async function rotate(currentTokenHash, csrfHash, replacement) {
         WHERE id = $2`,
       [replacement.id, session.id]
     );
-    await client.query("COMMIT");
     return {
       status: "rotated",
       session,
@@ -79,12 +76,7 @@ async function rotate(currentTokenHash, csrfHash, replacement) {
         updated_at: session.account_updated_at
       }
     };
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
+  });
 }
 
 async function revokeFamily(tokenHash, csrfHash) {
