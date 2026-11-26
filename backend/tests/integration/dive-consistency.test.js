@@ -130,3 +130,30 @@ test("deleting a dive removes its photo files and rows", async () => {
     await assert.rejects(fs.access(path.join(env.uploadsDir, key)));
   }
 });
+
+test("shared photo URLs keep working after the owner deletes one of them", async () => {
+  const diveId = await createDive();
+  const uploaded = await uploadPhotos(diveId, 2);
+  assert.equal(uploaded.status, 201);
+  const [first, second] = uploaded.body.data.photos;
+
+  const created = await authed(request(app).post(`/api/v1/dives/${diveId}/shares`))
+    .send({ visibility: { photoIds: [Number(first.id), Number(second.id)] } });
+  assert.equal(created.status, 201);
+  const rawToken = new URL(created.body.data.shareUrl).searchParams.get("share");
+
+  const removed = await authed(request(app).delete(`/api/v1/dives/${diveId}/photos/${first.id}`));
+  assert.equal(removed.status, 204);
+
+  const view = await request(app).get(`/api/v1/public/dives/${rawToken}`);
+  assert.equal(view.status, 200);
+  assert.equal(view.body.data.dive.photos.length, 1);
+  assert.equal(view.body.data.dive.photos[0].originalName, second.originalName);
+
+  const content = await request(app).get(view.body.data.dive.photos[0].url);
+  assert.equal(content.status, 200);
+  assert.equal(content.headers["content-type"], "image/png");
+  const beyond = await request(app).get(`/api/v1/public/dives/${rawToken}/photos/2/content`);
+  assert.equal(beyond.status, 404);
+  assert.equal(beyond.body.error.code, "PHOTO_NOT_FOUND");
+});
