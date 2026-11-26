@@ -97,6 +97,16 @@ function userConditions(userId) {
   };
 }
 
+// Ownership check for sub-resources (photos, shares, reflection) that do not
+// need the dive itself.
+async function existsForUser(diveId, userId) {
+  const result = await database.query(
+    "SELECT 1 FROM dives WHERE id = $1 AND user_id = $2",
+    [diveId, userId]
+  );
+  return result.rowCount > 0;
+}
+
 function buildListQuery(userId, filters) {
   const where = userConditions(userId);
 
@@ -442,6 +452,7 @@ async function remove(diveId, userId) {
 module.exports = {
   create,
   findByIdAndUserId,
+  existsForUser,
   findAllByUserId,
   getStatsByUserId,
   findMapByUserId,

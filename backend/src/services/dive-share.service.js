@@ -4,11 +4,11 @@ const bcrypt = require("bcryptjs");
 const QRCode = require("qrcode");
 const env = require("../config/env");
 const AppError = require("../errors/app-error");
-const diveRepository = require("../repositories/dive.repository");
 const buddyRepository = require("../repositories/dive-buddy.repository");
 const photoRepository = require("../repositories/dive-photo.repository");
 const shareRepository = require("../repositories/dive-share.repository");
 const { toDateOnly, toEquipmentResponse } = require("../utils/dive-response");
+const { assertDiveOwner } = require("./dive-ownership");
 const tokenService = require("./token.service");
 
 const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
@@ -29,8 +29,7 @@ function toShareStatus(share) {
 }
 
 async function createShare(userId, diveId, input, origin) {
-  const dive = await diveRepository.findByIdAndUserId(diveId, userId);
-  if (!dive) throw new AppError(404, "DIVE_NOT_FOUND", "Dive not found");
+  await assertDiveOwner(userId, diveId);
 
   const selectedPhotos = await photoRepository.findByDiveIds([diveId]);
   const ownedIds = new Set((selectedPhotos.get(String(diveId)) || []).map((p) => Number(p.id)));
@@ -59,8 +58,7 @@ async function createShare(userId, diveId, input, origin) {
 }
 
 async function listShares(userId, diveId) {
-  const dive = await diveRepository.findByIdAndUserId(diveId, userId);
-  if (!dive) throw new AppError(404, "DIVE_NOT_FOUND", "Dive not found");
+  await assertDiveOwner(userId, diveId);
   return (await shareRepository.listOwned(diveId, userId)).map(toShareStatus);
 }
 

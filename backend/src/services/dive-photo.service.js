@@ -3,8 +3,8 @@ const fs = require("fs/promises");
 const path = require("path");
 const env = require("../config/env");
 const AppError = require("../errors/app-error");
-const diveRepository = require("../repositories/dive.repository");
 const photoRepository = require("../repositories/dive-photo.repository");
+const { assertDiveOwner } = require("./dive-ownership");
 const { sanitizeImage } = require("../utils/image-sanitizer");
 
 const extensionByMimeType = {
@@ -43,8 +43,7 @@ async function removeFiles(storageKeys) {
 }
 
 async function addPhotos(userId, diveId, files = []) {
-  const dive = await diveRepository.findByIdAndUserId(diveId, userId);
-  if (!dive) throw new AppError(404, "DIVE_NOT_FOUND", "Dive not found");
+  await assertDiveOwner(userId, diveId);
   if (files.length === 0) {
     throw new AppError(400, "PHOTOS_REQUIRED", "At least one photo is required");
   }

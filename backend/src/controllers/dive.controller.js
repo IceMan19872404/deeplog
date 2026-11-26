@@ -168,8 +168,11 @@ async function removePhoto(req, res, next) {
 
 async function saveReflection(req, res, next) {
   try {
-    await diveService.saveReflection(req.auth.userId, req.params.diveId, req.body);
-    const dive = await diveService.getDive(req.auth.userId, req.params.diveId);
+    const dive = await diveService.saveReflection(
+      req.auth.userId,
+      req.params.diveId,
+      req.body
+    );
     return res.status(200).json({ data: { dive: toDiveResponse(dive) } });
   } catch (error) {
     return next(error);
