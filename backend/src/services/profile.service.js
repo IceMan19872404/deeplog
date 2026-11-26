@@ -43,14 +43,13 @@ async function savePhoto(userId, file) {
   if (!file) throw new AppError(400, "PROFILE_PHOTO_REQUIRED", "Profile photo is required");
   if (!hasValidSignature(file)) throw invalidProfilePhoto();
   const cleanBuffer = await sanitizeOr(file, invalidProfilePhoto);
-  const previous = await repository.findByUserId(userId);
   const storageKey = newStorageKey(file.mimetype, "profile-");
   await writeFiles([{ storageKey, buffer: cleanBuffer }]);
   try {
     const saved = await repository.replacePhoto(userId, {
       storageKey, mimeType: file.mimetype, sizeBytes: cleanBuffer.length
     });
-    if (previous?.photo_storage_key) await removeFiles([previous.photo_storage_key]);
+    if (saved.previous_photo_storage_key) await removeFiles([saved.previous_photo_storage_key]);
     return response(saved);
   } catch (error) {
     await removeFiles([storageKey]);
@@ -65,9 +64,9 @@ async function getPhoto(userId) {
 }
 
 async function deletePhoto(userId) {
-  const profile = await repository.removePhoto(userId);
-  if (!profile) throw profilePhotoNotFound();
-  await removeFiles([profile.photo_storage_key]);
+  const removedKey = await repository.removePhoto(userId);
+  if (!removedKey) throw profilePhotoNotFound();
+  await removeFiles([removedKey]);
 }
 
 module.exports = { get, update, savePhoto, getPhoto, deletePhoto };
