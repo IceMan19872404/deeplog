@@ -445,3 +445,40 @@ test("trust proxy and HSTS follow the configuration", () => {
     poweredBy: null
   });
 });
+
+test("session endpoints answer with fresh cookies or cleared cookies and no-store", async () => {
+  const cookieHeader = "deeplog_refresh=refresh-secret; deeplog_csrf=csrf-secret";
+  const user = { id: 11, first_name: "Ana", last_name: "Mar", second_last_name: null, email: "ana@example.com", created_at: "2026-01-01", updated_at: "2026-01-01" };
+  const accessToken = tokenService.createAccessToken(11, "family-11");
+  await withStubs(sessionRepository, {
+    rotate: async () => ({ status: "rotated", session: { user_id: 11, family_id: "family-11" }, user }),
+    revokeFamily: async () => true,
+    revokeAllForUser: async () => {},
+    hasActiveFamily: async (userId, familyId) => userId === "11" && familyId === "family-11"
+  }, async () => {
+    const refreshed = await request(app).post("/api/v1/auth/refresh")
+      .set("Cookie", cookieHeader).set("X-CSRF-Token", "csrf-secret");
+    assert.equal(refreshed.status, 200);
+    assert.equal(refreshed.headers["cache-control"], "no-store");
+    const [refreshCookie, csrfCookie] = refreshed.headers["set-cookie"];
+    assert.match(refreshCookie, /^deeplog_refresh=[0-9a-f]{64}; Path=\/api\/v1\/auth; SameSite=Strict; HttpOnly; Max-Age=2592000$/);
+    assert.match(csrfCookie, /^deeplog_csrf=[0-9a-f]{64}; Path=\/; SameSite=Strict; Max-Age=2592000$/);
+    assert.deepEqual(Object.keys(refreshed.body.data), ["user", "accessToken", "tokenType", "expiresIn"]);
+    assert.equal(refreshed.body.data.user.email, "ana@example.com");
+    assert.equal(refreshed.body.data.tokenType, "Bearer");
+
+    const cleared = [
+      "deeplog_refresh=; Path=/api/v1/auth; SameSite=Strict; HttpOnly; Max-Age=0",
+      "deeplog_csrf=; Path=/; SameSite=Strict; Max-Age=0"
+    ];
+    for (const url of ["/api/v1/auth/logout", "/api/v1/auth/logout-all"]) {
+      const response = await request(app).post(url)
+        .set("Authorization", `Bearer ${accessToken}`)
+        .set("Cookie", cookieHeader).set("X-CSRF-Token", "csrf-secret");
+      assert.equal(response.status, 204, url);
+      assert.equal(response.headers["cache-control"], "no-store", url);
+      assert.deepEqual(response.headers["set-cookie"], cleared, url);
+      assert.equal(response.text, "", url);
+    }
+  });
+});
