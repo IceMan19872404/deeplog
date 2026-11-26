@@ -1,22 +1,13 @@
 const bcrypt = require("bcryptjs");
 const path = require("path");
-const database = require("../config/database");
 const AppError = require("../errors/app-error");
+const accountRepository = require("../repositories/account.repository");
+const { withTransaction } = require("../repositories/transaction");
 const photoService = require("./dive-photo.service");
 
 async function deleteAccount(userId, input) {
-  const client = await database.pool.connect();
-  let storageKeys = [];
-
-  try {
-    await client.query("BEGIN");
-    const userResult = await client.query(
-      `SELECT u.password_hash, p.photo_storage_key
-         FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id
-        WHERE u.id = $1 FOR UPDATE OF u`,
-      [userId]
-    );
-    const user = userResult.rows[0];
+  const storageKeys = await withTransaction(async (client) => {
+    const user = await accountRepository.lockForDeletion(userId, client);
     const passwordMatches = user &&
       (await bcrypt.compare(input.password, user.password_hash));
 
@@ -29,24 +20,14 @@ async function deleteAccount(userId, input) {
       );
     }
 
-    const photosResult = await client.query(
-      `SELECT p.storage_key
-         FROM dive_photos p
-         JOIN dives d ON d.id = p.dive_id
-        WHERE d.user_id = $1`,
-      [userId]
-    );
-    storageKeys = photosResult.rows.map((row) => row.storage_key);
-    if (user.photo_storage_key) storageKeys.push(user.photo_storage_key);
-    await client.query("DELETE FROM users WHERE id = $1", [userId]);
-    await client.query("COMMIT");
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
+    const photos = await accountRepository.findAllPhotoFiles(userId, client);
+    const keys = photos.map((photo) => photo.storage_key);
+    if (user.photo_storage_key) keys.push(user.photo_storage_key);
+    await accountRepository.deleteUser(userId, client);
+    return keys;
+  });
 
+  // Files go only after COMMIT, so a failed deletion never loses photos.
   await photoService.removeFiles(storageKeys.map((key) => path.basename(key)));
   return { deleted: true, removedPhotoFiles: storageKeys.length };
 }

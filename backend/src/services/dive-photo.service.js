@@ -3,8 +3,10 @@ const fs = require("fs/promises");
 const path = require("path");
 const env = require("../config/env");
 const AppError = require("../errors/app-error");
+const diveRepository = require("../repositories/dive.repository");
 const photoRepository = require("../repositories/dive-photo.repository");
-const { assertDiveOwner } = require("./dive-ownership");
+const { withTransaction } = require("../repositories/transaction");
+const { assertDiveOwner, diveNotFound } = require("./dive-ownership");
 const { sanitizeImage } = require("../utils/image-sanitizer");
 
 const extensionByMimeType = {
@@ -42,6 +44,18 @@ async function removeFiles(storageKeys) {
   );
 }
 
+const MAX_PHOTOS_PER_DIVE = 5;
+
+function assertPhotoRoom(existingCount, addedCount) {
+  if (existingCount + addedCount > MAX_PHOTOS_PER_DIVE) {
+    throw new AppError(
+      400,
+      "PHOTO_LIMIT_EXCEEDED",
+      "A dive can contain a maximum of 5 photos"
+    );
+  }
+}
+
 async function addPhotos(userId, diveId, files = []) {
   await assertDiveOwner(userId, diveId);
   if (files.length === 0) {
@@ -55,14 +69,8 @@ async function addPhotos(userId, diveId, files = []) {
     );
   }
 
-  const existingCount = await photoRepository.countByDiveId(diveId);
-  if (existingCount + files.length > 5) {
-    throw new AppError(
-      400,
-      "PHOTO_LIMIT_EXCEEDED",
-      "A dive can contain a maximum of 5 photos"
-    );
-  }
+  // Early answer before the costly re-encoding; repeated under lock below.
+  assertPhotoRoom(await photoRepository.countByDiveId(diveId), files.length);
 
   let cleanBuffers;
   try {
@@ -92,7 +100,14 @@ async function addPhotos(userId, diveId, files = []) {
         fs.writeFile(photoPath(photo.storageKey), photo.buffer, { flag: "wx" })
       )
     );
-    return await photoRepository.createMany(diveId, storedPhotos);
+    // Lock the dive so two concurrent uploads cannot both pass the limit.
+    return await withTransaction(async (client) => {
+      if (!(await diveRepository.lockForUser(diveId, userId, client))) {
+        throw diveNotFound();
+      }
+      assertPhotoRoom(await photoRepository.countByDiveId(diveId, client), files.length);
+      return photoRepository.createMany(diveId, storedPhotos, client);
+    });
   } catch (error) {
     await removeFiles(storedPhotos.map((photo) => photo.storageKey));
     throw error;

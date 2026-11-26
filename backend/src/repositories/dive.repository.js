@@ -46,10 +46,10 @@ function writableValues(dive) {
   ];
 }
 
-async function create(userId, dive) {
+async function create(userId, dive, db = database) {
   const values = [userId, ...writableValues(dive)];
   const placeholders = values.map((_value, index) => `$${index + 1}`);
-  const result = await database.query(
+  const result = await db.query(
     `INSERT INTO dives (user_id, ${writableColumns.join(", ")})
      VALUES (${placeholders.join(", ")})
      RETURNING ${diveColumns}`,
@@ -102,6 +102,17 @@ function userConditions(userId) {
 async function existsForUser(diveId, userId) {
   const result = await database.query(
     "SELECT 1 FROM dives WHERE id = $1 AND user_id = $2",
+    [diveId, userId]
+  );
+  return result.rowCount > 0;
+}
+
+// Locks the user's dive row until the transaction ends. New photos (and any
+// other row referencing the dive) wait for the lock, so counts and storage
+// keys read afterwards stay true until COMMIT. Returns false if not owned.
+async function lockForUser(diveId, userId, client) {
+  const result = await client.query(
+    "SELECT 1 FROM dives WHERE id = $1 AND user_id = $2 FOR UPDATE",
     [diveId, userId]
   );
   return result.rowCount > 0;
@@ -423,10 +434,10 @@ async function findConfigurationMemory(userId, filters) {
   return result.rows;
 }
 
-async function update(diveId, userId, dive) {
+async function update(diveId, userId, dive, db = database) {
   const values = writableValues(dive);
   const assignments = writableColumns.map((column, index) => `${column} = $${index + 1}`);
-  const result = await database.query(
+  const result = await db.query(
     `UPDATE dives
         SET ${assignments.join(", ")},
             updated_at = NOW()
@@ -438,8 +449,8 @@ async function update(diveId, userId, dive) {
   return result.rows[0] || null;
 }
 
-async function remove(diveId, userId) {
-  const result = await database.query(
+async function remove(diveId, userId, db = database) {
+  const result = await db.query(
     `DELETE FROM dives
       WHERE id = $1 AND user_id = $2
       RETURNING id`,
@@ -453,6 +464,7 @@ module.exports = {
   create,
   findByIdAndUserId,
   existsForUser,
+  lockForUser,
   findAllByUserId,
   getStatsByUserId,
   findMapByUserId,

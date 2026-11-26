@@ -21,15 +21,15 @@ async function findByDiveIds(diveIds) {
   return grouped;
 }
 
-async function countByDiveId(diveId) {
-  const result = await database.query(
+async function countByDiveId(diveId, db = database) {
+  const result = await db.query(
     "SELECT COUNT(*)::INTEGER AS total FROM dive_photos WHERE dive_id = $1",
     [diveId]
   );
   return result.rows[0].total;
 }
 
-async function createMany(diveId, photos) {
+async function createMany(diveId, photos, db = database) {
   if (photos.length === 0) return [];
 
   const values = [];
@@ -44,7 +44,7 @@ async function createMany(diveId, photos) {
     );
     return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`;
   });
-  const result = await database.query(
+  const result = await db.query(
     `INSERT INTO dive_photos (
        dive_id, storage_key, original_name, mime_type, size_bytes
      ) VALUES ${placeholders.join(", ")}
@@ -80,8 +80,8 @@ async function removeOwnedPhoto(photoId, diveId, userId) {
   return result.rows[0] || null;
 }
 
-async function findStorageKeysByDiveId(diveId) {
-  const result = await database.query(
+async function findStorageKeysByDiveId(diveId, db = database) {
+  const result = await db.query(
     "SELECT storage_key FROM dive_photos WHERE dive_id = $1",
     [diveId]
   );

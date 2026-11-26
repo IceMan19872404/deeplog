@@ -2,6 +2,7 @@ const diveRepository = require("../repositories/dive.repository");
 const buddyRepository = require("../repositories/dive-buddy.repository");
 const photoRepository = require("../repositories/dive-photo.repository");
 const reflectionRepository = require("../repositories/dive-reflection.repository");
+const { withTransaction } = require("../repositories/transaction");
 const photoService = require("./dive-photo.service");
 const { assertDiveOwner, diveNotFound } = require("./dive-ownership");
 
@@ -21,9 +22,13 @@ async function attachRelations(dives) {
   }));
 }
 
+// The dive row and its buddies are written together: a failure leaves neither.
 async function createDive(userId, input) {
-  const dive = await diveRepository.create(userId, input);
-  await buddyRepository.replaceAll(dive.id, input.buddies);
+  const dive = await withTransaction(async (client) => {
+    const created = await diveRepository.create(userId, input, client);
+    await buddyRepository.replaceAll(created.id, input.buddies, client);
+    return created;
+  });
   return (await attachRelations([dive]))[0];
 }
 
@@ -78,18 +83,26 @@ async function deleteReflection(userId, diveId) {
 }
 
 async function updateDive(userId, diveId, input) {
-  const dive = await diveRepository.update(diveId, userId, input);
-
-  if (!dive) throw diveNotFound();
-  await buddyRepository.replaceAll(dive.id, input.buddies);
+  const dive = await withTransaction(async (client) => {
+    const updated = await diveRepository.update(diveId, userId, input, client);
+    if (!updated) throw diveNotFound();
+    await buddyRepository.replaceAll(updated.id, input.buddies, client);
+    return updated;
+  });
   return (await attachRelations([dive]))[0];
 }
 
+// The dive is locked before its photo keys are read, so a concurrent upload
+// cannot add a file that the cascade would orphan. Files go after COMMIT.
 async function deleteDive(userId, diveId) {
-  const storageKeys = await photoRepository.findStorageKeysByDiveId(diveId);
-  const deleted = await diveRepository.remove(diveId, userId);
-
-  if (!deleted) throw diveNotFound();
+  const storageKeys = await withTransaction(async (client) => {
+    if (!(await diveRepository.lockForUser(diveId, userId, client))) {
+      throw diveNotFound();
+    }
+    const keys = await photoRepository.findStorageKeysByDiveId(diveId, client);
+    await diveRepository.remove(diveId, userId, client);
+    return keys;
+  });
   await photoService.removeFiles(storageKeys);
 }
 
